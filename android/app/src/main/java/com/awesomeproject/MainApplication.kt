@@ -1,4 +1,4 @@
-package com.Poxfy
+package com.AwesomeProject
 
 import android.app.Application
 import com.facebook.react.PackageList
