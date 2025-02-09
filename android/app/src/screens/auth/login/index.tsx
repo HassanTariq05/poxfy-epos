@@ -13,6 +13,31 @@ import {BlurView} from '@react-native-community/blur';
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const validateEmail = (text: string) => {
+    setEmail(text);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!text) {
+      setEmailError('Email is required');
+    } else if (!emailRegex.test(text)) {
+      setEmailError('Enter a valid email address');
+    } else {
+      setEmailError('');
+    }
+  };
+
+  const validatePassword = (text: string) => {
+    setPassword(text);
+    if (!text) {
+      setPasswordError('Password is required');
+    } else {
+      setPasswordError('');
+    }
+  };
+
+  const isFormValid = !emailError && !passwordError && email && password;
 
   return (
     <View style={styles.container}>
@@ -44,10 +69,8 @@ const LoginScreen = () => {
         />
       </View>
 
-      {/* Vertical Separator */}
       <View style={styles.separator} />
 
-      {/* Right Side - Login Form */}
       <View style={styles.rightSide}>
         <View style={styles.formContainer}>
           <Text style={styles.title}>Sign In</Text>
@@ -58,25 +81,33 @@ const LoginScreen = () => {
           <TextInput
             placeholder="dummy@admin.com"
             value={email}
-            onChangeText={setEmail}
-            style={styles.input}
+            onChangeText={validateEmail}
+            style={[styles.input, emailError ? styles.inputError : null]}
             keyboardType="email-address"
             autoCapitalize="none"
           />
+          {emailError ? (
+            <Text style={styles.errorText}>{emailError}</Text>
+          ) : null}
 
+          {/* Password Input */}
           <TextInput
             placeholder="********"
             value={password}
-            onChangeText={setPassword}
-            style={styles.input}
+            onChangeText={validatePassword}
+            style={[styles.input, passwordError ? styles.inputError : null]}
             secureTextEntry
           />
+          {passwordError ? (
+            <Text style={styles.errorText}>{passwordError}</Text>
+          ) : null}
 
           <TouchableOpacity>
             <Text style={styles.forgotPassword}>Forget your password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.loginButton}>
+          {/* Login Button */}
+          <TouchableOpacity style={styles.loginButton} disabled={!isFormValid}>
             <Text style={styles.loginButtonText}>Login</Text>
           </TouchableOpacity>
         </View>
@@ -111,7 +142,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     opacity: 0.3,
   },
-
   gradientBackgroundRed: {
     position: 'absolute',
     bottom: -50,
@@ -123,14 +153,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     opacity: 0.3,
   },
-
   blurBackground: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 100,
   },
-
   leftSide: {
-    flex: 1,
+    flex: 1.2,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -147,13 +175,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 60,
+    paddingHorizontal: 40,
   },
   formContainer: {
     flex: 1,
     justifyContent: 'center',
     alignContent: 'center',
-    width: '100%',
+    width: '90%',
   },
   title: {
     fontSize: 24,
@@ -175,6 +203,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 25,
     marginBottom: 8,
+  },
+  inputError: {
+    borderColor: '#ff6b6b',
+    borderWidth: 1.5,
+  },
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: 12,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
   },
   loginButton: {
     backgroundColor: '#fe5e5e',
