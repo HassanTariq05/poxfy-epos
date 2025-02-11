@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -9,79 +9,43 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Feather from 'react-native-vector-icons/Feather';
+import {menuItems, collapsibleItems} from './menu-items';
 
-const menuItems = [
-  {
-    name: 'Dashboard',
-    icon: 'home-outline',
-    color: '#32CD32',
-    backgroundTint: 'rgb(245, 255, 250)',
-  },
-  {
-    name: 'Landing Page',
-    icon: 'file-download-outline',
-    color: '#FFD700',
-    backgroundTint: 'rgb(254, 246, 221)',
-  },
-  {
-    name: 'Pages',
-    icon: 'file-document-outline',
-    color: '#6495ED',
-    backgroundTint: 'rgb(224, 229, 253)',
-  },
-];
+interface LeftMenuCardProps {
+  collapsed: boolean;
+  setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+}
 
-const collapsibleItems = [
-  {
-    name: 'User',
-    icon: 'account-outline',
-    color: '#00BFFF',
-    backgroundTint: 'rgb(227, 247, 254)',
-    subItems: [
-      {
-        name: 'Role Option',
-        icon: 'shield-account',
-        color: '#FF6347',
-        backgroundTint: 'rgb(255, 238, 238)',
-      },
-    ],
-  },
-  {
-    name: 'Subscriptions',
-    icon: 'gesture-tap',
-    color: '#FF69B4',
-    backgroundTint: 'rgb(251, 228, 241)',
-  },
-  {
-    name: 'Reporting',
-    icon: 'gesture-tap',
-    color: '#FF69B4',
-    backgroundTint: 'rgb(251, 228, 241)',
-  },
-];
-
-export default function LeftMenuCard() {
-  // Define the expanded state with proper type
-  const [expanded, setExpanded] = useState<{[key: string]: boolean}>({});
+export default function LeftMenuCard({
+  collapsed,
+  setCollapsed,
+}: LeftMenuCardProps) {
+  const [expanded, setExpanded] = React.useState<{[key: string]: boolean}>({});
 
   const toggleExpand = (item: string) => {
     setExpanded(prev => ({...prev, [item]: !prev[item]}));
   };
 
   return (
-    <View style={styles.menuCard}>
-      <View style={styles.logoContainer}>
-        <Image
-          source={require('../../../src/assets/images/logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+    <View style={[styles.menuCard, collapsed && styles.collapsedMenuCard]}>
+      <View
+        style={[
+          styles.logoContainer,
+          collapsed ? styles.logoContainerCollapsed : styles.logoContainer,
+        ]}>
+        {!collapsed && (
+          <Image
+            source={require('../../../src/assets/images/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        )}
         <TouchableOpacity
           style={[
             styles.sidebarToggleButton,
-            styles.rotated, // Rotate the button if sidebar is not collapsed
+            collapsed ? styles.notRotated : styles.rotated,
           ]}
-          onPress={() => {}}>
+          onPress={() => setCollapsed(!collapsed)}>
           <Image
             source={require('../../../src/assets/images/sidebarToggle.png')}
             style={styles.image}
@@ -99,7 +63,7 @@ export default function LeftMenuCard() {
               ]}>
               <Icon name={item.icon} size={22} color={item.color} />
             </View>
-            <Text style={styles.menuText}>{item.name}</Text>
+            {!collapsed && <Text style={styles.menuText}>{item.name}</Text>}
           </TouchableOpacity>
         ))}
 
@@ -115,27 +79,23 @@ export default function LeftMenuCard() {
                 ]}>
                 <Icon name={item.icon} size={22} color={item.color} />
               </View>
-              <Text style={styles.menuText}>{item.name}</Text>
-              <Feather
-                name={expanded[item.name] ? 'chevron-up' : 'chevron-down'}
-                size={18}
-                color="black"
-                style={{marginLeft: 'auto'}}
-              />
+              {!collapsed && <Text style={styles.menuText}>{item.name}</Text>}
+              {!collapsed && (
+                <Feather
+                  name={expanded[item.name] ? 'chevron-up' : 'chevron-down'}
+                  size={18}
+                  color="black"
+                  style={{marginLeft: 'auto'}}
+                />
+              )}
             </TouchableOpacity>
 
-            {/* Render subitems under 'User' */}
             {expanded[item.name] &&
+              !collapsed &&
               item.subItems &&
               item.subItems.map((subItem, subIndex) => (
                 <TouchableOpacity key={subIndex} style={styles.subMenuItem}>
-                  <View
-                    style={[
-                      styles.iconContainer,
-                      {backgroundColor: subItem.backgroundTint},
-                    ]}>
-                    <Icon name={subItem.icon} size={22} color={subItem.color} />
-                  </View>
+                  <View style={[styles.iconContainer]}></View>
                   <Text style={styles.menuText}>{subItem.name}</Text>
                 </TouchableOpacity>
               ))}
@@ -152,15 +112,26 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: 200,
+    minWidth: 60,
+    maxWidth: 200,
     backgroundColor: 'white',
     paddingVertical: 15,
     paddingHorizontal: 15,
-    borderRadius: 20,
+    borderRadius: 30,
+    flexShrink: 1,
+  },
+  collapsedMenuCard: {
+    minWidth: 60,
+    paddingHorizontal: 10,
   },
   logoContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  logoContainerCollapsed: {
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
   },
@@ -174,17 +145,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
+    flexWrap: 'nowrap',
   },
   subMenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
-    paddingLeft: 20, // Indent subitems
+    backgroundColor: 'rgb(244, 244, 244)',
   },
   menuText: {
     fontSize: 16,
     color: '#333',
     marginLeft: 10,
+    flexShrink: 1,
   },
   iconContainer: {
     width: 36,
@@ -194,16 +167,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 1,
   },
+  iconContainerCollapsed: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   sidebarToggleButton: {
     backgroundColor: 'rgb(103, 223, 135)',
-    width: 32, // Equivalent to w-8 in Tailwind (8 * 4px = 32px)
-    aspectRatio: 1, // Ensures a square shape
-    borderRadius: 16, // Half of the width for round shape
+    width: 32,
+    aspectRatio: 1,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   rotated: {
     transform: [{rotate: '180deg'}],
+  },
+  notRotated: {
+    transform: [{rotate: '0deg'}],
   },
   image: {
     width: 16,

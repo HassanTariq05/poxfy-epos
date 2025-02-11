@@ -30,21 +30,19 @@ export default function Header() {
         {storeDropdownOpen && (
           <View style={styles.dropdown}>
             <TouchableOpacity style={styles.dropdownItem}>
-              <Text>Main Store Option 1</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.dropdownItem}>
-              <Text>Main Store Option 2</Text>
+              <Text>Main Store</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        <View style={styles.searchContainer}>
+        <View
+          style={[
+            styles.searchContainer,
+            isSearchFocused && styles.searchTextFocused,
+          ]}>
           <MaterialCommunityIcons name="magnify" size={20} color="black" />
           <TextInput
-            style={[
-              styles.searchText,
-              isSearchFocused && styles.searchTextFocused,
-            ]}
+            style={[styles.searchText]}
             value={email}
             placeholder="Search..."
             onChangeText={setEmail}
@@ -88,7 +86,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#fff',
-    padding: 10,
+    paddingRight: 10,
     borderRadius: 20,
     marginHorizontal: 10,
     width: '100%',
@@ -121,7 +119,7 @@ const styles = StyleSheet.create({
   searchText: {fontSize: 14, marginLeft: 5, color: '#000'},
   searchTextFocused: {
     borderWidth: 1,
-    borderColor: 'blue',
+    borderColor: 'rgb(32, 97, 197)',
     paddingHorizontal: 10,
   },
 

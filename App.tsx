@@ -1,14 +1,17 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {View, StyleSheet} from 'react-native';
 import LeftMenuCard from './android/app/src/components/sidebar';
 import LoginScreen from './android/app/src/screens/auth/login';
 import Header from './android/app/src/components/header';
+import Dashboard from './android/app/src/screens/dashboard';
 
 export default function App() {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <View style={styles.container}>
-      <View style={styles.sidebar}>
-        <LeftMenuCard />
+      <View style={[styles.sidebar, collapsed && styles.collapsedSidebar]}>
+        <LeftMenuCard collapsed={collapsed} setCollapsed={setCollapsed} />
       </View>
 
       <View style={styles.rightContainer}>
@@ -16,7 +19,9 @@ export default function App() {
           <Header />
         </View>
 
-        <View style={styles.content}>{/* <LoginScreen /> */}</View>
+        <View style={styles.content}>
+          <Dashboard />
+        </View>
       </View>
     </View>
   );
@@ -31,22 +36,23 @@ const styles = StyleSheet.create({
   },
   sidebar: {
     width: 200,
-    backgroundColor: '#fff',
     marginRight: 20,
-    borderRadius: 20,
+  },
+  collapsedSidebar: {
+    width: 60,
+    marginRight: 20,
   },
   rightContainer: {
     flex: 1,
     flexDirection: 'column',
   },
   headerContainer: {
-    width: '100%',
     backgroundColor: '#fff',
     borderRadius: 20,
   },
   content: {
     flex: 1,
-    padding: 20,
+    paddingTop: 20,
     backgroundColor: 'rgb(232, 231, 232)',
   },
 });
