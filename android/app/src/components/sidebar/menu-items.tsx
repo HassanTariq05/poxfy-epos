@@ -21,6 +21,30 @@ export const menuItems = [
 
 export const collapsibleItems = [
   {
+    name: 'Point of Sales',
+    icon: 'basket-outline',
+    color: 'rgb(237, 111, 106)',
+    backgroundTint: 'rgb(253, 242, 238)',
+    subItems: [
+      {
+        name: 'Process Sales',
+        color: '#FF6347',
+        backgroundTint: 'rgb(255, 238, 238)',
+      },
+      {
+        name: 'Sale History',
+        color: '#FF6347',
+        backgroundTint: 'rgb(255, 238, 238)',
+      },
+      {
+        name: 'Cash Registers',
+        color: '#FF6347',
+        backgroundTint: 'rgb(255, 238, 238)',
+      },
+    ],
+  },
+  ,
+  {
     name: 'User',
     icon: 'account-outline',
     color: '#00BFFF',

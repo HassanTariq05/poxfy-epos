@@ -4,6 +4,10 @@ import LeftMenuCard from './android/app/src/components/sidebar';
 import LoginScreen from './android/app/src/screens/auth/login';
 import Header from './android/app/src/components/header';
 import Dashboard from './android/app/src/screens/dashboard';
+import CashRegister from './android/app/src/screens/pos/cash-resgister';
+import DataTableComponent from './android/app/src/components/data-table';
+import CustomDataTable from './android/app/src/components/data-table';
+import Listing from './android/app/src/screens/pos/cash-resgister/listing';
 
 export default function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -20,7 +24,16 @@ export default function App() {
         </View>
 
         <View style={styles.content}>
-          <Dashboard />
+          {/* <Dashboard /> */}
+          <CashRegister
+            registerData={[]}
+            cashDifference={''}
+            cardDifference={''}
+            creditDifference={''}
+            registerId=""
+          />
+
+          {/* <Listing /> */}
         </View>
       </View>
     </View>
