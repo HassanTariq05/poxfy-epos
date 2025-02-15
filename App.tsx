@@ -1,30 +1,26 @@
 import React, {useState} from 'react';
 import {View, StyleSheet} from 'react-native';
 import LeftMenuCard from './android/app/src/components/sidebar';
-import LoginScreen from './android/app/src/screens/auth/login';
 import Header from './android/app/src/components/header';
 import Dashboard from './android/app/src/screens/dashboard';
 import CashRegister from './android/app/src/screens/pos/cash-resgister';
-import DataTableComponent from './android/app/src/components/data-table';
-import CustomDataTable from './android/app/src/components/data-table';
 import Listing from './android/app/src/screens/pos/cash-resgister/listing';
+import Customer from './android/app/src/screens/customer/customer';
+import Tag from './android/app/src/screens/customer/tag';
+import Tier from './android/app/src/screens/customer/tier';
 
 export default function App() {
   const [collapsed, setCollapsed] = useState(false);
+  const [selectedComponent, setSelectedComponent] = useState('Dashboard');
 
-  return (
-    <View style={styles.container}>
-      <View style={[styles.sidebar, collapsed && styles.collapsedSidebar]}>
-        <LeftMenuCard collapsed={collapsed} setCollapsed={setCollapsed} />
-      </View>
-
-      <View style={styles.rightContainer}>
-        <View style={styles.headerContainer}>
-          <Header />
-        </View>
-
-        <View style={styles.content}>
-          {/* <Dashboard /> */}
+  const renderComponent = () => {
+    switch (selectedComponent) {
+      case 'Dashboard':
+        return <Dashboard />;
+      case 'POS-Cash-Registers':
+        return <Listing />;
+      case 'Listing':
+        return (
           <CashRegister
             registerData={[]}
             cashDifference={''}
@@ -32,9 +28,34 @@ export default function App() {
             creditDifference={''}
             registerId=""
           />
+        );
+      case 'Customer-Customer':
+        return <Customer />;
+      case 'Customer-Tag':
+        return <Tag />;
+      case 'Customer-Tier':
+        return <Tier />;
+      default:
+        return <Dashboard />;
+    }
+  };
 
-          {/* <Listing /> */}
+  return (
+    <View style={styles.container}>
+      <View style={[styles.sidebar, collapsed && styles.collapsedSidebar]}>
+        <LeftMenuCard
+          collapsed={collapsed}
+          setCollapsed={setCollapsed}
+          setSelectedComponent={setSelectedComponent}
+        />
+      </View>
+
+      <View style={styles.rightContainer}>
+        <View style={styles.headerContainer}>
+          <Header />
         </View>
+
+        <View style={styles.content}>{renderComponent()}</View>
       </View>
     </View>
   );
