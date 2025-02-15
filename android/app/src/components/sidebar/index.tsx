@@ -14,16 +14,26 @@ import {menuItems, collapsibleItems} from './menu-items';
 interface LeftMenuCardProps {
   collapsed: boolean;
   setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  setSelectedComponent: any;
 }
 
 export default function LeftMenuCard({
   collapsed,
   setCollapsed,
+  setSelectedComponent,
 }: LeftMenuCardProps) {
   const [expanded, setExpanded] = React.useState<{[key: string]: boolean}>({});
+  const [selectedItem, setSelectedItem] = React.useState<string | null>(null);
 
-  const toggleExpand = (item: string) => {
-    setExpanded(prev => ({...prev, [item]: !prev[item]}));
+  const toggleExpand = (item: string | undefined) => {
+    if (item) {
+      setExpanded(prev => ({...prev, [item]: !prev[item]}));
+    }
+  };
+
+  const handleSelectComponent = (component: any, itemName: string) => {
+    setSelectedComponent(component);
+    setSelectedItem(itemName);
   };
 
   return (
@@ -55,7 +65,13 @@ export default function LeftMenuCard({
 
       <ScrollView style={styles.menuItemsView}>
         {menuItems.map((item, index) => (
-          <TouchableOpacity key={index} style={styles.menuItem}>
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.menuItem,
+              selectedItem === item.name ? styles.selectedMenuItem : null,
+            ]}
+            onPress={() => handleSelectComponent(item.component, item.name)}>
             <View
               style={[
                 styles.iconContainer,
@@ -63,44 +79,83 @@ export default function LeftMenuCard({
               ]}>
               <Icon name={item.icon} size={22} color={item.color} />
             </View>
-            {!collapsed && <Text style={styles.menuText}>{item.name}</Text>}
+            {!collapsed && (
+              <Text
+                style={[
+                  styles.menuText,
+                  selectedItem === item.name && styles.selectedMenuText, // Change text color for selected item
+                ]}>
+                {item.name}
+              </Text>
+            )}
           </TouchableOpacity>
         ))}
 
-        {collapsibleItems.map((item, index) => (
-          <View key={index}>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => toggleExpand(item.name)}>
-              <View
-                style={[
-                  styles.iconContainer,
-                  {backgroundColor: item.backgroundTint},
-                ]}>
-                <Icon name={item.icon} size={22} color={item.color} />
-              </View>
-              {!collapsed && <Text style={styles.menuText}>{item.name}</Text>}
-              {!collapsed && (
-                <Feather
-                  name={expanded[item.name] ? 'chevron-up' : 'chevron-down'}
-                  size={18}
-                  color="black"
-                  style={{marginLeft: 'auto'}}
-                />
-              )}
-            </TouchableOpacity>
+        {collapsibleItems.map((item, index) => {
+          const isChildSelected = item?.subItems?.some(
+            subItem => subItem.name === selectedItem,
+          );
 
-            {expanded[item.name] &&
-              !collapsed &&
-              item.subItems &&
-              item.subItems.map((subItem, subIndex) => (
-                <TouchableOpacity key={subIndex} style={styles.subMenuItem}>
-                  <View style={[styles.iconContainer]}></View>
-                  <Text style={styles.menuText}>{subItem.name}</Text>
-                </TouchableOpacity>
-              ))}
-          </View>
-        ))}
+          return (
+            <View key={index}>
+              <TouchableOpacity
+                style={[
+                  styles.menuItem,
+                  isChildSelected ? styles.selectedMenuItem : null, // Only change background when a child is selected
+                ]}
+                onPress={() => toggleExpand(item?.name)}>
+                <View
+                  style={[
+                    styles.iconContainer,
+                    {backgroundColor: item?.backgroundTint},
+                  ]}>
+                  <Icon
+                    name={item?.icon || ''}
+                    size={22}
+                    color={item?.color || ''}
+                  />
+                </View>
+                {!collapsed && (
+                  <Text
+                    style={[
+                      styles.menuText,
+                      isChildSelected && {color: 'white'},
+                    ]}>
+                    {item?.name || ''}
+                  </Text>
+                )}
+                {!collapsed && (
+                  <Feather
+                    name={
+                      expanded[item?.name || ''] ? 'chevron-up' : 'chevron-down'
+                    }
+                    size={18}
+                    color="black"
+                    style={[
+                      {marginLeft: 'auto'},
+                      isChildSelected && {color: 'white'},
+                    ]}
+                  />
+                )}
+              </TouchableOpacity>
+
+              {expanded[item?.name || ''] &&
+                !collapsed &&
+                item?.subItems &&
+                item.subItems.map((subItem, subIndex) => (
+                  <TouchableOpacity
+                    key={subIndex}
+                    style={styles.subMenuItem}
+                    onPress={() =>
+                      handleSelectComponent(subItem.component, subItem.name)
+                    }>
+                    <View style={[styles.iconContainer]}></View>
+                    <Text style={[styles.menuText]}>{subItem.name}</Text>
+                  </TouchableOpacity>
+                ))}
+            </View>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -145,13 +200,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    flexWrap: 'nowrap',
+    paddingHorizontal: 2,
+    borderRadius: 10,
   },
   subMenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
+    paddingHorizontal: 10,
     backgroundColor: 'rgb(244, 244, 244)',
+  },
+  selectedMenuItem: {
+    backgroundColor: 'rgb(237, 111, 106)',
+    color: 'white',
+  },
+  selectedSubMenuItem: {
+    backgroundColor: 'rgb(244, 244, 244)', // Keep the background same for sub-items
+  },
+  selectedMenuText: {
+    color: 'white',
   },
   menuText: {
     fontSize: 16,
@@ -165,14 +232,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 1,
-  },
-  iconContainerCollapsed: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginRight: 3,
   },
   sidebarToggleButton: {
     backgroundColor: 'rgb(103, 223, 135)',

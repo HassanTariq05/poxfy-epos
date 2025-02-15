@@ -1,18 +1,33 @@
 import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import {Card} from 'react-native-paper';
 
 interface TableCardProps {
   heading?: string;
+  button?: string;
   children?: React.ReactNode;
   style?: any;
+  onAction?: any;
 }
 
-const TableCard: React.FC<TableCardProps> = ({heading, children, style}) => {
+const TableCard: React.FC<TableCardProps> = ({
+  heading,
+  children,
+  style,
+  button,
+  onAction,
+}) => {
   return (
     <Card style={[styles.card, style]}>
       <View style={styles.header}>
         {heading && <Text style={styles.heading}>{heading}</Text>}
+        {button && (
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => onAction()}>
+            <Text style={styles.buttonText}>{button}</Text>
+          </TouchableOpacity>
+        )}
       </View>
       <View>{children}</View>
     </Card>
@@ -41,5 +56,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: 'black',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgb(237,105, 100)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    width: 120,
+    textAlign: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: '400',
   },
 });

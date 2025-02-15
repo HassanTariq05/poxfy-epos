@@ -45,7 +45,8 @@ function Listing() {
           <CustomDataTable
             headers={headers}
             data={dummyListingData}
-            onAction={handleAction} // Open modal when a row is clicked
+            showOpenRegister={true}
+            onOpenRegister={() => setModalVisible(true)}
           />
         </TableCard>
 

@@ -146,6 +146,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     width: '90%',
     zIndex: 10,
+    elevation: 10,
   },
   dropdownItem: {
     paddingVertical: 8,

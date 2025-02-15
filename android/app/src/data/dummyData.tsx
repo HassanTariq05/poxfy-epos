@@ -90,3 +90,92 @@ export const dummyListingData = [
     createdBy: 'User',
   },
 ];
+
+export const dummyCustomerData = [
+  {
+    Code: '001',
+    Name: 'John Doe',
+    Phone: '+1 123-456-7890',
+    Email: 'johndoe@example.com',
+    Country: 'USA',
+  },
+  {
+    Code: '002',
+    Name: 'Jane Smith',
+    Phone: '+44 789-456-1230',
+    Email: 'janesmith@example.co.uk',
+    Country: 'UK',
+  },
+  {
+    Code: '003',
+    Name: 'Ali Khan',
+    Phone: '+92 300-4567890',
+    Email: 'alikhan@example.pk',
+    Country: 'Pakistan',
+  },
+  {
+    Code: '004',
+    Name: 'Maria Gonzalez',
+    Phone: '+34 612-345-678',
+    Email: 'maria.g@example.es',
+    Country: 'Spain',
+  },
+  {
+    Code: '005',
+    Name: 'Chen Wei',
+    Phone: '+86 138-0013-8000',
+    Email: 'chenwei@example.cn',
+    Country: 'China',
+  },
+  {
+    Code: '006',
+    Name: 'Pierre Dupont',
+    Phone: '+33 6-12-34-56-78',
+    Email: 'pierre@example.fr',
+    Country: 'France',
+  },
+  {
+    Code: '007',
+    Name: 'Ivan Petrov',
+    Phone: '+7 912-345-6789',
+    Email: 'ivan.petrov@example.ru',
+    Country: 'Russia',
+  },
+  {
+    Code: '008',
+    Name: 'Fatima Ahmed',
+    Phone: '+971 50-123-4567',
+    Email: 'fatima.a@example.ae',
+    Country: 'UAE',
+  },
+  {
+    Code: '009',
+    Name: 'Satoshi Tanaka',
+    Phone: '+81 90-1234-5678',
+    Email: 'satoshi.t@example.jp',
+    Country: 'Japan',
+  },
+  {
+    Code: '010',
+    Name: 'Carlos Mendes',
+    Phone: '+55 21-98765-4321',
+    Email: 'carlosm@example.br',
+    Country: 'Brazil',
+  },
+];
+
+export const dummyCustomerTagData = [
+  {Name: 'Carlos Mendes'},
+  {Name: 'Satoshi Tanaka'},
+  {Name: 'Fatima Ahmed'},
+  {Name: 'Pierre Dupont'},
+  {Name: 'Chen Wei'},
+];
+
+export const dummyCustomerTierData = [
+  {Name: 'Carlos Mendes'},
+  {Name: 'Satoshi Tanaka'},
+  {Name: 'Fatima Ahmed'},
+  {Name: 'Pierre Dupont'},
+  {Name: 'Chen Wei'},
+];

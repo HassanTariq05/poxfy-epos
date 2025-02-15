@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Modal,
   View,
@@ -13,9 +13,14 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 interface SlideInModalProps {
   visible: boolean;
   onClose: () => void;
+  tier: any;
 }
 
-const SlideInModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
+const EditTierModal: React.FC<SlideInModalProps> = ({
+  visible,
+  onClose,
+  tier,
+}) => {
   const slideAnim = useRef(new Animated.Value(500)).current;
 
   useEffect(() => {
@@ -33,6 +38,14 @@ const SlideInModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
       }).start();
     }
   }, [visible]);
+  const [tierVal, settierVal] = useState(tier?.Name || '');
+
+  useEffect(() => {
+    console.log('here', tier);
+    if (tier) {
+      settierVal(tier?.Name || '');
+    }
+  }, [tier]);
 
   return (
     <Modal visible={visible} transparent animationType="none">
@@ -45,32 +58,26 @@ const SlideInModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
               <MaterialCommunityIcons
                 name="chevron-left"
                 size={30}
-                color="black"
+                color="#ED6964"
               />
             </TouchableOpacity>
-            <Text style={styles.title}>Open Register</Text>
+            <Text style={styles.title}>Edit Tier</Text>
           </View>
 
           <View style={styles.form}>
             <Text style={styles.label}>
-              <Text style={styles.required}>*</Text> Opening Balance
+              <Text style={styles.required}>*</Text> Name
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter opening balance"
-              keyboardType="numeric"
-            />
-
-            <Text style={styles.label}>Notes</Text>
-            <TextInput
-              style={[styles.input, styles.textarea]}
-              placeholder="Enter notes"
-              multiline
-              numberOfLines={4}
+              placeholder="Enter Brand Name"
+              keyboardType="default"
+              value={tierVal}
+              onChange={settierVal}
             />
           </View>
           <TouchableOpacity onPress={onClose} style={styles.button}>
-            <Text style={styles.buttonText}>Open</Text>
+            <Text style={styles.buttonText}>Save</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -79,6 +86,11 @@ const SlideInModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
 };
 
 const styles = StyleSheet.create({
+  notesText: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: 'rgb(103, 223, 135)',
+  },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -94,7 +106,7 @@ const styles = StyleSheet.create({
     top: '30%',
     right: 0,
     width: '40%',
-    height: '52%',
+    height: '40%',
     backgroundColor: 'white',
     elevation: 10,
     shadowColor: '#000',
@@ -126,9 +138,9 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '400',
     marginBottom: 5,
-    color: 'black',
+    color: 'gray',
   },
   required: {
     color: 'red',
@@ -163,6 +175,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  iconContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
 });
 
-export default SlideInModal;
+export default EditTierModal;
