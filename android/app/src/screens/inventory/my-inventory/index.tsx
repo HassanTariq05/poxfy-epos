@@ -80,7 +80,15 @@ function MyInventory() {
               />
             </View>
           }>
-          <CustomDataTable headers={headers} data={dummyMyInventoryData} />
+          <CustomDataTable
+            headers={headers}
+            data={dummyMyInventoryData}
+            showInputButton={true}
+            editableFields={['editAvailableQuantity']}
+            onInputChange={(row, key, value) =>
+              console.log('Updated:', row, key, value)
+            }
+          />
         </TableCard>
       </View>
     </>

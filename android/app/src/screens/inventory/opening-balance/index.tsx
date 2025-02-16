@@ -42,7 +42,14 @@ function OpeningBalance() {
               </TouchableOpacity>
             </View>
           }>
-          <CustomDataTable headers={headers} data={dummyOpeningData} />
+          <CustomDataTable
+            headers={headers}
+            data={dummyOpeningData}
+            editableFields={['opening']}
+            onInputChange={(row, key, value) =>
+              console.log('Updated:', row, key, value)
+            }
+          />
         </TableCard>
       </View>
     </>
