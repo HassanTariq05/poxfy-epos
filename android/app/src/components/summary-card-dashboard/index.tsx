@@ -11,6 +11,7 @@ interface SalesCardProps {
   items: Item[];
   backgroundColor: string;
   color: string;
+  inLastRow?: boolean;
 }
 
 const SummaryCard: React.FC<SalesCardProps> = ({
@@ -18,9 +19,11 @@ const SummaryCard: React.FC<SalesCardProps> = ({
   items,
   backgroundColor,
   color,
+  inLastRow = false,
 }) => {
   return (
-    <View style={[styles.card, {backgroundColor}]}>
+    <View
+      style={[inLastRow ? styles.lastRowCard : styles.card, {backgroundColor}]}>
       <View style={styles.content}>
         <Text style={[styles.title, {color}]}>{title}</Text>
         <View style={styles.contentView}>
@@ -50,9 +53,16 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 20,
     padding: 20,
-    marginTop: 20,
-    maxWidth: 370,
-    width: '100%',
+    marginTop: 10,
+    width: '49.50%',
+    height: 210,
+    justifyContent: 'space-between',
+  },
+  lastRowCard: {
+    borderRadius: 20,
+    padding: 20,
+    marginTop: 10,
+    width: '32.50%',
     height: 210,
     justifyContent: 'space-between',
   },
