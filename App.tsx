@@ -8,6 +8,10 @@ import Listing from './android/app/src/screens/pos/cash-resgister/listing';
 import Customer from './android/app/src/screens/customer/customer';
 import Tag from './android/app/src/screens/customer/tag';
 import Tier from './android/app/src/screens/customer/tier';
+import MyInventory from './android/app/src/screens/inventory/my-inventory';
+import OpeningBalance from './android/app/src/screens/inventory/opening-balance';
+import Purchase from './android/app/src/screens/inventory/purchase';
+import InventoryTransfer from './android/app/src/screens/inventory/inventory-transfer';
 
 export default function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -35,6 +39,14 @@ export default function App() {
         return <Tag />;
       case 'Customer-Tier':
         return <Tier />;
+      case 'Inventory-My-Inventory':
+        return <MyInventory />;
+      case 'Inventory-Opening-Balance':
+        return <OpeningBalance />;
+      case 'Inventory-Purchase':
+        return <Purchase />;
+      case 'Inventory-Inventory-Transfer':
+        return <InventoryTransfer />;
       default:
         return <Dashboard />;
     }

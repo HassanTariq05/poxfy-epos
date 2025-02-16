@@ -50,6 +50,38 @@ export const collapsibleItems = [
     ],
   },
   {
+    name: 'Inventory',
+    icon: 'archive-outline',
+    color: 'rgb(106, 141, 41)',
+    backgroundTint: 'rgb(239, 254, 198)',
+    subItems: [
+      {
+        name: 'My Inventory',
+        color: '#FF6347',
+        backgroundTint: 'rgb(255, 238, 238)',
+        component: 'Inventory-My-Inventory',
+      },
+      {
+        name: 'Opening Balance',
+        color: '#FF6347',
+        backgroundTint: 'rgb(255, 238, 238)',
+        component: 'Inventory-Opening-Balance',
+      },
+      {
+        name: 'Purchase',
+        color: '#FF6347',
+        backgroundTint: 'rgb(255, 238, 238)',
+        component: 'Inventory-Purchase',
+      },
+      {
+        name: 'Inventory Transfer',
+        color: '#FF6347',
+        backgroundTint: 'rgb(255, 238, 238)',
+        component: 'Inventory-Inventory-Transfer',
+      },
+    ],
+  },
+  {
     name: 'Customer',
     icon: 'account-group-outline',
     color: 'rgb(133, 50, 19)',

@@ -8,6 +8,7 @@ interface TableCardProps {
   children?: React.ReactNode;
   style?: any;
   onAction?: any;
+  headerChildren?: any;
 }
 
 const TableCard: React.FC<TableCardProps> = ({
@@ -16,6 +17,7 @@ const TableCard: React.FC<TableCardProps> = ({
   style,
   button,
   onAction,
+  headerChildren,
 }) => {
   return (
     <Card style={[styles.card, style]}>
@@ -28,6 +30,7 @@ const TableCard: React.FC<TableCardProps> = ({
             <Text style={styles.buttonText}>{button}</Text>
           </TouchableOpacity>
         )}
+        {headerChildren}
       </View>
       <View>{children}</View>
     </Card>
