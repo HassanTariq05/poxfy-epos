@@ -187,9 +187,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   dataTable: {
+    flex:1,
     backgroundColor: 'white',
-    minWidth: 720,
-    width: '100%',
+    minWidth: '100%',
   },
   header: {
     backgroundColor: 'rgb(250,250,250)',

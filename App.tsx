@@ -12,6 +12,7 @@ import MyInventory from './android/app/src/screens/inventory/my-inventory';
 import OpeningBalance from './android/app/src/screens/inventory/opening-balance';
 import Purchase from './android/app/src/screens/inventory/purchase';
 import InventoryTransfer from './android/app/src/screens/inventory/inventory-transfer';
+import LoginScreen from './android/app/src/screens/auth/login';
 
 export default function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -48,7 +49,7 @@ export default function App() {
       case 'Inventory-Inventory-Transfer':
         return <InventoryTransfer />;
       default:
-        return <Dashboard />;
+        // return <Dashboard />;
     }
   };
 
@@ -67,9 +68,12 @@ export default function App() {
           <Header />
         </View>
 
+
         <View style={styles.content}>{renderComponent()}</View>
+        {/* <View style={styles.content}><CashRegister cashDifference={''} registerData={''} cardDifference={''} creditDifference={''} registerId={''}/></View> */}
       </View>
     </View>
+    // <View style={styles.container} ><LoginScreen/></View>
   );
 }
 
