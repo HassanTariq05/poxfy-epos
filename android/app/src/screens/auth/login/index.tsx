@@ -106,9 +106,9 @@ const LoginScreen = ({onLogin}: any) => {
             <Text style={styles.errorText}>{passwordError}</Text>
           ) : null}
 
-          <TouchableOpacity>
+          {/* <TouchableOpacity>
             <Text style={styles.forgotPassword}>Forget your password?</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           {/* Login Button */}
           <TouchableOpacity
