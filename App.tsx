@@ -16,7 +16,6 @@ import OpeningBalance from './android/app/src/screens/inventory/opening-balance'
 import Purchase from './android/app/src/screens/inventory/purchase';
 import InventoryTransfer from './android/app/src/screens/inventory/inventory-transfer';
 import LoginScreen from './android/app/src/screens/auth/login';
-import LoginScreen from './android/app/src/screens/auth/login';
 
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
