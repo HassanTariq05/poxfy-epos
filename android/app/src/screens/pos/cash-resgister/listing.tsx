@@ -5,6 +5,8 @@ import TableCard from '../../../components/table-card';
 import {dummyListingData} from '../../../data/dummyData';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import SlideInModal from '../../../components/modals/open-register';
+import {useNavigation} from '@react-navigation/native';
+import {DrawerNavigationProp} from '@react-navigation/drawer';
 
 function Listing() {
   const headers = [
@@ -23,9 +25,15 @@ function Listing() {
     [key: string]: string | number;
   } | null>(null);
 
-  const handleAction = (row: {[key: string]: string | number}) => {
-    setSelectedRow(row);
-    setModalVisible(true);
+  // const handleAction = (row: {[key: string]: string | number}) => {
+  //   setSelectedRow(row);
+  //   setModalVisible(true);
+  // };
+
+  const navigation = useNavigation<DrawerNavigationProp<any>>();
+
+  const handleAction = () => {
+    navigation.navigate('Listing');
   };
 
   return (
@@ -80,6 +88,7 @@ function Listing() {
         <SlideInModal
           visible={modalVisible}
           onClose={() => setModalVisible(false)}
+          onOpenPress={handleAction}
         />
       </View>
     </>

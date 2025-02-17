@@ -15,15 +15,19 @@ interface LeftMenuCardProps {
   collapsed: boolean;
   setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   setSelectedComponent: any;
+  navigation: any;
 }
 
 export default function LeftMenuCard({
   collapsed,
   setCollapsed,
   setSelectedComponent,
+  navigation,
 }: LeftMenuCardProps) {
   const [expanded, setExpanded] = React.useState<{[key: string]: boolean}>({});
-  const [selectedItem, setSelectedItem] = React.useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = React.useState<string | null>(
+    'Dashboard',
+  );
 
   const toggleExpand = (item: string | undefined) => {
     if (item) {
@@ -31,9 +35,10 @@ export default function LeftMenuCard({
     }
   };
 
-  const handleSelectComponent = (component: any, itemName: string) => {
-    setSelectedComponent(component);
+  const handleSelectComponent = (routeName: string, itemName: string) => {
+    setSelectedComponent(routeName);
     setSelectedItem(itemName);
+    navigation.navigate(routeName);
   };
 
   return (
@@ -83,7 +88,7 @@ export default function LeftMenuCard({
               <Text
                 style={[
                   styles.menuText,
-                  selectedItem === item.name && styles.selectedMenuText, // Change text color for selected item
+                  selectedItem === item.name && styles.selectedMenuText,
                 ]}>
                 {item.name}
               </Text>
