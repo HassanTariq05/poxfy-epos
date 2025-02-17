@@ -51,13 +51,13 @@ export default function Dashboard() {
             svgIconClassName={'bg-ufoGreen'}
             svgIconBottom={
               <Svg
-                className="block w-full h-auto"
-                width={240}
-                height={120}
+                width="100%"
+                height={75}
                 viewBox="0 0 390 95"
-                fill="none">
+                fill="none"
+                preserveAspectRatio="none">
                 <Path
-                  d="M94.1152 24.8922C73.3015 -3.9756 19.0373 34.3297 -5.49316 57.0909V104.459H392.197V24.8922C385.507 29.7035 365.436 40.6584 338.676 45.9879C305.225 52.6497 291.845 42.1019 268.802 18.7856C250.367 0.132538 238.324 0.261683 230.891 3.24138C220.014 7.60129 202.792 32.1091 182.573 60.977C162.354 89.8448 146.149 80.4072 136.486 73.1902C131.035 69.1191 114.929 53.76 94.1152 24.8922Z"
+                  d="M94 55C80 35 20 45 -5 60V104H392V55C365 60 345 63 320 65C290 67 275 60 255 50C240 42 225 40 215 45C200 50 185 70 165 85C145 100 130 90 120 80C110 70 105 65 94 55Z"
                   fill="#FFF1ED"
                   stroke="rgb(237, 105, 100)"
                   strokeWidth={2}
@@ -98,13 +98,13 @@ export default function Dashboard() {
             svgIconClassName={'bg-ufoGreen'}
             svgIconBottom={
               <Svg
-                className="block w-full h-auto"
-                width={240}
-                height={120}
+                width="100%"
+                height={75}
                 viewBox="0 0 390 95"
-                fill="none">
+                fill="none"
+                preserveAspectRatio="none">
                 <Path
-                  d="M94.1152 24.8922C73.3015 -3.9756 19.0373 34.3297 -5.49316 57.0909V104.459H392.197V24.8922C385.507 29.7035 365.436 40.6584 338.676 45.9879C305.225 52.6497 291.845 42.1019 268.802 18.7856C250.367 0.132538 238.324 0.261683 230.891 3.24138C220.014 7.60129 202.792 32.1091 182.573 60.977C162.354 89.8448 146.149 80.4072 136.486 73.1902C131.035 69.1191 114.929 53.76 94.1152 24.8922Z"
+                  d="M94 55C80 35 20 45 -5 60V104H392V55C365 60 345 63 320 65C290 67 275 60 255 50C240 42 225 40 215 45C200 50 185 70 165 85C145 100 130 90 120 80C110 70 105 65 94 55Z"
                   fill="#FFF1ED"
                   stroke="rgb(237, 105, 100)"
                   strokeWidth={2}
@@ -145,13 +145,13 @@ export default function Dashboard() {
             svgIconClassName={'bg-ufoGreen'}
             svgIconBottom={
               <Svg
-                className="block w-full h-auto"
-                width={240}
-                height={120}
+                width="100%"
+                height={75}
                 viewBox="0 0 390 95"
-                fill="none">
+                fill="none"
+                preserveAspectRatio="none">
                 <Path
-                  d="M94.1152 24.8922C73.3015 -3.9756 19.0373 34.3297 -5.49316 57.0909V104.459H392.197V24.8922C385.507 29.7035 365.436 40.6584 338.676 45.9879C305.225 52.6497 291.845 42.1019 268.802 18.7856C250.367 0.132538 238.324 0.261683 230.891 3.24138C220.014 7.60129 202.792 32.1091 182.573 60.977C162.354 89.8448 146.149 80.4072 136.486 73.1902C131.035 69.1191 114.929 53.76 94.1152 24.8922Z"
+                  d="M94 55C80 35 20 45 -5 60V104H392V55C365 60 345 63 320 65C290 67 275 60 255 50C240 42 225 40 215 45C200 50 185 70 165 85C145 100 130 90 120 80C110 70 105 65 94 55Z"
                   fill="#FFF1ED"
                   stroke="rgb(237, 105, 100)"
                   strokeWidth={2}
@@ -159,6 +159,8 @@ export default function Dashboard() {
               </Svg>
             }
           />
+        </View>
+        <View style={styles.cardContainer}>
           <InfoCardDashboard
             mainheading={'Current Year vs Last Year'}
             todayLabel="Current Year"
@@ -188,13 +190,13 @@ export default function Dashboard() {
             svgIconClassName={'bg-ufoGreen'}
             svgIconBottom={
               <Svg
-                className="block w-full h-auto"
-                width={240}
-                height={120}
+                width="100%"
+                height={75}
                 viewBox="0 0 390 95"
-                fill="none">
+                fill="none"
+                preserveAspectRatio="none">
                 <Path
-                  d="M94.1152 24.8922C73.3015 -3.9756 19.0373 34.3297 -5.49316 57.0909V104.459H392.197V24.8922C385.507 29.7035 365.436 40.6584 338.676 45.9879C305.225 52.6497 291.845 42.1019 268.802 18.7856C250.367 0.132538 238.324 0.261683 230.891 3.24138C220.014 7.60129 202.792 32.1091 182.573 60.977C162.354 89.8448 146.149 80.4072 136.486 73.1902C131.035 69.1191 114.929 53.76 94.1152 24.8922Z"
+                  d="M94 55C80 35 20 45 -5 60V104H392V55C365 60 345 63 320 65C290 67 275 60 255 50C240 42 225 40 215 45C200 50 185 70 165 85C145 100 130 90 120 80C110 70 105 65 94 55Z"
                   fill="#FFF1ED"
                   stroke="rgb(237, 105, 100)"
                   strokeWidth={2}
@@ -213,6 +215,8 @@ export default function Dashboard() {
             value={'0%'}
             period="Period: Last 3 Months"
           />
+        </View>
+        <View style={styles.cardContainer}>
           <SalesCard
             title="Average Transaction Value"
             value={0}
@@ -226,9 +230,9 @@ export default function Dashboard() {
           />
 
           <SalesCard title="Top-Selling Products" value={0} period="" />
+        </View>
 
-          <SalesCard title="Sales By Category" value={0} period="" />
-
+        <View style={styles.cardContainer}>
           <StatusCard
             title="Customer Insights"
             color="rgb(237, 105, 100)"
@@ -242,43 +246,48 @@ export default function Dashboard() {
             items={inventoryStatusItems}
             backgroundColor="rgb(245, 255, 250)"
           />
+        </View>
 
-          <SalesCard title="Sales by Store Location" value={0} period="" />
-
+        <View style={styles.cardContainer}>
           <SummaryCard
             title="Weekly Sales Summary"
             color="rgb(103,223,135)"
             items={weeklySalesItems}
             backgroundColor="white"
           />
-
           <SummaryCard
             title="Monthly Sales Overview"
             color="rgb(103,223,135)"
             items={monthlySalesItems}
             backgroundColor="white"
           />
+        </View>
 
+        <View style={styles.cardContainer}>
           <SummaryCard
             title="Yearly Sales Overview"
             color="rgb(103,223,135)"
             items={yearlySalesItems}
             backgroundColor="white"
           />
-
           <SummaryCard
             title="Total Sales Invoices "
             color="rgb(103,223,135)"
             items={totalSalesItems}
             backgroundColor="white"
           />
+        </View>
 
+        <View style={styles.cardContainer}>
           <SummaryCard
             title="Refunds and Returns"
             color="rgb(103,223,135)"
             items={refundsItems}
             backgroundColor="white"
+            inLastRow={true}
           />
+          <SalesCard title="Sales By Category" value={0} period="" />
+          <SalesCard title="Sales by Store Location" value={0} period="" />
         </View>
       </ScrollView>
     </>
@@ -291,9 +300,9 @@ const styles = StyleSheet.create({
     // paddingHorizontal: 16,
   },
   cardContainer: {
+    display: 'flex',
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    // gap: 10,
+    gap: 10,
   },
 });

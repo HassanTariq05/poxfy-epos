@@ -207,7 +207,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
-    paddingHorizontal: 10,
+    marginLeft: 6,
+    marginRight: 6,
     backgroundColor: 'rgb(244, 244, 244)',
   },
   selectedMenuItem: {

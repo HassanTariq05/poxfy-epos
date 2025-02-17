@@ -40,9 +40,8 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 20,
     padding: 20,
-    marginTop: 20,
-    maxWidth: 500,
-    width: '100%',
+    marginTop: 10,
+    width: '49.50%',
     height: 210,
     justifyContent: 'space-between',
   },
