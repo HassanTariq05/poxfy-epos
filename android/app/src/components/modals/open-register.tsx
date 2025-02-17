@@ -13,9 +13,14 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 interface SlideInModalProps {
   visible: boolean;
   onClose: () => void;
+  onOpenPress: any;
 }
 
-const SlideInModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
+const SlideInModal: React.FC<SlideInModalProps> = ({
+  visible,
+  onClose,
+  onOpenPress,
+}) => {
   const slideAnim = useRef(new Animated.Value(500)).current;
 
   useEffect(() => {
@@ -33,6 +38,10 @@ const SlideInModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
       }).start();
     }
   }, [visible]);
+
+  const handleOpenClick = () => {
+    onOpenPress();
+  };
 
   return (
     <Modal visible={visible} transparent animationType="none">
@@ -69,7 +78,7 @@ const SlideInModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
               numberOfLines={4}
             />
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.button}>
+          <TouchableOpacity onPress={handleOpenClick} style={styles.button}>
             <Text style={styles.buttonText}>Open</Text>
           </TouchableOpacity>
         </Animated.View>

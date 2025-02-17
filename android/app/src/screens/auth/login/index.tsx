@@ -10,7 +10,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import {BlurView} from '@react-native-community/blur';
 
-const LoginScreen = () => {
+const LoginScreen = ({onLogin}: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -38,6 +38,10 @@ const LoginScreen = () => {
   };
 
   const isFormValid = !emailError && !passwordError && email && password;
+
+  const handleLogin = () => {
+    onLogin();
+  };
 
   return (
     <View style={styles.container}>
@@ -107,7 +111,10 @@ const LoginScreen = () => {
           </TouchableOpacity>
 
           {/* Login Button */}
-          <TouchableOpacity style={styles.loginButton} disabled={!isFormValid}>
+          <TouchableOpacity
+            onPress={handleLogin}
+            style={styles.loginButton}
+            disabled={!isFormValid}>
             <Text style={styles.loginButtonText}>Login</Text>
           </TouchableOpacity>
         </View>

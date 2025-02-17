@@ -1,5 +1,8 @@
 import React, {useState} from 'react';
 import {View, StyleSheet} from 'react-native';
+import {NavigationContainer} from '@react-navigation/native';
+import {createDrawerNavigator} from '@react-navigation/drawer';
+import {createStackNavigator} from '@react-navigation/stack';
 import LeftMenuCard from './android/app/src/components/sidebar';
 import Header from './android/app/src/components/header';
 import Dashboard from './android/app/src/screens/dashboard';
@@ -14,64 +17,146 @@ import Purchase from './android/app/src/screens/inventory/purchase';
 import InventoryTransfer from './android/app/src/screens/inventory/inventory-transfer';
 import LoginScreen from './android/app/src/screens/auth/login';
 
-export default function App() {
-  const [collapsed, setCollapsed] = useState(false);
-  const [selectedComponent, setSelectedComponent] = useState('Dashboard');
+const Drawer = createDrawerNavigator();
+const Stack = createStackNavigator();
 
-  const renderComponent = () => {
-    switch (selectedComponent) {
-      case 'Dashboard':
-        return <Dashboard />;
-      case 'POS-Cash-Registers':
-        return <Listing />;
-      case 'Listing':
-        return (
-          <CashRegister
-            registerData={[]}
-            cashDifference={''}
-            cardDifference={''}
-            creditDifference={''}
-            registerId=""
-          />
-        );
-      case 'Customer-Customer':
-        return <Customer />;
-      case 'Customer-Tag':
-        return <Tag />;
-      case 'Customer-Tier':
-        return <Tier />;
-      case 'Inventory-My-Inventory':
-        return <MyInventory />;
-      case 'Inventory-Opening-Balance':
-        return <OpeningBalance />;
-      case 'Inventory-Purchase':
-        return <Purchase />;
-      case 'Inventory-Inventory-Transfer':
-        return <InventoryTransfer />;
-      default:
-        // return <Dashboard />;
-    }
-  };
-
+function ScreenWrapper({children}: any) {
   return (
     <View style={styles.container}>
-      <View style={[styles.sidebar, collapsed && styles.collapsedSidebar]}>
+      <View style={styles.headerContainer}>
+        <Header />
+      </View>
+      <View style={styles.content}>{children}</View>
+    </View>
+  );
+}
+
+function DrawerNavigator() {
+  const [collapsed, setCollapsed] = useState(false);
+  const [selectedComponent, setSelectedComponent] = useState(null);
+  return (
+    <Drawer.Navigator
+      screenOptions={{
+        headerShown: false,
+        drawerType: 'permanent',
+        drawerStyle: {
+          width: collapsed ? 60 : 200,
+          borderTopWidth: 20,
+          borderBottomWidth: 20,
+          borderLeftWidth: 20,
+          borderRightWidth: collapsed ? 60 : 0,
+          borderColor: 'rgb(232, 231, 232)',
+          backgroundColor: 'rgb(232, 231, 232)',
+        },
+      }}
+      drawerContent={props => (
         <LeftMenuCard
+          {...props}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
           setSelectedComponent={setSelectedComponent}
         />
-      </View>
+      )}>
+      <Drawer.Screen name="Dashboard">
+        {() => (
+          <ScreenWrapper>
+            <Dashboard />
+          </ScreenWrapper>
+        )}
+      </Drawer.Screen>
+      <Drawer.Screen name="POS-Cash-Registers">
+        {() => (
+          <ScreenWrapper>
+            <Listing />
+          </ScreenWrapper>
+        )}
+      </Drawer.Screen>
+      <Drawer.Screen name="Listing">
+        {() => (
+          <ScreenWrapper>
+            <CashRegister
+              registerData={[]}
+              cashDifference=""
+              cardDifference=""
+              creditDifference=""
+              registerId=""
+            />
+          </ScreenWrapper>
+        )}
+      </Drawer.Screen>
+      <Drawer.Screen name="Customer-Customer">
+        {() => (
+          <ScreenWrapper>
+            <Customer />
+          </ScreenWrapper>
+        )}
+      </Drawer.Screen>
+      <Drawer.Screen name="Customer-Tag">
+        {() => (
+          <ScreenWrapper>
+            <Tag />
+          </ScreenWrapper>
+        )}
+      </Drawer.Screen>
+      <Drawer.Screen name="Customer-Tier">
+        {() => (
+          <ScreenWrapper>
+            <Tier />
+          </ScreenWrapper>
+        )}
+      </Drawer.Screen>
+      <Drawer.Screen name="Inventory-My-Inventory">
+        {() => (
+          <ScreenWrapper>
+            <MyInventory />
+          </ScreenWrapper>
+        )}
+      </Drawer.Screen>
+      <Drawer.Screen name="Inventory-Opening-Balance">
+        {() => (
+          <ScreenWrapper>
+            <OpeningBalance />
+          </ScreenWrapper>
+        )}
+      </Drawer.Screen>
+      <Drawer.Screen name="Inventory-Purchase">
+        {() => (
+          <ScreenWrapper>
+            <Purchase />
+          </ScreenWrapper>
+        )}
+      </Drawer.Screen>
+      <Drawer.Screen name="Inventory-Inventory-Transfer">
+        {() => (
+          <ScreenWrapper>
+            <InventoryTransfer />
+          </ScreenWrapper>
+        )}
+      </Drawer.Screen>
+    </Drawer.Navigator>
+  );
+}
 
-      <View style={styles.rightContainer}>
-        <View style={styles.headerContainer}>
-          <Header />
-        </View>
-
-
-        <View style={styles.content}>{renderComponent()}</View>
-        {/* <View style={styles.content}><CashRegister cashDifference={''} registerData={''} cardDifference={''} creditDifference={''} registerId={''}/></View> */}
-      </View>
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  return (
+    <View style={styles.navContainer}>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{headerShown: false}}>
+          {!isAuthenticated ? (
+            <Stack.Screen name="Login">
+              {props => (
+                <LoginScreen
+                  {...props}
+                  onLogin={() => setIsAuthenticated(true)}
+                />
+              )}
+            </Stack.Screen>
+          ) : (
+            <Stack.Screen name="Dashboard" component={DrawerNavigator} />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
     </View>
     // <View style={styles.container} ><LoginScreen/></View>
   );
@@ -80,22 +165,10 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row',
     backgroundColor: 'rgb(232, 231, 232)',
     padding: 20,
   },
-  sidebar: {
-    width: 200,
-    marginRight: 20,
-  },
-  collapsedSidebar: {
-    width: 60,
-    marginRight: 20,
-  },
-  rightContainer: {
-    flex: 1,
-    flexDirection: 'column',
-  },
+  navContainer: {flex: 1, backgroundColor: 'rgb(232, 231, 232)'},
   headerContainer: {
     backgroundColor: '#fff',
     borderRadius: 20,
