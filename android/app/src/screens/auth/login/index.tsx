@@ -6,9 +6,14 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  Button,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {BlurView} from '@react-native-community/blur';
+import {useForm, Controller} from 'react-hook-form';
+import {submitLogin} from './service';
+import {Dropdown} from 'react-native-element-dropdown';
 
 const LoginScreen = ({onLogin}: any) => {
   const [email, setEmail] = useState('');
@@ -16,24 +21,25 @@ const LoginScreen = ({onLogin}: any) => {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  const validateEmail = (text: string) => {
-    setEmail(text);
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!text) {
-      setEmailError('Email is required');
-    } else if (!emailRegex.test(text)) {
-      setEmailError('Enter a valid email address');
-    } else {
-      setEmailError('');
-    }
-  };
-
-  const validatePassword = (text: string) => {
-    setPassword(text);
-    if (!text) {
-      setPasswordError('Password is required');
-    } else {
-      setPasswordError('');
+  const {
+    control,
+    handleSubmit,
+    formState: {errors},
+  } = useForm({
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+  const onSubmit = async (data: any) => {
+    try {
+      const response = await submitLogin(data);
+      if (response?.status == 201 || response?.status == 200) {
+        // localStorage.setItem('accessToken', response.data.data.accessToken);
+        handleLogin();
+      }
+    } catch (err) {
+      console.log(err);
     }
   };
 
@@ -82,29 +88,68 @@ const LoginScreen = ({onLogin}: any) => {
             Enter your credentials to access your account.
           </Text>
 
-          <TextInput
-            placeholder="dummy@admin.com"
-            value={email}
-            onChangeText={validateEmail}
-            style={[styles.input, emailError ? styles.inputError : null]}
-            keyboardType="email-address"
-            autoCapitalize="none"
+          <Dropdown
+            style={styles.input}
+            data={[
+              {label: 'Admin', value: 'admin'},
+              {label: 'Guest', value: 'guest'},
+            ]}
+            labelField="label"
+            valueField="value"
+            placeholder="User"
+            placeholderStyle={{color: 'gray'}}
+            containerStyle={{borderRadius: 10}}
+            selectedTextStyle={{fontSize: 14}}
+            onChange={function (item: any): void {}}
           />
-          {emailError ? (
-            <Text style={styles.errorText}>{emailError}</Text>
-          ) : null}
 
-          {/* Password Input */}
-          <TextInput
-            placeholder="********"
-            value={password}
-            onChangeText={validatePassword}
-            style={[styles.input, passwordError ? styles.inputError : null]}
-            secureTextEntry
+          <Controller
+            control={control}
+            rules={{
+              required: 'Email is required',
+              pattern: {
+                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                message: 'Invalid email address',
+              },
+            }}
+            render={({field: {onChange, onBlur, value}}) => (
+              <TextInput
+                placeholder="dummy@admin.com"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+                style={[styles.input, errors.email ? styles.inputError : null]}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            )}
+            name="email"
           />
-          {passwordError ? (
-            <Text style={styles.errorText}>{passwordError}</Text>
-          ) : null}
+          {errors.email && (
+            <Text style={styles.errorText}>{errors.email.message}</Text>
+          )}
+
+          <Controller
+            control={control}
+            rules={{
+              required: true,
+            }}
+            render={({field: {onChange, onBlur, value}}) => (
+              <TextInput
+                placeholder="**********"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+                style={[styles.input, passwordError ? styles.inputError : null]}
+                keyboardType="default"
+                autoCapitalize="none"
+              />
+            )}
+            name="password"
+          />
+          {errors.password && (
+            <Text style={styles.errorText}>This is required.</Text>
+          )}
 
           {/* <TouchableOpacity>
             <Text style={styles.forgotPassword}>Forget your password?</Text>
@@ -112,9 +157,8 @@ const LoginScreen = ({onLogin}: any) => {
 
           {/* Login Button */}
           <TouchableOpacity
-            onPress={handleLogin}
-            style={styles.loginButton}
-            disabled={!isFormValid}>
+            onPress={handleSubmit(onSubmit)}
+            style={styles.loginButton}>
             <Text style={styles.loginButtonText}>Login</Text>
           </TouchableOpacity>
         </View>

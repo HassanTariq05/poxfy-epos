@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,37 @@ import {
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Feather from 'react-native-vector-icons/Feather';
+import {getAllOutletApi} from '../../services/outlet';
 
 export default function Header() {
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
   const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [outlet, setOutlet] = useState();
+
+  const getOutlet = async () => {
+    try {
+      console.log('response');
+      const {data: response} = await getAllOutletApi();
+      console.log(response);
+      const {data: record} = response;
+      if (record) {
+        setOutlet(record?.data);
+        console.log(record?.data);
+        // if (selectedOutlet) {
+        //   const outletRecord = record.data[0];
+        //   dispatch(setSelectedOutlet(outletRecord));
+        // }
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  useEffect(() => {
+    console.log('useEffect');
+    getOutlet();
+  }, []);
 
   return (
     <View style={styles.header}>
@@ -70,9 +95,6 @@ export default function Header() {
         <View style={styles.dropdown}>
           <TouchableOpacity style={styles.dropdownItem}>
             <Text>Admin Option 1</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.dropdownItem}>
-            <Text>Admin Option 2</Text>
           </TouchableOpacity>
         </View>
       )}
