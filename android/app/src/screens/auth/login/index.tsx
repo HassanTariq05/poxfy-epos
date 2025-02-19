@@ -14,6 +14,7 @@ import {BlurView} from '@react-native-community/blur';
 import {useForm, Controller} from 'react-hook-form';
 import {submitLogin} from './service';
 import {Dropdown} from 'react-native-element-dropdown';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({onLogin}: any) => {
   const [email, setEmail] = useState('');
@@ -35,11 +36,19 @@ const LoginScreen = ({onLogin}: any) => {
     try {
       const response = await submitLogin(data);
       if (response?.status == 201 || response?.status == 200) {
-        // localStorage.setItem('accessToken', response.data.data.accessToken);
+        saveToken(response.data.data.accessToken);
         handleLogin();
       }
     } catch (err) {
       console.log(err);
+    }
+  };
+
+  const saveToken = async (token: string) => {
+    try {
+      await AsyncStorage.setItem('userToken', token);
+    } catch (error) {
+      console.error('Error saving token:', error);
     }
   };
 

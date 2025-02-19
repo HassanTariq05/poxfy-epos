@@ -1,4 +1,5 @@
 import {Api} from '../../network/client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const changeOutletStatus = async (id, data) => {
   return Api.put(`outlet/${id}`, data);
@@ -10,7 +11,20 @@ export const updateOutlet = async (data, id) => {
   return Api.put(`outlet/${id}`, data);
 };
 export const getAllOutletApi = async () => {
-  return Api.get(`outlet`);
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+
+    const response = await Api.get('outlet', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching outlets:', error);
+    throw error;
+  }
 };
 export const getOutletByIdApi = async id => {
   return Api.get(`outlet/${id}`);

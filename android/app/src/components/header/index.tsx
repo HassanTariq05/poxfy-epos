@@ -28,10 +28,6 @@ export default function Header() {
       if (record) {
         setOutlet(record?.data);
         console.log(record?.data);
-        // if (selectedOutlet) {
-        //   const outletRecord = record.data[0];
-        //   dispatch(setSelectedOutlet(outletRecord));
-        // }
       }
     } catch (err) {
       console.log(err);
