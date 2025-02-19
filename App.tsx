@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import {View, StyleSheet} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {View, StyleSheet, Text} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createDrawerNavigator} from '@react-navigation/drawer';
 import {createStackNavigator} from '@react-navigation/stack';
@@ -16,6 +16,8 @@ import OpeningBalance from './android/app/src/screens/inventory/opening-balance'
 import Purchase from './android/app/src/screens/inventory/purchase';
 import InventoryTransfer from './android/app/src/screens/inventory/inventory-transfer';
 import LoginScreen from './android/app/src/screens/auth/login';
+import {getUserToken} from './android/app/src/user';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
@@ -139,6 +141,24 @@ function DrawerNavigator() {
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true); // Add loading state
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = await getUserToken();
+      setIsAuthenticated(!!token);
+      setLoading(false);
+    };
+    checkAuth();
+  }, []);
+
+  if (loading) {
+    return (
+      <View>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
   return (
     <View style={styles.navContainer}>
       <NavigationContainer>

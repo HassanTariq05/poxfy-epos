@@ -1,5 +1,12 @@
-import React, {useState} from 'react';
-import {View, Text, ScrollView, StyleSheet, Alert} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+} from 'react-native';
 import BasicCard from '../../../components/basic-card';
 import CashRegisterInvoice from './cash-register-invoice';
 import SaleSummary from '../../../components/pos/cash-register/sale-summary';
@@ -9,22 +16,12 @@ import TaxSummary from '../../../components/pos/cash-register/tax-summary';
 import PaymentTally from '../../../components/pos/cash-register/payment-tally';
 import CashInModal from '../../../components/modals/cash-in';
 import CashOutModal from '../../../components/modals/cash-out';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getRegisterDetailsApi} from '../../../services/register';
+import {useNavigation} from '@react-navigation/native';
+import {DrawerNavigationProp} from '@react-navigation/drawer';
 
-interface CashRegisterProps {
-  registerData: any;
-  cashDifference: any;
-  cardDifference: any;
-  creditDifference: any;
-  registerId: any;
-}
-
-const CashRegister: React.FC<CashRegisterProps> = ({
-  registerData,
-  cashDifference,
-  cardDifference,
-  creditDifference,
-  registerId,
-}) => {
+const CashRegister: React.FC<any> = () => {
   const handleCashInClick = () => {
     setCashInModalVisible(true);
   };
@@ -33,6 +30,32 @@ const CashRegister: React.FC<CashRegisterProps> = ({
     setCashOutModalVisible(true);
   };
 
+  const [registerId, setRegisterId] = useState('');
+
+  const navigation = useNavigation<DrawerNavigationProp<any>>();
+
+  const [registerData, setRegisterData] = useState<any>();
+  const handleOpenRegister = async () => {
+    let response;
+    try {
+      const outletId = await AsyncStorage.getItem('selectedOutlet');
+      setRegisterId(outletId || '');
+      if (outletId) {
+        response = await getRegisterDetailsApi(outletId);
+        console.log('Response Register Details:', response.data.data);
+      }
+      if (response?.data.meta.success) {
+        setRegisterData(response.data.data);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    handleOpenRegister();
+  }, []);
+
   const [cashInModalVisible, setCashInModalVisible] = useState(false);
   const [selectedCashInRow, setSelectedCashInRow] = useState<{
     [key: string]: string | number;
@@ -40,8 +63,8 @@ const CashRegister: React.FC<CashRegisterProps> = ({
 
   const [cashOutModalVisible, setCashOutModalVisible] = useState(false);
 
-  const handleAction = (row: {[key: string]: string | number}) => {
-    // setSelectedCashInRow(row);
+  const handleCloseRegister = () => {
+    navigation.navigate('POS-Cash-Registers');
   };
   return (
     <View style={styles.container}>
@@ -64,12 +87,7 @@ const CashRegister: React.FC<CashRegisterProps> = ({
         <View style={styles.row}>
           <View style={styles.column}>
             <BasicCard heading="Payment Tally">
-              <PaymentTally
-                registerData={registerData}
-                cashDifference={cashDifference}
-                cardDifference={cardDifference}
-                creditDifference={creditDifference}
-              />
+              <PaymentTally registerData={registerData} />
             </BasicCard>
 
             <BasicCard heading="Sale Summary">
@@ -116,14 +134,24 @@ const CashRegister: React.FC<CashRegisterProps> = ({
             <BasicCard heading="Tax Summary">
               <TaxSummary registerData={registerData} />
             </BasicCard>
+            <View style={styles.buttonView}>
+              <TouchableOpacity
+                onPress={handleCloseRegister}
+                style={styles.actionButton}>
+                <Text style={styles.buttonText}>Close Register</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </ScrollView>
       <CashInModal
+        registerData={registerData}
+        registerId={registerId}
         visible={cashInModalVisible}
         onClose={() => setCashInModalVisible(false)}
       />
       <CashOutModal
+        registerData={registerData}
         visible={cashOutModalVisible}
         onClose={() => setCashOutModalVisible(false)}
       />
@@ -164,6 +192,27 @@ const styles = StyleSheet.create({
   column: {
     flex: 1,
     marginHorizontal: 8,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgb(237,105, 100)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    height: 50,
+    width: 150,
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  buttonView: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
 });
 

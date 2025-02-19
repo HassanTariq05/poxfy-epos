@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Modal,
   View,
@@ -10,13 +10,19 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import {cashInnOutApi} from '../../services/register';
 
 interface SlideInModalProps {
   visible: boolean;
   onClose: () => void;
+  registerData: any;
 }
 
-const CashOutModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
+const CashOutModal: React.FC<SlideInModalProps> = ({
+  visible,
+  onClose,
+  registerData,
+}) => {
   const slideAnim = useRef(new Animated.Value(500)).current;
 
   useEffect(() => {
@@ -34,6 +40,35 @@ const CashOutModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
       }).start();
     }
   }, [visible]);
+
+  const [amount, setAmount] = useState('');
+  const [notes, setNotes] = useState('');
+
+  const handleOpen = async () => {
+    let response;
+    try {
+      const payload = {
+        amount: Number(amount),
+        isActive: true,
+        notes: notes,
+      };
+      console.log('Payload:', payload);
+      if (amount || notes) {
+        response = await cashInnOutApi(
+          registerData.cashRegister._id,
+          registerData._id,
+          'OUT',
+          payload,
+        );
+        console.log('Cash OUT Response:', response.data.data);
+      }
+      if (response?.data.meta.success) {
+        onClose();
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   return (
     <Modal visible={visible} transparent animationType="none">
@@ -60,6 +95,7 @@ const CashOutModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
               style={styles.input}
               placeholder="0.00"
               keyboardType="numeric"
+              onChangeText={setAmount}
             />
             <View style={styles.iconContainer}>
               <Icon
@@ -75,9 +111,10 @@ const CashOutModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
               placeholder=""
               multiline
               numberOfLines={4}
+              onChangeText={setNotes}
             />
           </View>
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity onPress={handleOpen} style={styles.button}>
             <Text style={styles.buttonText}>Open</Text>
           </TouchableOpacity>
         </Animated.View>

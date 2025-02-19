@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Modal,
   View,
@@ -13,7 +13,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 interface SlideInModalProps {
   visible: boolean;
   onClose: () => void;
-  onOpenPress: any;
+  onOpenPress: (data: {openingBalance: string; notes: string}) => void;
 }
 
 const SlideInModal: React.FC<SlideInModalProps> = ({
@@ -22,6 +22,9 @@ const SlideInModal: React.FC<SlideInModalProps> = ({
   onOpenPress,
 }) => {
   const slideAnim = useRef(new Animated.Value(500)).current;
+
+  const [openingBalance, setOpeningBalance] = useState('');
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     if (visible) {
@@ -40,7 +43,8 @@ const SlideInModal: React.FC<SlideInModalProps> = ({
   }, [visible]);
 
   const handleOpenClick = () => {
-    onOpenPress();
+    onOpenPress({openingBalance, notes}); // Pass values back
+    onClose(); // Close modal after submission
   };
 
   return (
@@ -68,6 +72,8 @@ const SlideInModal: React.FC<SlideInModalProps> = ({
               style={styles.input}
               placeholder="Enter opening balance"
               keyboardType="numeric"
+              value={openingBalance}
+              onChangeText={setOpeningBalance} // Update state
             />
 
             <Text style={styles.label}>Notes</Text>
@@ -76,6 +82,8 @@ const SlideInModal: React.FC<SlideInModalProps> = ({
               placeholder="Enter notes"
               multiline
               numberOfLines={4}
+              value={notes}
+              onChangeText={setNotes} // Update state
             />
           </View>
           <TouchableOpacity onPress={handleOpenClick} style={styles.button}>

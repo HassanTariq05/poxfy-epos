@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {useState} from 'react';
 import {
   View,
@@ -10,31 +11,26 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 interface PaymentProps {
-  registerData: {
-    transaction: {
-      cash: number;
-      card: number;
-      credit: number;
-    };
-  };
-  cashDifference: number;
-  cardDifference: number;
-  creditDifference: number;
+  registerData: any;
 }
 
-const PaymentTally: React.FC<PaymentProps> = ({
-  registerData,
-  cashDifference,
-  cardDifference,
-  creditDifference,
-}) => {
-  const {transaction} = registerData || {};
+const PaymentTally: React.FC<PaymentProps> = ({registerData}) => {
   const [isPopupVisible, setPopupVisible] = useState(false);
   const [countedCash, setCountedCash] = useState('');
   const [countedCard, setCountedCard] = useState('');
   const [countedCredit, setCountedCredit] = useState('');
   const [notes, setNotes] = useState('');
+  // const [registerData, setRegisterData] = useState<any>();
 
+  // const getRegisterData = async () => {
+  //   try {
+  //     const registerData = await AsyncStorage.getItem('registerData');
+  //     if (registerData) {
+  //       setRegisterData(JSON.parse(registerData));
+  //       setRegisterData(JSON.parse(registerData));
+  //     }
+  //   } catch (error) {}
+  // };
   const safeNumber = (value: any) =>
     isNaN(Number(value)) ? 0 : Number(value).toFixed(2);
 
@@ -50,7 +46,7 @@ const PaymentTally: React.FC<PaymentProps> = ({
 
         <View style={styles.tableRow}>
           <Text style={styles.rowText}>Cash</Text>
-          <Text style={styles.rowText}>{safeNumber(transaction?.cash)}</Text>
+          <Text style={styles.rowText}>{registerData?.transaction.cash}</Text>
           <TextInput
             style={styles.input}
             value={countedCash}
@@ -59,13 +55,13 @@ const PaymentTally: React.FC<PaymentProps> = ({
             keyboardType="numeric"
           />
           <Text style={styles.rowText}>
-            {Number(cashDifference).toFixed(2)}
+            {Number(countedCash) - Number(registerData?.transaction.cash)}
           </Text>
         </View>
 
         <View style={styles.tableRow}>
           <Text style={styles.rowText}>Card</Text>
-          <Text style={styles.rowText}>{transaction?.card || 0}</Text>
+          <Text style={styles.rowText}>{registerData?.transaction.card}</Text>
           <TextInput
             style={styles.input}
             value={countedCard}
@@ -74,13 +70,13 @@ const PaymentTally: React.FC<PaymentProps> = ({
             keyboardType="numeric"
           />
           <Text style={styles.rowText}>
-            {Number(cardDifference).toFixed(2) || 0}
+            {Number(countedCard) - Number(registerData?.transaction.card)}
           </Text>
         </View>
 
         <View style={styles.tableRow}>
           <Text style={styles.rowText}>Store Credit</Text>
-          <Text style={styles.rowText}>{transaction?.credit || 0}</Text>
+          <Text style={styles.rowText}>{registerData?.transaction.credit}</Text>
           <TextInput
             style={styles.input}
             value={countedCredit}
@@ -88,7 +84,9 @@ const PaymentTally: React.FC<PaymentProps> = ({
             placeholder="0.00"
             keyboardType="numeric"
           />
-          <Text style={styles.rowText}>{creditDifference || 0}</Text>
+          <Text style={styles.rowText}>
+            {Number(countedCredit) - Number(registerData?.transaction.credit)}
+          </Text>
         </View>
       </View>
 

@@ -2,23 +2,11 @@ import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 import {safeNumber} from '../../../utils/helper';
 
-// Define types for props
-interface Transaction {
-  received?: number;
-  refund?: number;
-}
-
-interface RegisterData {
-  transaction?: Transaction;
-}
-
 interface PaymentSummaryProps {
-  registerData?: RegisterData;
+  registerData?: any;
 }
 
 const PaymentSummary: React.FC<PaymentSummaryProps> = ({registerData}) => {
-  const {transaction} = registerData || {};
-
   const calculate = (rec = 0, ref = 0) => {
     return (Number(rec) - Number(ref)).toFixed(2);
   };
@@ -35,13 +23,16 @@ const PaymentSummary: React.FC<PaymentSummaryProps> = ({registerData}) => {
       {/* Table Row */}
       <View style={styles.row}>
         <Text style={[styles.cell, styles.left]}>
-          {safeNumber(transaction?.received)}
+          {safeNumber(registerData?.transaction?.received)}
         </Text>
         <Text style={[styles.cell, styles.left]}>
-          {safeNumber(transaction?.refund)}
+          {safeNumber(registerData?.transaction?.refund)}
         </Text>
         <Text style={[styles.cell, styles.right]}>
-          {calculate(transaction?.received, transaction?.refund)}
+          {calculate(
+            registerData?.transaction?.received || 0,
+            registerData?.transaction?.refund || 0,
+          )}
         </Text>
       </View>
     </View>

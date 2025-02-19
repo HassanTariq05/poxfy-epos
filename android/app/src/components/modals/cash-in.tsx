@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Modal,
   View,
@@ -10,13 +10,21 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import {cashInnOutApi} from '../../services/register';
 
 interface SlideInModalProps {
   visible: boolean;
   onClose: () => void;
+  registerData: any;
+  registerId: any;
 }
 
-const CashInModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
+const CashInModal: React.FC<SlideInModalProps> = ({
+  visible,
+  onClose,
+  registerData,
+  registerId,
+}) => {
   const slideAnim = useRef(new Animated.Value(500)).current;
 
   useEffect(() => {
@@ -35,6 +43,34 @@ const CashInModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
     }
   }, [visible]);
 
+  const [amount, setAmount] = useState('');
+  const [notes, setNotes] = useState('');
+
+  const handleOpen = async () => {
+    let response;
+    try {
+      const payload = {
+        amount: Number(amount),
+        isActive: true,
+        notes: notes,
+      };
+      console.log('Payload:', payload);
+      if (amount || notes) {
+        response = await cashInnOutApi(
+          registerData.cashRegister._id,
+          registerData._id,
+          'IN',
+          payload,
+        );
+        console.log('Cash IN Response:', response.data.data);
+      }
+      if (response?.data.meta.success) {
+        onClose();
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
   return (
     <Modal visible={visible} transparent animationType="none">
       <View style={styles.overlay}>
@@ -60,6 +96,7 @@ const CashInModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
               style={styles.input}
               placeholder="0.00"
               keyboardType="numeric"
+              onChangeText={setAmount}
             />
             <View style={styles.iconContainer}>
               <Icon
@@ -75,9 +112,10 @@ const CashInModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
               placeholder=""
               multiline
               numberOfLines={4}
+              onChangeText={setNotes}
             />
           </View>
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity onPress={handleOpen} style={styles.button}>
             <Text style={styles.buttonText}>Open</Text>
           </TouchableOpacity>
         </Animated.View>

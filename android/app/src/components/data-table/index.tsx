@@ -1,12 +1,11 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
-  View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
   Switch,
   TextInput,
+  TouchableOpacity,
 } from 'react-native';
 import {DataTable} from 'react-native-paper';
 import Feather from 'react-native-vector-icons/Feather';
@@ -17,18 +16,18 @@ type DataFormat = {
 
 interface CustomDataTableProps {
   headers: string[];
-  data: DataFormat[];
-  onToggleSwitch?: (row: DataFormat, value: boolean) => void;
-  onOpenRegister?: (row: DataFormat) => void;
-  onEdit?: (row: DataFormat) => void;
-  onDelete?: (row: DataFormat) => void;
-  onInputChange?: (row: DataFormat, key: string, value: string) => void;
+  data: {[key: string]: string | number}[];
   showSwitch?: boolean;
   showOpenRegister?: boolean;
   showEdit?: boolean;
   showDelete?: boolean;
   editableFields?: string[];
   showInputButton?: boolean;
+  onToggleSwitch?: (row: DataFormat, value: boolean) => void;
+  onOpenRegister?: (row: DataFormat) => void;
+  onEdit?: (row: DataFormat) => void;
+  onDelete?: (row: DataFormat) => void;
+  onInputChange?: (row: DataFormat, key: string, value: string) => void;
 }
 
 const CustomDataTable: React.FC<CustomDataTableProps> = ({
@@ -53,29 +52,12 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
     Record<number, Record<string, string>>
   >({});
 
+  const currentRows = data.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+
   const toggleSwitch = (index: number, row: DataFormat) => {
     const newState = !switchStates[index];
     setSwitchStates(prev => ({...prev, [index]: newState}));
     if (onToggleSwitch) onToggleSwitch(row, newState);
-  };
-
-  const handleInputChange = (rowIndex: number, key: string, value: string) => {
-    setInputValues(prev => ({
-      ...prev,
-      [rowIndex]: {
-        ...prev[rowIndex],
-        [key]: value,
-      },
-    }));
-    if (onInputChange) {
-      onInputChange(data[rowIndex], key, value);
-    }
-  };
-
-  const currentRows = data.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
-
-  const handleChangePage = (newPage: number) => {
-    setPage(newPage);
   };
 
   return (
@@ -88,9 +70,7 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
             </DataTable.Title>
           ))}
           {(showSwitch || showOpenRegister || showEdit || showDelete) && (
-            <DataTable.Title
-              textStyle={styles.headerText}
-              style={styles.leftAlignedHeader}>
+            <DataTable.Title textStyle={styles.headerText}>
               Action
             </DataTable.Title>
           )}
@@ -98,35 +78,23 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
 
         {currentRows.map((row, rowIndex) => (
           <DataTable.Row key={rowIndex} style={styles.row}>
-            {Object.entries(row).map(([key, value], cellIndex) => (
+            {headers.map((header, cellIndex) => (
               <DataTable.Cell key={cellIndex} style={styles.cell}>
-                {editableFields.includes(key) ? (
-                  <View style={styles.editableView}>
-                    {showInputButton && (
-                      <TouchableOpacity
-                        onPress={() => {}}
-                        style={styles.addButton}>
-                        <Text style={styles.inputButtonText}>Add</Text>
-                      </TouchableOpacity>
-                    )}
-
-                    <TextInput
-                      style={styles.input}
-                      value={inputValues[rowIndex]?.[key] ?? String(value)}
-                      onChangeText={text =>
-                        handleInputChange(rowIndex, key, text)
-                      }
-                    />
-                    {showInputButton && (
-                      <TouchableOpacity
-                        onPress={() => {}}
-                        style={styles.settButton}>
-                        <Text style={styles.inputButtonText}>Set</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
+                {editableFields.includes(header) ? (
+                  <TextInput
+                    style={styles.input}
+                    value={
+                      inputValues[rowIndex]?.[header] ?? String(row[header])
+                    }
+                    onChangeText={text =>
+                      setInputValues(prev => ({
+                        ...prev,
+                        [rowIndex]: {...prev[rowIndex], [header]: text},
+                      }))
+                    }
+                  />
                 ) : (
-                  <Text>{value}</Text>
+                  <Text>{row[header]}</Text>
                 )}
               </DataTable.Cell>
             ))}
@@ -172,7 +140,7 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
         <DataTable.Pagination
           page={page}
           numberOfPages={Math.ceil(data.length / rowsPerPage)}
-          onPageChange={handleChangePage}
+          onPageChange={setPage}
           label={`${page * rowsPerPage + 1} - ${(page + 1) * rowsPerPage} of ${
             data.length
           }`}
@@ -183,14 +151,8 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
-    width: '100%',
-  },
-  dataTable: {
-    flex:1,
-    backgroundColor: 'white',
-    minWidth: '100%',
-  },
+  scrollView: {width: '100%'},
+  dataTable: {flex: 1, backgroundColor: 'white', minWidth: '100%'},
   header: {
     backgroundColor: 'rgb(250,250,250)',
     borderBottomWidth: 1,
@@ -201,22 +163,22 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     paddingRight: 10,
     textAlign: 'center',
-    justifyContent: 'center',
   },
-  leftAlignedHeader: {
-    justifyContent: 'flex-end',
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgb(237,105, 100)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    width: 120,
   },
-  row: {
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgb(240,240,240)',
+  buttonText: {
+    color: 'white',
+    fontWeight: '400',
   },
-  cell: {
-    minWidth: 100,
-    paddingRight: 10,
-    paddingLeft: 10,
-    textAlign: 'center',
-    justifyContent: 'flex-start',
-  },
+  row: {borderBottomWidth: 1, borderBottomColor: 'rgb(240,240,240)'},
+  cell: {minWidth: 100, paddingRight: 10, paddingLeft: 10, textAlign: 'center'},
   actionCell: {
     minWidth: 100,
     paddingRight: 0,
@@ -232,65 +194,10 @@ const styles = StyleSheet.create({
     width: 80,
     textAlign: 'center',
   },
-  editableView: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 5,
-  },
-  switch: {
-    alignSelf: 'flex-start',
-    paddingBottom: 10,
-  },
-  editButton: {
-    alignSelf: 'flex-start',
-    paddingBottom: 5,
-  },
-  crossButton: {
-    alignSelf: 'flex-start',
-    paddingBottom: 5,
-    paddingLeft: 5,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgb(237,105, 100)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    width: 120,
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'none',
-    paddingVertical: 2,
-    paddingHorizontal: 2,
-    borderRadius: 4,
-    width: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-  },
-  settButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgb(230,231,235)',
-    paddingVertical: 2,
-    paddingHorizontal: 2,
-    borderRadius: 4,
-    width: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: '400',
-  },
-  inputButtonText: {
-    color: 'black',
-  },
+  switch: {alignSelf: 'flex-start'},
+  editButton: {alignSelf: 'flex-start', paddingBottom: 5},
+  crossButton: {alignSelf: 'flex-start', paddingBottom: 5, paddingLeft: 5},
+  errorText: {color: 'red', textAlign: 'center', marginVertical: 10},
 });
 
 export default CustomDataTable;

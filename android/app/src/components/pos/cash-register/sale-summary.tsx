@@ -1,24 +1,11 @@
 import React from 'react';
 import {View, Text, StyleSheet, ScrollView} from 'react-native';
 
-interface TransactionData {
-  total: number;
-  onAccountSale: number;
-  itemDiscount: number;
-  orderDiscount: number;
-  surcharge: number;
-  avgSalesVolume: number;
-  totalTransactions: number;
-}
-
 interface SaleSummaryProps {
-  registerData: {
-    transaction: TransactionData;
-  };
+  registerData: any;
 }
 
 const SaleSummary: React.FC<SaleSummaryProps> = ({registerData}) => {
-  // Helper function to safely format numbers and handle NaN
   const formatNumber = (value: any) => {
     const number = Number(value);
     return isNaN(number) ? '0.00' : number.toFixed(2);

@@ -2,18 +2,8 @@ import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 import {safeNumber} from '../../../utils/helper';
 
-// Define types for props
-interface Transaction {
-  total?: number;
-  gst?: number;
-}
-
-interface RegisterData {
-  transaction?: Transaction;
-}
-
 interface TaxSummaryProps {
-  registerData?: RegisterData;
+  registerData?: any;
 }
 
 const TaxSummary: React.FC<TaxSummaryProps> = ({registerData}) => {
