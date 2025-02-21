@@ -16,6 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Controller, useForm} from 'react-hook-form';
 import {createCustomer, updateCustomer} from '../../services/customer';
+import PopupDatePicker from '../date-picker';
 
 interface EditCustomerModalProps {
   visible: boolean;
@@ -55,6 +56,7 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
       signupLoyalty: false,
       receiveMarketing: false,
       taxExempted: false,
+      dateOfBirth: '',
     },
   });
 
@@ -78,6 +80,7 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         signupLoyalty: customer?.signUpForLoyality || false,
         receiveMarketing: customer?.optOutForMarketing || false,
         taxExempted: customer?.taxExempted || false,
+        dateOfBirth: customer?.dateOfBirth,
       });
     }
   }, [customer, reset]);
@@ -123,9 +126,9 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
       }).start();
     }
   }, [visible]);
-
-  const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    customer?.dateOfBirth,
+  );
 
   const onSubmit = async (data: any) => {
     console.log('Submitted Data: ', data);
@@ -139,7 +142,7 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
       country: data.country,
       customerGroupTag: data.tag,
       customerGroupTierId: data.tier,
-      dateOfBirth: '2025-02-20',
+      dateOfBirth: selectedDate,
       email: data.email,
       firstName: data.firstName,
       genderId: '67af88cbbdf76fc83c97ebf9',
@@ -400,13 +403,10 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                   )}
                 />
 
-                <TouchableOpacity
-                  style={styles.inputDate}
-                  onPress={() => setShowDatePicker(true)}>
-                  <Text style={{color: 'black'}}>
-                    {date.toDateString() || 'Select Date'}
-                  </Text>
-                </TouchableOpacity>
+                <PopupDatePicker
+                  initialVal={selectedDate}
+                  onDateSelect={setSelectedDate}
+                />
 
                 <View style={styles.switchContainer}>
                   <Text style={styles.subHeading}>

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,6 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
-  Button,
-  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {BlurView} from '@react-native-community/blur';
@@ -17,11 +15,6 @@ import {Dropdown} from 'react-native-element-dropdown';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({onLogin}: any) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-
   const {
     control,
     handleSubmit,
@@ -51,8 +44,6 @@ const LoginScreen = ({onLogin}: any) => {
       console.error('Error saving token:', error);
     }
   };
-
-  const isFormValid = !emailError && !passwordError && email && password;
 
   const handleLogin = () => {
     onLogin();
@@ -149,9 +140,10 @@ const LoginScreen = ({onLogin}: any) => {
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
-                style={[styles.input, passwordError ? styles.inputError : null]}
+                style={[styles.input]}
                 keyboardType="default"
                 autoCapitalize="none"
+                secureTextEntry={true}
               />
             )}
             name="password"

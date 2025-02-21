@@ -30,6 +30,7 @@ interface CustomDataTableProps {
   onEdit?: (row: any) => void;
   onDelete?: (row: DataFormat) => void;
   onInputChange?: (row: DataFormat, key: string, value: string) => void;
+  onInputChangeForSet?: (row: DataFormat, key: string, value: string) => void;
   addDisabled?: boolean;
 }
 
@@ -41,6 +42,7 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
   onEdit,
   onDelete,
   onInputChange,
+  onInputChangeForSet,
   showSwitch = false,
   showOpenRegister = false,
   showEdit = false,
@@ -91,6 +93,13 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
     }
   };
 
+  const handleSetPress = (row: DataFormat, rowIndex: number, key: string) => {
+    console.log(`Set button pressed for row ${rowIndex}, key: ${key}`);
+    if (onInputChangeForSet) {
+      onInputChangeForSet(row, key, inputValues[rowIndex]?.[key] || '');
+    }
+  };
+
   return (
     <ScrollView horizontal style={styles.scrollView}>
       <DataTable style={styles.dataTable}>
@@ -138,7 +147,8 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
 
                     {showInputButton && (
                       <TouchableOpacity
-                        onPress={() => handleAddPress(row, rowIndex, header)}
+                        disabled={addDisabled}
+                        onPress={() => handleSetPress(row, rowIndex, header)}
                         style={styles.settButton}>
                         <Text style={styles.inputButtonText}>Set</Text>
                       </TouchableOpacity>

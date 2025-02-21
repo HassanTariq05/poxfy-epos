@@ -9,13 +9,15 @@ import {
   StyleSheet,
   ScrollView,
   Switch,
+  Button,
 } from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
 import {Platform} from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DatePicker from 'react-native-date-picker';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Controller, useForm} from 'react-hook-form';
 import {createCustomer} from '../../services/customer';
+import PopupDatePicker from '../date-picker';
 
 interface AddCustomerModalProps {
   visible: boolean;
@@ -97,19 +99,8 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     }
   }, [visible]);
 
-  const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [selectedTag, setSelectedTag] = useState<any>();
-  const [selectedTier, setSelectedTier] = useState<any>();
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  const onChange = (event: any, selectedDate: any) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-    }
-    if (selectedDate) {
-      setDate(selectedDate);
-    }
-  };
   const [isLoyalityRewardEnabled, setIsLoyalityRewardEnabled] = useState(false);
   const toggleLoyalityRewardSwitch = () =>
     setIsLoyalityRewardEnabled(previousState => !previousState);
@@ -134,7 +125,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       country: data.country,
       customerGroupTag: data.tag,
       customerGroupTierId: data.tier,
-      dateOfBirth: '2025-02-20',
+      dateOfBirth: selectedDate,
       email: data.email,
       firstName: data.firstName,
       genderId: '67af88cbbdf76fc83c97ebf9',
@@ -388,13 +379,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                   )}
                 />
 
-                <TouchableOpacity
-                  style={styles.inputDate}
-                  onPress={() => setShowDatePicker(true)}>
-                  <Text style={{color: 'black'}}>
-                    {date.toDateString() || 'Select Date'}
-                  </Text>
-                </TouchableOpacity>
+                <PopupDatePicker onDateSelect={setSelectedDate} />
 
                 <View style={styles.switchContainer}>
                   <Text style={styles.subHeading}>
@@ -457,15 +442,6 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                     )}
                   />
                 </View>
-
-                {/* {showDatePicker && (
-                  <DateTimePicker
-                    value={date}
-                    mode="date"
-                    display="default"
-                    onChange={onChange}
-                  />
-                )} */}
               </View>
             </View>
 

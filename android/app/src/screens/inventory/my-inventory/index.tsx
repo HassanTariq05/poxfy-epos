@@ -38,6 +38,7 @@ function MyInventory() {
   const [selectedOutlet, setSelectedOutlet] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [refetch, setRefetch] = useState(false);
 
   const getOutlet = async () => {
     try {
@@ -112,7 +113,7 @@ function MyInventory() {
     };
 
     fetchData();
-  }, [selectedItem, selectedProduct, selectedOutlet]);
+  }, [selectedItem, selectedProduct, selectedOutlet, refetch]);
 
   const outletsWithAll = [{id: 0, value: '', label: 'All'}, ...outlets];
 
@@ -126,13 +127,36 @@ function MyInventory() {
       outletId: selectedOutlet,
       productId: row.productId,
     };
-    const response = await axios.post(url, {
+    const response = await axios.post(url, payload, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
+    setRefetch((prev: any) => !prev);
     console.log('Response Add POST:', response);
+  };
+
+  const handleOnSetClick = async (row: any, key: string, value: any) => {
+    console.log('Updated:', row, key, value);
+    const token = await AsyncStorage.getItem('userToken');
+    const url = `${API_BASE_URL}/outlet/${selectedOutlet}/opening-balance`;
+    console.log('URL: ', url);
+    const payload = [
+      {
+        notes: '-',
+        quantity: value,
+        productId: row.productId,
+      },
+    ];
+    const response = await axios.put(url, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    console.log('Response Sett PUT:', response);
+    setRefetch((prev: any) => !prev);
   };
 
   return (
@@ -188,6 +212,9 @@ function MyInventory() {
             editableFields={['Edit Available Quantity']}
             onInputChange={(row, key, value) =>
               handleOnAddClick(row, key, value)
+            }
+            onInputChangeForSet={(row, key, value) =>
+              handleOnSetClick(row, key, value)
             }
           />
         </TableCard>
