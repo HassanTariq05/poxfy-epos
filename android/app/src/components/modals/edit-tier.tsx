@@ -9,20 +9,28 @@ import {
   StyleSheet,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import {updateSlug} from '../../services/product/brand';
+import {Controller, useForm} from 'react-hook-form';
 
 interface SlideInModalProps {
   visible: boolean;
   onClose: () => void;
   tier: any;
+  setRefetch: any;
 }
 
 const EditTierModal: React.FC<SlideInModalProps> = ({
   visible,
   onClose,
   tier,
+  setRefetch,
 }) => {
+  const {control, handleSubmit, setValue, reset} = useForm({
+    defaultValues: {
+      name: tier?.name || '',
+    },
+  });
   const slideAnim = useRef(new Animated.Value(500)).current;
-
   useEffect(() => {
     if (visible) {
       Animated.timing(slideAnim, {
@@ -38,23 +46,42 @@ const EditTierModal: React.FC<SlideInModalProps> = ({
       }).start();
     }
   }, [visible]);
-  const [tierVal, settierVal] = useState(tier?.Name || '');
+
+  const onSubmit = async (data: any) => {
+    console.log('Submitted Data: ', data);
+
+    const payload = {
+      name: data.name,
+      accountLimit: null,
+      isActive: true,
+    };
+    console.log('Create Tier Payload: ', payload);
+    const response = await updateSlug('customer-tier', payload, tier?._id);
+    console.log('Response Create Tier: ', response);
+    setRefetch((prev: any) => !prev);
+    onClose();
+    reset();
+  };
 
   useEffect(() => {
-    console.log('here', tier);
     if (tier) {
-      settierVal(tier?.Name || '');
+      setValue('name', tier.Name || '');
     }
-  }, [tier]);
+  }, [tier, setValue]);
+
+  const handleOnClose = () => {
+    onClose();
+    reset();
+  };
 
   return (
     <Modal visible={visible} transparent animationType="none">
       <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} />
+        <TouchableOpacity style={styles.backdrop} onPress={handleOnClose} />
         <Animated.View
           style={[styles.modal, {transform: [{translateX: slideAnim}]}]}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.backButton}>
+            <TouchableOpacity onPress={handleOnClose} style={styles.backButton}>
               <MaterialCommunityIcons
                 name="chevron-left"
                 size={30}
@@ -68,15 +95,23 @@ const EditTierModal: React.FC<SlideInModalProps> = ({
             <Text style={styles.label}>
               <Text style={styles.required}>*</Text> Name
             </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter Brand Name"
-              keyboardType="default"
-              value={tierVal}
-              onChange={settierVal}
+            <Controller
+              control={control}
+              name="name"
+              rules={{required: 'Name is required'}}
+              render={({field: {onChange, value}}) => (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter Brand Name"
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
             />
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.button}>
+          <TouchableOpacity
+            onPress={handleSubmit(onSubmit)}
+            style={styles.button}>
             <Text style={styles.buttonText}>Save</Text>
           </TouchableOpacity>
         </Animated.View>

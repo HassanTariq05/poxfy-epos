@@ -1,22 +1,58 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {StyleSheet, TextInput, View} from 'react-native';
 import CustomDataTable from '../../../components/data-table';
 import TableCard from '../../../components/table-card';
-import {dummyCustomerTierData} from '../../../data/dummyData';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AddTierModal from '../../../components/modals/add-tier';
 import EditTierModal from '../../../components/modals/edit-tier';
+import {
+  getAllListOfValueByKey,
+  getSlugListOfValuesByKey,
+} from '../../../services/global';
+import CustomPopConfirm from '../../../components/pop-confirm';
+import {deleteslug, updateSlug} from '../../../services/product/brand';
 
 function Tier() {
   const headers = ['Name'];
-
-  const [customer, setcustomer] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-
   const [modalEditVisible, setEditModalVisible] = useState(false);
   const [selectedTier, setSelectedTier] = useState<{
     [key: string]: string | number;
   } | null>(null);
+  const [data, setData] = useState<any>([]);
+  const [refetch, setRefetch] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const {data: tierData} = await getSlugListOfValuesByKey(
+          'customer-tier',
+        );
+        console.log('Tier Fetch: ', tierData.data.data);
+
+        const formattedData = tierData.data.data.map((item: any) => ({
+          ...item,
+          Name: item.name,
+        }));
+
+        console.log('Formatted data:', formattedData);
+
+        setData((prev: any) => {
+          console.log('Previous Data:', prev);
+          console.log('New Data:', formattedData);
+          return [...formattedData];
+        });
+      } catch {
+        return null;
+      }
+    };
+
+    fetchData();
+  }, [refetch]);
+
+  const handleHeadingAction = () => {
+    setModalVisible(true);
+  };
 
   const handleEdit = (row: {[key: string]: string | number}) => {
     console.log(row);
@@ -24,13 +60,64 @@ function Tier() {
     setEditModalVisible(true);
   };
 
-  const handleAction = (row: {[key: string]: string | number}) => {
-    // setSelectedRow(row);
-    // setModalVisible(true);
+  const [popConfirmVisible, setPopConfirmVisible] = useState(false);
+  const [popSwitchConfirmVisible, setPopSwitchConfirmVisible] = useState(false);
+  const [tierToDelete, setTierToDelete] = useState(null);
+  const [tierToSwitch, setTierToSwitch] = useState(null);
+
+  const handleDelete = async () => {
+    if (tierToDelete) {
+      console.log('Deleting tier:', tierToDelete);
+      await deleteTier(tierToDelete);
+
+      setData((prevData: any) =>
+        prevData.filter((cust: any) => cust._id !== tierToDelete._id),
+      );
+
+      setPopConfirmVisible(false);
+    }
   };
 
-  const handleHeadingAction = () => {
-    setModalVisible(true);
+  const deleteTier = async (tier: any) => {
+    const response = await deleteslug('customer-tier', tier?._id);
+    console.log('Delete Tier Response:', response);
+  };
+
+  const confirmDelete = (tier: any) => {
+    setTierToDelete(tier);
+    setPopConfirmVisible(true);
+  };
+
+  const handleSwitch = async () => {
+    if (tierToSwitch) {
+      console.log('Switching tier:', tierToSwitch);
+      await switchTier(tierToSwitch);
+    }
+  };
+
+  const switchTier = async (tier: any) => {
+    const payload = {
+      ...tier,
+      isActive: !tier.isActive,
+    };
+    const response = await updateSlug('customer-tier', payload, tier?._id);
+    console.log('Switch Tier Response:', response);
+    setRefetch((prev: any) => !prev);
+    setPopSwitchConfirmVisible(false);
+  };
+
+  const confirmSwitch = (tier: any) => {
+    setTierToSwitch(tier);
+    setPopSwitchConfirmVisible(true);
+  };
+
+  const handleOnCloseAddModal = () => {
+    setModalVisible(false);
+  };
+
+  const handleOnSwitchPopCancel = () => {
+    setPopSwitchConfirmVisible(false);
+    setRefetch((prev: any) => !prev);
   };
 
   return (
@@ -44,28 +131,52 @@ function Tier() {
             <MaterialCommunityIcons name="magnify" size={20} color="black" />
             <TextInput
               style={styles.searchText}
-              value={customer}
-              placeholder="Find..."
-              onChangeText={setcustomer}
+              value={data}
+              placeholder="Find Tier"
+              onChangeText={setData}
               keyboardType="default"
             />
           </View>
           <CustomDataTable
             headers={headers}
-            data={dummyCustomerTierData}
+            data={data}
             showEdit={true}
             onEdit={handleEdit}
             showDelete={true}
-            onDelete={() => {}}
+            onDelete={confirmDelete}
             showSwitch={true}
-            onToggleSwitch={() => {}}
+            onToggleSwitch={confirmSwitch}
+          />
+          <CustomPopConfirm
+            title="Confirm Deletion"
+            description="Are you sure you want to delete this tier?"
+            onConfirm={handleDelete}
+            onCancel={() => setPopConfirmVisible(false)}
+            okText="Delete"
+            cancelText="Cancel"
+            visible={popConfirmVisible}
+            setVisible={setPopConfirmVisible}
+          />
+          <CustomPopConfirm
+            title="Confirm"
+            description="Are you sure?"
+            onConfirm={handleSwitch}
+            onCancel={handleOnSwitchPopCancel}
+            okText="Update"
+            cancelText="Cancel"
+            visible={popSwitchConfirmVisible}
+            setVisible={setPopSwitchConfirmVisible}
           />
         </TableCard>
+
         <AddTierModal
           visible={modalVisible}
-          onClose={() => setModalVisible(false)}
+          setRefetch={setRefetch}
+          onClose={handleOnCloseAddModal}
         />
+
         <EditTierModal
+          setRefetch={setRefetch}
           visible={modalEditVisible}
           onClose={() => setEditModalVisible(false)}
           tier={selectedTier}
@@ -96,17 +207,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgb(230, 231, 235)',
     paddingHorizontal: 10,
-  },
-  modalContent: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  input: {
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    width: '100%',
-    marginVertical: 5,
-    borderRadius: 5,
   },
 });
 

@@ -83,8 +83,8 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
             </DataTable.Title>
           ))}
           {(showSwitch || showOpenRegister || showEdit || showDelete) && (
-            <DataTable.Title textStyle={styles.headerText}>
-              Action
+            <DataTable.Title textStyle={styles.headerActionText}>
+              <Text style={styles.headerActionTextInside}>Action</Text>
             </DataTable.Title>
           )}
         </DataTable.Header>
@@ -194,16 +194,23 @@ const styles = StyleSheet.create({
   },
   headerText: {
     color: 'black',
-    paddingLeft: 10,
-    paddingRight: 10,
-    textAlign: 'center',
+    justifyContent: 'flex-end',
+  },
+  headerActionText: {
+    color: 'black',
+    width: '100%',
+
+    textAlign: 'right',
+  },
+  headerActionTextInside: {
+    justifyContent: 'flex-end',
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgb(237,105, 100)',
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 15,
     borderRadius: 20,
     width: 120,
   },
@@ -212,11 +219,10 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   row: {borderBottomWidth: 1, borderBottomColor: 'rgb(240,240,240)'},
-  cell: {minWidth: 100, paddingRight: 10, paddingLeft: 10, textAlign: 'center'},
+  cell: {minWidth: 100, textAlign: 'center'},
   actionCell: {
     minWidth: 100,
     paddingRight: 0,
-    paddingLeft: 10,
     textAlign: 'center',
     justifyContent: 'flex-end',
   },
@@ -229,8 +235,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   switch: {alignSelf: 'flex-start'},
-  editButton: {alignSelf: 'flex-start', paddingBottom: 5},
-  crossButton: {alignSelf: 'flex-start', paddingBottom: 5, paddingLeft: 5},
+  editButton: {
+    alignSelf: 'flex-start',
+    paddingBottom: 5,
+    marginTop: 5,
+    marginLeft: 5,
+    marginRight: 5,
+  },
+  crossButton: {alignSelf: 'flex-start', paddingBottom: 5, marginTop: 5},
   errorText: {color: 'red', textAlign: 'center', marginVertical: 10},
 });
 
