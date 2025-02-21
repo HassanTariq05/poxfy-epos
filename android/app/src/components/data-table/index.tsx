@@ -30,6 +30,7 @@ interface CustomDataTableProps {
   onEdit?: (row: any) => void;
   onDelete?: (row: DataFormat) => void;
   onInputChange?: (row: DataFormat, key: string, value: string) => void;
+  addDisabled?: boolean;
 }
 
 const CustomDataTable: React.FC<CustomDataTableProps> = ({
@@ -46,6 +47,7 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
   showDelete = false,
   editableFields = [],
   showInputButton = false,
+  addDisabled = false,
 }) => {
   const rowsPerPage = 5;
   const [page, setPage] = useState(0);
@@ -72,6 +74,22 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
       onToggleSwitch(row, newState);
     }
   };
+  const handleInputChange = (rowIndex: number, key: string, value: string) => {
+    setInputValues(prev => ({
+      ...prev,
+      [rowIndex]: {
+        ...prev[rowIndex],
+        [key]: value,
+      },
+    }));
+  };
+
+  const handleAddPress = (row: DataFormat, rowIndex: number, key: string) => {
+    console.log(`Add button pressed for row ${rowIndex}, key: ${key}`);
+    if (onInputChange) {
+      onInputChange(row, key, inputValues[rowIndex]?.[key] || '');
+    }
+  };
 
   return (
     <ScrollView horizontal style={styles.scrollView}>
@@ -94,18 +112,38 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
             {headers.map((header, cellIndex) => (
               <DataTable.Cell key={cellIndex} style={styles.cell}>
                 {editableFields.includes(header) ? (
-                  <TextInput
-                    style={styles.input}
-                    value={
-                      inputValues[rowIndex]?.[header] ?? String(row[header])
-                    }
-                    onChangeText={text =>
-                      setInputValues(prev => ({
-                        ...prev,
-                        [rowIndex]: {...prev[rowIndex], [header]: text},
-                      }))
-                    }
-                  />
+                  <View style={styles.editableView}>
+                    {showInputButton && (
+                      <TouchableOpacity
+                        disabled={addDisabled}
+                        onPress={() => handleAddPress(row, rowIndex, header)}
+                        style={[
+                          styles.addButton,
+                          addDisabled && {
+                            backgroundColor: 'rgba(230, 231, 235, 0.39)',
+                            borderColor: 'rgba(230, 231, 235, 0.39)',
+                          },
+                        ]}>
+                        <Text style={styles.inputButtonText}>Add</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    <TextInput
+                      style={styles.input}
+                      value={inputValues[rowIndex]?.[header] || ''}
+                      onChangeText={text =>
+                        handleInputChange(rowIndex, header, text)
+                      }
+                    />
+
+                    {showInputButton && (
+                      <TouchableOpacity
+                        onPress={() => handleAddPress(row, rowIndex, header)}
+                        style={styles.settButton}>
+                        <Text style={styles.inputButtonText}>Set</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 ) : (
                   <Text>{row[header]}</Text>
                 )}
@@ -244,6 +282,39 @@ const styles = StyleSheet.create({
   },
   crossButton: {alignSelf: 'flex-start', paddingBottom: 5, marginTop: 5},
   errorText: {color: 'red', textAlign: 'center', marginVertical: 10},
+  editableView: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'none',
+    paddingVertical: 2,
+    paddingHorizontal: 2,
+    borderRadius: 4,
+    width: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+  },
+  settButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgb(230,231,235)',
+    paddingVertical: 2,
+    paddingHorizontal: 2,
+    borderRadius: 4,
+    width: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+  },
+  inputButtonText: {
+    color: 'black',
+  },
 });
 
 export default CustomDataTable;
