@@ -1,27 +1,52 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {StyleSheet, TextInput, View} from 'react-native';
 import CustomDataTable from '../../../components/data-table';
 import TableCard from '../../../components/table-card';
-import {dummyCustomerTagData} from '../../../data/dummyData';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AddTagModal from '../../../components/modals/add-tag';
 import EditTagModal from '../../../components/modals/edit-tag';
+import {
+  getAllListOfValueByKey,
+  getSlugListOfValuesByKey,
+} from '../../../services/global';
+import CustomPopConfirm from '../../../components/pop-confirm';
+import {deleteslug, updateSlug} from '../../../services/product/brand';
 
 function Tag() {
   const headers = ['Name'];
-
-  const [customer, setcustomer] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-
   const [modalEditVisible, setEditModalVisible] = useState(false);
   const [selectedTag, setSelectedTag] = useState<{
     [key: string]: string | number;
   } | null>(null);
+  const [data, setData] = useState<any>([]);
+  const [refetch, setRefetch] = useState(false);
 
-  const handleAction = (row: {[key: string]: string | number}) => {
-    // setSelectedRow(row);
-    // setModalVisible(true);
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const {data: tagData} = await getSlugListOfValuesByKey('customer-tag');
+        console.log('Tag Fetch: ', tagData.data.data);
+
+        const formattedData = tagData.data.data.map((item: any) => ({
+          ...item,
+          Name: item.name,
+        }));
+
+        console.log('Formatted data:', formattedData);
+
+        setData((prev: any) => {
+          console.log('Previous Data:', prev);
+          console.log('New Data:', formattedData);
+          return [...formattedData];
+        });
+      } catch {
+        return null;
+      }
+    };
+
+    fetchData();
+  }, [refetch]);
 
   const handleHeadingAction = () => {
     setModalVisible(true);
@@ -31,6 +56,66 @@ function Tag() {
     console.log(row);
     setSelectedTag(row);
     setEditModalVisible(true);
+  };
+
+  const [popConfirmVisible, setPopConfirmVisible] = useState(false);
+  const [popSwitchConfirmVisible, setPopSwitchConfirmVisible] = useState(false);
+  const [tagToDelete, setTagToDelete] = useState(null);
+  const [tagToSwitch, setTagToSwitch] = useState(null);
+
+  const handleDelete = async () => {
+    if (tagToDelete) {
+      console.log('Deleting tag:', tagToDelete);
+      await deleteTag(tagToDelete);
+
+      setData((prevData: any) =>
+        prevData.filter((cust: any) => cust._id !== tagToDelete._id),
+      );
+
+      setPopConfirmVisible(false);
+    }
+  };
+
+  const deleteTag = async (tag: any) => {
+    const response = await deleteslug('customer-tag', tag?._id);
+    console.log('Delete Tag Response:', response);
+  };
+
+  const confirmDelete = (tag: any) => {
+    setTagToDelete(tag);
+    setPopConfirmVisible(true);
+  };
+
+  const handleSwitch = async () => {
+    if (tagToSwitch) {
+      console.log('Switching tag:', tagToSwitch);
+      await switchTag(tagToSwitch);
+    }
+  };
+
+  const switchTag = async (tag: any) => {
+    const payload = {
+      ...tag,
+      isActive: !tag.isActive,
+    };
+    const response = await updateSlug('customer-tag', payload, tag?._id);
+    console.log('Switch Tag Response:', response);
+    setRefetch((prev: any) => !prev);
+    setPopSwitchConfirmVisible(false);
+  };
+
+  const confirmSwitch = (tag: any) => {
+    setTagToSwitch(tag);
+    setPopSwitchConfirmVisible(true);
+  };
+
+  const handleOnCloseAddModal = () => {
+    setModalVisible(false);
+  };
+
+  const handleOnSwitchPopCancel = () => {
+    setPopSwitchConfirmVisible(false);
+    setRefetch((prev: any) => !prev);
   };
 
   return (
@@ -44,28 +129,52 @@ function Tag() {
             <MaterialCommunityIcons name="magnify" size={20} color="black" />
             <TextInput
               style={styles.searchText}
-              value={customer}
-              placeholder="Find..."
-              onChangeText={setcustomer}
+              value={data}
+              placeholder="Find Tag"
+              onChangeText={setData}
               keyboardType="default"
             />
           </View>
           <CustomDataTable
             headers={headers}
-            data={dummyCustomerTagData}
+            data={data}
             showEdit={true}
             onEdit={handleEdit}
             showDelete={true}
-            onDelete={() => {}}
+            onDelete={confirmDelete}
             showSwitch={true}
-            onToggleSwitch={() => {}}
+            onToggleSwitch={confirmSwitch}
+          />
+          <CustomPopConfirm
+            title="Confirm Deletion"
+            description="Are you sure you want to delete this tag?"
+            onConfirm={handleDelete}
+            onCancel={() => setPopConfirmVisible(false)}
+            okText="Delete"
+            cancelText="Cancel"
+            visible={popConfirmVisible}
+            setVisible={setPopConfirmVisible}
+          />
+          <CustomPopConfirm
+            title="Confirm"
+            description="Are you sure?"
+            onConfirm={handleSwitch}
+            onCancel={handleOnSwitchPopCancel}
+            okText="Update"
+            cancelText="Cancel"
+            visible={popSwitchConfirmVisible}
+            setVisible={setPopSwitchConfirmVisible}
           />
         </TableCard>
+
         <AddTagModal
           visible={modalVisible}
-          onClose={() => setModalVisible(false)}
+          setRefetch={setRefetch}
+          onClose={handleOnCloseAddModal}
         />
+
         <EditTagModal
+          setRefetch={setRefetch}
           visible={modalEditVisible}
           onClose={() => setEditModalVisible(false)}
           tag={selectedTag}
@@ -96,17 +205,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgb(230, 231, 235)',
     paddingHorizontal: 10,
-  },
-  modalContent: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  input: {
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    width: '100%',
-    marginVertical: 5,
-    borderRadius: 5,
   },
 });
 

@@ -1,4 +1,5 @@
 import React, {useEffect, useRef} from 'react';
+import {Controller, useForm} from 'react-hook-form';
 import {
   Modal,
   View,
@@ -10,13 +11,24 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import {createSlug} from '../../services/product/brand';
 
 interface SlideInModalProps {
   visible: boolean;
   onClose: () => void;
+  setRefetch: any;
 }
 
-const AddTagModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
+const AddTagModal: React.FC<SlideInModalProps> = ({
+  visible,
+  onClose,
+  setRefetch,
+}) => {
+  const {control, handleSubmit, setValue, reset} = useForm({
+    defaultValues: {
+      name: '',
+    },
+  });
   const slideAnim = useRef(new Animated.Value(500)).current;
 
   useEffect(() => {
@@ -34,6 +46,22 @@ const AddTagModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
       }).start();
     }
   }, [visible]);
+
+  const onSubmit = async (data: any) => {
+    console.log('Submitted Data: ', data);
+
+    const payload = {
+      name: data.name,
+      accountLimit: null,
+      isActive: true,
+    };
+    console.log('Create Tag Payload: ', payload);
+    const response = await createSlug('customer-tag', payload);
+    console.log('Response Create Tag: ', response);
+    setRefetch((prev: any) => !prev);
+    onClose();
+    reset();
+  };
 
   return (
     <Modal visible={visible} transparent animationType="none">
@@ -56,13 +84,23 @@ const AddTagModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
             <Text style={styles.label}>
               <Text style={styles.required}>*</Text> Name
             </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter Brand Name"
-              keyboardType="default"
+            <Controller
+              control={control}
+              name="name"
+              rules={{required: 'Name is required'}}
+              render={({field: {onChange, value}}) => (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter Brand Name"
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
             />
           </View>
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity
+            onPress={handleSubmit(onSubmit)}
+            style={styles.button}>
             <Text style={styles.buttonText}>Save</Text>
           </TouchableOpacity>
         </Animated.View>

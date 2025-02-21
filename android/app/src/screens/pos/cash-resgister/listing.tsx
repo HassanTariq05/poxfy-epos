@@ -95,7 +95,7 @@ function Listing() {
         console.log('Response Open resgister:', response.data.data);
       }
       if (response?.data.meta.success) {
-        saveRegister(response.data.data);
+        // saveRegister(response.data.data);
         navigation.navigate('Listing');
         setModalVisible(false);
       }

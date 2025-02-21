@@ -3,15 +3,17 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Switch,
   TextInput,
   TouchableOpacity,
+  View,
 } from 'react-native';
 import {DataTable} from 'react-native-paper';
 import Feather from 'react-native-vector-icons/Feather';
+import {Switch} from 'react-native-switch';
 
 type DataFormat = {
-  [key: string]: string | number;
+  [key: string]: string | number | boolean;
+  isActive?: any;
 };
 
 interface CustomDataTableProps {
@@ -23,9 +25,9 @@ interface CustomDataTableProps {
   showDelete?: boolean;
   editableFields?: string[];
   showInputButton?: boolean;
-  onToggleSwitch?: (row: DataFormat, value: boolean) => void;
+  onToggleSwitch?: (row: any, value: boolean) => void;
   onOpenRegister?: (row: DataFormat) => void;
-  onEdit?: (row: DataFormat) => void;
+  onEdit?: (row: any) => void;
   onDelete?: (row: DataFormat) => void;
   onInputChange?: (row: DataFormat, key: string, value: string) => void;
 }
@@ -52,12 +54,23 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
     Record<number, Record<string, string>>
   >({});
 
+  useEffect(() => {
+    const initialSwitchStates: Record<number, boolean> = {};
+    data.forEach((row, index) => {
+      initialSwitchStates[index] = Boolean(row.isActive);
+    });
+    setSwitchStates(initialSwitchStates);
+  }, [data]);
+
   const currentRows = data.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
 
   const toggleSwitch = (index: number, row: DataFormat) => {
     const newState = !switchStates[index];
     setSwitchStates(prev => ({...prev, [index]: newState}));
-    if (onToggleSwitch) onToggleSwitch(row, newState);
+
+    if (onToggleSwitch) {
+      onToggleSwitch(row, newState);
+    }
   };
 
   return (
@@ -102,15 +115,32 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
             {(showSwitch || showOpenRegister || showEdit || showDelete) && (
               <DataTable.Cell style={styles.actionCell}>
                 {showSwitch && (
-                  <Switch
-                    trackColor={{false: '#e0e0e0', true: '#eb6b6b'}}
-                    thumbColor={switchStates[rowIndex] ? '#ffffff' : '#ffffff'}
-                    ios_backgroundColor="#e0e0e0"
-                    onValueChange={() => toggleSwitch(rowIndex, row)}
-                    value={switchStates[rowIndex] || false}
-                    style={styles.switch}
-                  />
+                  <View style={{paddingLeft: 5, paddingRight: 5}}>
+                    <Switch
+                      value={switchStates[rowIndex]}
+                      onValueChange={() => toggleSwitch(rowIndex, row)}
+                      disabled={false}
+                      activeText=""
+                      inActiveText=""
+                      circleSize={22}
+                      barHeight={24}
+                      circleBorderWidth={1}
+                      backgroundActive={'#eb6b6b'}
+                      backgroundInactive={'#e0e0e0'}
+                      circleActiveColor={'#fff'}
+                      circleInActiveColor={'#fff'}
+                      changeValueImmediately={true}
+                      innerCircleStyle={{
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      switchLeftPx={10}
+                      switchRightPx={10}
+                      switchWidthMultiplier={1.6}
+                    />
+                  </View>
                 )}
+
                 {showOpenRegister && onOpenRegister && (
                   <TouchableOpacity
                     onPress={() => onOpenRegister(row)}
@@ -118,6 +148,7 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                     <Text style={styles.buttonText}>Open Register</Text>
                   </TouchableOpacity>
                 )}
+
                 {showEdit && onEdit && (
                   <TouchableOpacity
                     onPress={() => onEdit(row)}
@@ -125,12 +156,15 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                     <Feather name="edit-3" size={22} color="black" />
                   </TouchableOpacity>
                 )}
+
                 {showDelete && onDelete && (
-                  <TouchableOpacity
-                    onPress={() => onDelete(row)}
-                    style={styles.crossButton}>
-                    <Feather name="x" size={22} color="black" />
-                  </TouchableOpacity>
+                  <>
+                    <TouchableOpacity
+                      onPress={() => onDelete(row)}
+                      style={styles.crossButton}>
+                      <Feather name="x" size={22} color="black" />
+                    </TouchableOpacity>
+                  </>
                 )}
               </DataTable.Cell>
             )}

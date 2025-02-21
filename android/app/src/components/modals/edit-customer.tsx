@@ -14,19 +14,99 @@ import {Dropdown} from 'react-native-element-dropdown';
 import {Platform} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import {Controller, useForm} from 'react-hook-form';
+import {createCustomer, updateCustomer} from '../../services/customer';
 
 interface EditCustomerModalProps {
   visible: boolean;
   onClose: () => void;
+  gender: any;
+  tier: any;
+  tag: any;
+  setRefetch: any;
   customer: any;
 }
 
 const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
   visible,
   onClose,
+  gender,
+  tag,
+  tier,
+  setRefetch,
   customer,
 }) => {
+  const {control, handleSubmit, setValue, reset} = useForm({
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      notes: '',
+      companyName: '',
+      streetAddress: '',
+      city: '',
+      state: '',
+      country: '',
+      gender: '',
+      tag: '',
+      tier: '',
+      additional: 0,
+      signupLoyalty: false,
+      receiveMarketing: false,
+      taxExempted: false,
+    },
+  });
+
+  useEffect(() => {
+    if (customer) {
+      reset({
+        firstName: customer?.firstName || '',
+        lastName: customer?.lastName || '',
+        email: customer?.email || '',
+        phone: customer?.phone || '',
+        notes: customer?.notes || '',
+        companyName: customer?.companyName || '',
+        streetAddress: customer?.address || '',
+        city: customer?.city || '',
+        state: customer?.state || '',
+        country: customer?.country || '',
+        gender: customer?.genderId || '',
+        tag: customer?.customerGroupTag || '',
+        tier: customer?.customerGroupTierId || '',
+        additional: customer?.accountLimit || 0,
+        signupLoyalty: customer?.signUpForLoyality || false,
+        receiveMarketing: customer?.optOutForMarketing || false,
+        taxExempted: customer?.taxExempted || false,
+      });
+    }
+  }, [customer, reset]);
+
   const slideAnim = useRef(new Animated.Value(500)).current;
+
+  const [tags, setTags] = useState([]);
+  const [tiers, setTiers] = useState([]);
+
+  useEffect(() => {
+    // const genderData = gender.data.map((gender: any) => ({
+    //   label: gender.name,
+    //   value: gender._id,
+    // }));
+
+    console.log('tag: ', tag);
+    const tagData = tag.map((tag: any) => ({
+      label: tag.name,
+      value: tag._id,
+    }));
+
+    setTags(tagData);
+    const tierData = tier.map((tier: any) => ({
+      label: tier.name,
+      value: tier._id,
+    }));
+
+    setTiers(tierData);
+  }, [tier, tag]);
 
   useEffect(() => {
     if (visible) {
@@ -46,53 +126,57 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
 
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [firstName, setFirstName] = useState(customer?.firstName || '');
-  const [lastName, setLastName] = useState(customer?.lastName || '');
-  const [email, setEmail] = useState(customer?.Email || '');
-  const [phone, setPhone] = useState(customer?.Phone || '');
-  const [company, setCompany] = useState(customer?.Company || '');
-  const [country, setCountry] = useState(customer?.Country || '');
 
-  useEffect(() => {
-    if (customer) {
-      setFirstName(customer.firstName || '');
-      setLastName(customer.lastName || '');
-      setEmail(customer.Email || '');
-      setPhone(customer.Phone || '');
-      setCompany(customer.Company || '');
-      setCountry(customer.Country || '');
-    }
-  }, [customer]);
+  const onSubmit = async (data: any) => {
+    console.log('Submitted Data: ', data);
 
-  const onChange = (event: any, selectedDate: any) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-    }
-    if (selectedDate) {
-      setDate(selectedDate);
-    }
+    const payload = {
+      accountLimit: data.additional,
+      address: data.streetAddress,
+      city: data.city,
+      companyName: data.companyName,
+      companyTaxId: 'str',
+      country: data.country,
+      customerGroupTag: data.tag,
+      customerGroupTierId: data.tier,
+      dateOfBirth: '2025-02-20',
+      email: data.email,
+      firstName: data.firstName,
+      genderId: '67af88cbbdf76fc83c97ebf9',
+      isActive: true,
+      lastName: data.lastName,
+      logo: 'http',
+      notes: data.notes,
+      optOutForMarketing: data.receiveMarketing,
+      phone: data.phone,
+      signUpForLoyality: data.signupLoyalty,
+      state: data.state,
+      taxExempted: data.taxExempted,
+    };
+
+    console.log('Update Customer payload: ', payload);
+
+    const response = await updateCustomer(payload, customer?._id);
+    console.log('Response Update Customer: ', response);
+    setRefetch((prev: any) => !prev);
+    onClose();
+    reset();
   };
-  const [isLoyalityRewardEnabled, setIsLoyalityRewardEnabled] = useState(false);
-  const toggleLoyalityRewardSwitch = () =>
-    setIsLoyalityRewardEnabled(previousState => !previousState);
 
-  const [isCommunicationEnabled, setIsCommunicationEnabled] = useState(false);
-  const toggleCommunicationSwitch = () =>
-    setIsCommunicationEnabled(previousState => !previousState);
-
-  const [isTaxEnabled, setIsTaxEnabled] = useState(false);
-  const toggleTaxSwitch = () =>
-    setIsTaxEnabled(previousState => !previousState);
+  const handleClose = () => {
+    onClose();
+    reset();
+  };
   return (
     <Modal visible={visible} transparent animationType="none">
       <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} />
+        <TouchableOpacity style={styles.backdrop} onPress={handleClose} />
 
         <Animated.View
           style={[styles.modal, {transform: [{translateX: slideAnim}]}]}>
           <ScrollView contentContainerStyle={styles.scrollContainer}>
             <View style={styles.header}>
-              <TouchableOpacity onPress={onClose} style={styles.backButton}>
+              <TouchableOpacity onPress={handleClose} style={styles.backButton}>
                 <MaterialCommunityIcons
                   name="chevron-left"
                   size={30}
@@ -108,122 +192,212 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
               <View style={styles.leftContainer}>
                 <Text style={styles.label}>Primary Details</Text>
                 <View style={styles.subLeftContainer}>
-                  <TextInput
-                    style={styles.input1}
-                    value={firstName}
-                    onChangeText={setFirstName}
-                    placeholder="First Name"
+                  <Controller
+                    control={control}
+                    name="firstName"
+                    rules={{required: 'First name is required'}}
+                    render={({field: {onChange, value}}) => (
+                      <TextInput
+                        style={styles.input1}
+                        placeholder="First Name"
+                        onChangeText={onChange}
+                        value={value}
+                      />
+                    )}
                   />
-                  <TextInput
-                    style={styles.input1}
-                    value={lastName}
-                    onChangeText={setLastName}
-                    placeholder="First Name"
+                  <Controller
+                    control={control}
+                    name="lastName"
+                    render={({field: {onChange, value}}) => (
+                      <TextInput
+                        style={styles.input1}
+                        placeholder="Last Name"
+                        onChangeText={onChange}
+                        value={value}
+                      />
+                    )}
                   />
                 </View>
 
                 <View style={styles.subLeftContainer}>
-                  <TextInput
-                    style={styles.input1}
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholder="Email"
+                  <Controller
+                    control={control}
+                    name="email"
+                    render={({field: {onChange, value}}) => (
+                      <TextInput
+                        style={styles.input1}
+                        placeholder="Email"
+                        keyboardType="email-address"
+                        onChangeText={onChange}
+                        value={value}
+                      />
+                    )}
                   />
-                  <TextInput
-                    style={styles.input1}
-                    value={phone}
-                    onChangeText={setPhone}
-                    placeholder="Phone"
+                  <Controller
+                    control={control}
+                    name="phone"
+                    render={({field: {onChange, value}}) => (
+                      <TextInput
+                        style={styles.input1}
+                        placeholder="Phone"
+                        keyboardType="phone-pad"
+                        onChangeText={onChange}
+                        value={value}
+                      />
+                    )}
                   />
                 </View>
 
-                <TextInput
-                  style={[styles.input, styles.textarea]}
-                  placeholder="Notes"
-                  multiline
-                  numberOfLines={4}
+                <Controller
+                  control={control}
+                  name="notes"
+                  render={({field: {onChange, value}}) => (
+                    <TextInput
+                      style={[styles.input, styles.textarea]}
+                      placeholder="Notes"
+                      multiline
+                      numberOfLines={4}
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
+                />
+                <Text style={styles.label}>Company Details</Text>
+                <Controller
+                  control={control}
+                  name="companyName"
+                  render={({field: {onChange, value}}) => (
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Company Name"
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
                 />
 
-                <Text style={styles.label}>Company Details</Text>
-                <TextInput style={styles.input} placeholder="Company Name" />
-
                 <Text style={styles.label}>Physical Address</Text>
-                <TextInput style={styles.input} placeholder="Street Address" />
+                <Controller
+                  control={control}
+                  name="streetAddress"
+                  render={({field: {onChange, value}}) => (
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Street Address"
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
+                />
 
                 <View style={styles.subLeftContainer}>
-                  <TextInput
-                    style={[styles.input1, {textAlign: 'center'}]}
-                    placeholder="City"
+                  <Controller
+                    control={control}
+                    name="city"
+                    render={({field: {onChange, value}}) => (
+                      <TextInput
+                        style={[styles.input1, {textAlign: 'center'}]}
+                        placeholder="City"
+                        onChangeText={onChange}
+                        value={value}
+                      />
+                    )}
                   />
-                  <TextInput
-                    style={[styles.input1, {textAlign: 'center'}]}
-                    placeholder="State"
+
+                  <Controller
+                    control={control}
+                    name="state"
+                    render={({field: {onChange, value}}) => (
+                      <TextInput
+                        style={[styles.input1, {textAlign: 'center'}]}
+                        placeholder="State"
+                        onChangeText={onChange}
+                        value={value}
+                      />
+                    )}
                   />
                 </View>
 
-                <TextInput
-                  style={[styles.input, {textAlign: 'center'}]}
-                  placeholder="Country"
-                  value={country}
-                  onChange={setCountry}
+                <Controller
+                  control={control}
+                  name="country"
+                  render={({field: {onChange, value}}) => (
+                    <TextInput
+                      style={[styles.input, {textAlign: 'center'}]}
+                      placeholder="Country"
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
                 />
               </View>
 
               {/* Right Container - 50% */}
               <View style={styles.rightContainer}>
                 <Text style={styles.label}>Additional Information</Text>
-                <TextInput
-                  style={[styles.input, {textAlign: 'center'}]}
-                  value="0"
-                  placeholder="0"
+                <Controller
+                  control={control}
+                  name="additional"
+                  render={({field: {onChange, value}}) => (
+                    <TextInput
+                      style={[styles.input, {textAlign: 'center'}]}
+                      placeholder="0"
+                      onChangeText={onChange}
+                      value={String(value)}
+                    />
+                  )}
                 />
 
-                <Dropdown
-                  style={styles.input}
-                  data={[
-                    {label: 'Male', value: 'male'},
-                    {label: 'Female', value: 'female'},
-                    {label: 'Other', value: 'other'},
-                  ]}
-                  labelField="label"
-                  valueField="value"
-                  placeholder="Gender"
-                  placeholderStyle={{color: 'gray'}}
-                  containerStyle={{borderRadius: 10}}
-                  selectedTextStyle={{fontSize: 14}}
-                  onChange={function (item: any): void {}}
+                <Controller
+                  control={control}
+                  name="gender"
+                  render={({field: {onChange, value}}) => (
+                    <Dropdown
+                      style={styles.input}
+                      data={[
+                        {label: 'Male', value: 'male'},
+                        {label: 'Female', value: 'female'},
+                        {label: 'Other', value: 'other'},
+                      ]}
+                      labelField="label"
+                      valueField="value"
+                      placeholder="Gender"
+                      value={value}
+                      onChange={item => onChange(item.value)}
+                    />
+                  )}
                 />
 
-                <Dropdown
-                  style={styles.input}
-                  data={[
-                    {label: 'Male', value: 'male'},
-                    {label: 'Female', value: 'female'},
-                    {label: 'Other', value: 'other'},
-                  ]}
-                  labelField="label"
-                  valueField="value"
-                  placeholder="Tag"
-                  placeholderStyle={{color: 'gray'}}
-                  containerStyle={{borderRadius: 10}}
-                  selectedTextStyle={{fontSize: 14}}
-                  onChange={function (item: any): void {}}
+                <Controller
+                  control={control}
+                  name="tag"
+                  render={({field: {onChange, value}}) => (
+                    <Dropdown
+                      style={styles.input}
+                      data={tags}
+                      labelField="label"
+                      valueField="value"
+                      placeholder="Tag"
+                      value={value}
+                      onChange={item => onChange(item.value)}
+                    />
+                  )}
                 />
 
-                <Dropdown
-                  style={styles.input}
-                  data={[
-                    {label: 'Male', value: 'male'},
-                    {label: 'Female', value: 'female'},
-                    {label: 'Other', value: 'other'},
-                  ]}
-                  labelField="label"
-                  valueField="value"
-                  placeholder="Group Tier"
-                  placeholderStyle={{color: 'gray'}}
-                  containerStyle={{borderRadius: 10}}
-                  selectedTextStyle={{fontSize: 14}}
-                  onChange={function (item: any): void {}}
+                <Controller
+                  control={control}
+                  name="tier"
+                  render={({field: {onChange, value}}) => (
+                    <Dropdown
+                      style={styles.input}
+                      data={tiers}
+                      labelField="label"
+                      valueField="value"
+                      placeholder="Group Tier"
+                      value={value}
+                      onChange={item => onChange(item.value)}
+                    />
+                  )}
                 />
 
                 <TouchableOpacity
@@ -238,45 +412,64 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                   <Text style={styles.subHeading}>
                     Signup for loyalty rewards program
                   </Text>
-                  <Switch
-                    trackColor={{false: '#e0e0e0', true: '#eb6b6b'}} // Light gray for off, red for on
-                    thumbColor={isLoyalityRewardEnabled ? '#ffffff' : '#ffffff'} // White thumb
-                    ios_backgroundColor="#e0e0e0"
-                    onValueChange={toggleLoyalityRewardSwitch}
-                    value={isLoyalityRewardEnabled}
-                    style={styles.switch}
+                  <Controller
+                    control={control}
+                    name="signupLoyalty"
+                    render={({field: {onChange, value}}) => (
+                      <Switch
+                        trackColor={{false: '#e0e0e0', true: '#eb6b6b'}}
+                        thumbColor={value ? '#ffffff' : '#ffffff'}
+                        ios_backgroundColor="#e0e0e0"
+                        onValueChange={onChange}
+                        value={value}
+                        style={styles.switch}
+                      />
+                    )}
                   />
                 </View>
 
                 <View style={styles.switchContainer}>
                   <Text style={styles.subHeading}>
-                    Customer has optedin to receive marketing & promo
+                    Customer has opted in to receive marketing & promo
                     communications
                   </Text>
-                  <Switch
-                    trackColor={{false: '#e0e0e0', true: '#eb6b6b'}}
-                    thumbColor={isCommunicationEnabled ? '#ffffff' : '#ffffff'}
-                    ios_backgroundColor="#e0e0e0"
-                    onValueChange={toggleCommunicationSwitch}
-                    value={isCommunicationEnabled}
-                    style={styles.switch}
+                  <Controller
+                    control={control}
+                    name="receiveMarketing"
+                    render={({field: {onChange, value}}) => (
+                      <Switch
+                        trackColor={{false: '#e0e0e0', true: '#eb6b6b'}}
+                        thumbColor={value ? '#ffffff' : '#ffffff'}
+                        ios_backgroundColor="#e0e0e0"
+                        onValueChange={onChange}
+                        value={value}
+                        style={styles.switch}
+                      />
+                    )}
                   />
                 </View>
 
                 <View style={styles.switchContainer}>
                   <Text style={styles.subHeading}>
-                    This customer is tax exempted. No tax applied when this
-                    customer allocate to sale
+                    This customer is tax-exempt. No tax applied when this
+                    customer is allocated to a sale.
                   </Text>
-                  <Switch
-                    trackColor={{false: '#e0e0e0', true: '#eb6b6b'}}
-                    thumbColor={isTaxEnabled ? '#ffffff' : '#ffffff'}
-                    ios_backgroundColor="#e0e0e0"
-                    onValueChange={toggleTaxSwitch}
-                    value={isTaxEnabled}
-                    style={styles.switch}
+                  <Controller
+                    control={control}
+                    name="taxExempted"
+                    render={({field: {onChange, value}}) => (
+                      <Switch
+                        trackColor={{false: '#e0e0e0', true: '#eb6b6b'}}
+                        thumbColor={value ? '#ffffff' : '#ffffff'}
+                        ios_backgroundColor="#e0e0e0"
+                        onValueChange={onChange}
+                        value={value}
+                        style={styles.switch}
+                      />
+                    )}
                   />
                 </View>
+
                 {/* {showDatePicker && (
                   <DateTimePicker
                     value={date}
@@ -288,8 +481,10 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
               </View>
             </View>
 
-            <TouchableOpacity onPress={onClose} style={styles.button}>
-              <Text style={styles.buttonText}>Save</Text>
+            <TouchableOpacity
+              onPress={handleSubmit(onSubmit)}
+              style={styles.button}>
+              <Text style={styles.buttonText}>Update</Text>
             </TouchableOpacity>
           </ScrollView>
         </Animated.View>

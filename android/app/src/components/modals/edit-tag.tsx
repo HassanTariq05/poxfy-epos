@@ -9,16 +9,28 @@ import {
   StyleSheet,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import {updateSlug} from '../../services/product/brand';
+import {Controller, useForm} from 'react-hook-form';
 
 interface SlideInModalProps {
   visible: boolean;
   onClose: () => void;
   tag: any;
+  setRefetch: any;
 }
 
-const EditTagModal: React.FC<SlideInModalProps> = ({visible, onClose, tag}) => {
+const EditTagModal: React.FC<SlideInModalProps> = ({
+  visible,
+  onClose,
+  tag,
+  setRefetch,
+}) => {
+  const {control, handleSubmit, setValue, reset} = useForm({
+    defaultValues: {
+      name: tag?.name || '',
+    },
+  });
   const slideAnim = useRef(new Animated.Value(500)).current;
-
   useEffect(() => {
     if (visible) {
       Animated.timing(slideAnim, {
@@ -34,23 +46,42 @@ const EditTagModal: React.FC<SlideInModalProps> = ({visible, onClose, tag}) => {
       }).start();
     }
   }, [visible]);
-  const [tagVal, setTagVal] = useState(tag?.Name || '');
+
+  const onSubmit = async (data: any) => {
+    console.log('Submitted Data: ', data);
+
+    const payload = {
+      name: data.name,
+      accountLimit: null,
+      isActive: true,
+    };
+    console.log('Create Tag Payload: ', payload);
+    const response = await updateSlug('customer-tag', payload, tag?._id);
+    console.log('Response Create Tag: ', response);
+    setRefetch((prev: any) => !prev);
+    onClose();
+    reset();
+  };
 
   useEffect(() => {
-    console.log('here', tag);
     if (tag) {
-      setTagVal(tag?.Name || '');
+      setValue('name', tag.Name || '');
     }
-  }, [tag]);
+  }, [tag, setValue]);
+
+  const handleOnClose = () => {
+    onClose();
+    reset();
+  };
 
   return (
     <Modal visible={visible} transparent animationType="none">
       <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} />
+        <TouchableOpacity style={styles.backdrop} onPress={handleOnClose} />
         <Animated.View
           style={[styles.modal, {transform: [{translateX: slideAnim}]}]}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.backButton}>
+            <TouchableOpacity onPress={handleOnClose} style={styles.backButton}>
               <MaterialCommunityIcons
                 name="chevron-left"
                 size={30}
@@ -64,15 +95,23 @@ const EditTagModal: React.FC<SlideInModalProps> = ({visible, onClose, tag}) => {
             <Text style={styles.label}>
               <Text style={styles.required}>*</Text> Name
             </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter Brand Name"
-              keyboardType="default"
-              value={tagVal}
-              onChange={setTagVal}
+            <Controller
+              control={control}
+              name="name"
+              rules={{required: 'Name is required'}}
+              render={({field: {onChange, value}}) => (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter Brand Name"
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
             />
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.button}>
+          <TouchableOpacity
+            onPress={handleSubmit(onSubmit)}
+            style={styles.button}>
             <Text style={styles.buttonText}>Save</Text>
           </TouchableOpacity>
         </Animated.View>
