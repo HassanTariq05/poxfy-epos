@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  ToastAndroid,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {BlurView} from '@react-native-community/blur';
@@ -13,6 +14,7 @@ import {useForm, Controller} from 'react-hook-form';
 import {submitLogin} from './service';
 import {Dropdown} from 'react-native-element-dropdown';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-root-toast';
 
 const LoginScreen = ({onLogin}: any) => {
   const {
@@ -34,6 +36,13 @@ const LoginScreen = ({onLogin}: any) => {
       }
     } catch (err) {
       console.log(err);
+      ToastAndroid.showWithGravityAndOffset(
+        'Invalid email or password',
+        ToastAndroid.LONG,
+        ToastAndroid.BOTTOM,
+        25,
+        50,
+      );
     }
   };
 

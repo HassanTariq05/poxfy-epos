@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Animated,
   StyleSheet,
+  ToastAndroid,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -60,6 +61,13 @@ const AddTagModal: React.FC<SlideInModalProps> = ({
     console.log('Response Create Tag: ', response);
     setRefetch((prev: any) => !prev);
     onClose();
+    ToastAndroid.showWithGravityAndOffset(
+      'Record created successfully',
+      ToastAndroid.LONG,
+      ToastAndroid.BOTTOM,
+      25,
+      50,
+    );
     reset();
   };
 

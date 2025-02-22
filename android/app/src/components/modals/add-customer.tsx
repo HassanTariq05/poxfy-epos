@@ -10,6 +10,7 @@ import {
   ScrollView,
   Switch,
   Button,
+  ToastAndroid,
 } from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
 import {Platform} from 'react-native';
@@ -144,6 +145,13 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     console.log('Response Create Customer: ', response);
     setRefetch((prev: any) => !prev);
     onClose();
+    ToastAndroid.showWithGravityAndOffset(
+      'Record created successfully',
+      ToastAndroid.LONG,
+      ToastAndroid.BOTTOM,
+      25,
+      50,
+    );
     reset();
   };
   return (
@@ -476,7 +484,7 @@ const styles = StyleSheet.create({
     top: '10%',
     right: 0,
     width: '60%',
-    height: '80%',
+    height: '65%',
     backgroundColor: 'white',
     elevation: 10,
     shadowColor: '#000',

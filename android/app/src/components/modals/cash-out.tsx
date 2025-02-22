@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Animated,
   StyleSheet,
+  ToastAndroid,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -64,6 +65,13 @@ const CashOutModal: React.FC<SlideInModalProps> = ({
       }
       if (response?.data.meta.success) {
         onClose();
+        ToastAndroid.showWithGravityAndOffset(
+          'Record added successfully',
+          ToastAndroid.LONG,
+          ToastAndroid.BOTTOM,
+          25,
+          50,
+        );
       }
     } catch (err) {
       console.log(err);

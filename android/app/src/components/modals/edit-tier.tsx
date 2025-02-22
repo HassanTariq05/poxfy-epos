@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Animated,
   StyleSheet,
+  ToastAndroid,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {updateSlug} from '../../services/product/brand';
@@ -60,6 +61,13 @@ const EditTierModal: React.FC<SlideInModalProps> = ({
     console.log('Response Create Tier: ', response);
     setRefetch((prev: any) => !prev);
     onClose();
+    ToastAndroid.showWithGravityAndOffset(
+      'Record updated successfully',
+      ToastAndroid.LONG,
+      ToastAndroid.BOTTOM,
+      25,
+      50,
+    );
     reset();
   };
 

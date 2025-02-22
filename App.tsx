@@ -17,7 +17,6 @@ import Purchase from './android/app/src/screens/inventory/purchase';
 import InventoryTransfer from './android/app/src/screens/inventory/inventory-transfer';
 import LoginScreen from './android/app/src/screens/auth/login';
 import {getUserToken} from './android/app/src/user';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();

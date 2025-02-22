@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, TextInput, View} from 'react-native';
+import {StyleSheet, TextInput, ToastAndroid, View} from 'react-native';
 import CustomDataTable from '../../../components/data-table';
 import TableCard from '../../../components/table-card';
 import {dummyCustomerData} from '../../../data/dummyData';
@@ -127,6 +127,13 @@ function Customer() {
       );
 
       setPopConfirmVisible(false);
+      ToastAndroid.showWithGravityAndOffset(
+        'Record deleted successfully',
+        ToastAndroid.LONG,
+        ToastAndroid.BOTTOM,
+        25,
+        50,
+      );
     }
   };
 
@@ -155,6 +162,13 @@ function Customer() {
     const response = await updateCustomer(payload, customer?._id);
     console.log('Switch Customer Response:', response);
     setRefetch((prev: any) => !prev);
+    ToastAndroid.showWithGravityAndOffset(
+      'Updated successfully',
+      ToastAndroid.LONG,
+      ToastAndroid.BOTTOM,
+      25,
+      50,
+    );
     setPopSwitchConfirmVisible(false);
   };
 

@@ -85,7 +85,6 @@ const styles = StyleSheet.create({
     top: '40%',
     right: 0,
     width: '30%',
-    height: '25%',
     backgroundColor: 'white',
     elevation: 10,
     shadowColor: '#000',
@@ -95,8 +94,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderBottomLeftRadius: 20,
     padding: 20,
-    justifyContent: 'flex-start',
-    flexDirection: 'column',
+    alignSelf: 'stretch', // Ensure it stretches to fit content
+    flexShrink: 1, // Prevents extra space from pushing content
   },
   title: {
     fontSize: 18,

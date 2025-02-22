@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, TextInput, View} from 'react-native';
+import {StyleSheet, TextInput, ToastAndroid, View} from 'react-native';
 import CustomDataTable from '../../../components/data-table';
 import TableCard from '../../../components/table-card';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -72,6 +72,14 @@ function Tag() {
         prevData.filter((cust: any) => cust._id !== tagToDelete._id),
       );
 
+      ToastAndroid.showWithGravityAndOffset(
+        'Record deleted successfully',
+        ToastAndroid.LONG,
+        ToastAndroid.BOTTOM,
+        25,
+        50,
+      );
+
       setPopConfirmVisible(false);
     }
   };
@@ -101,6 +109,13 @@ function Tag() {
     const response = await updateSlug('customer-tag', payload, tag?._id);
     console.log('Switch Tag Response:', response);
     setRefetch((prev: any) => !prev);
+    ToastAndroid.showWithGravityAndOffset(
+      'Record updated successfully',
+      ToastAndroid.LONG,
+      ToastAndroid.BOTTOM,
+      25,
+      50,
+    );
     setPopSwitchConfirmVisible(false);
   };
 

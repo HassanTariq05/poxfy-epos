@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, View} from 'react-native';
+import {StyleSheet, ToastAndroid, View} from 'react-native';
 import CustomDataTable from '../../../components/data-table';
 import TableCard from '../../../components/table-card';
 import {dummyMyInventoryData} from '../../../data/dummyData';
@@ -134,6 +134,13 @@ function MyInventory() {
       },
     });
     setRefetch((prev: any) => !prev);
+    ToastAndroid.showWithGravityAndOffset(
+      'Quantity updated successfully',
+      ToastAndroid.LONG,
+      ToastAndroid.BOTTOM,
+      25,
+      50,
+    );
     console.log('Response Add POST:', response);
   };
 
@@ -157,6 +164,13 @@ function MyInventory() {
     });
     console.log('Response Sett PUT:', response);
     setRefetch((prev: any) => !prev);
+    ToastAndroid.showWithGravityAndOffset(
+      'Quantity updated successfully',
+      ToastAndroid.LONG,
+      ToastAndroid.BOTTOM,
+      25,
+      50,
+    );
   };
 
   return (

@@ -9,6 +9,7 @@ import {
   StyleSheet,
   ScrollView,
   Switch,
+  ToastAndroid,
 } from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
 import {Platform} from 'react-native';
@@ -163,6 +164,13 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
     console.log('Response Update Customer: ', response);
     setRefetch((prev: any) => !prev);
     onClose();
+    ToastAndroid.showWithGravityAndOffset(
+      'Record updated successfully',
+      ToastAndroid.LONG,
+      ToastAndroid.BOTTOM,
+      25,
+      50,
+    );
     reset();
   };
 
@@ -512,7 +520,7 @@ const styles = StyleSheet.create({
     top: '10%',
     right: 0,
     width: '60%',
-    height: '80%',
+    height: '65%',
     backgroundColor: 'white',
     elevation: 10,
     shadowColor: '#000',
