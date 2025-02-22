@@ -19,6 +19,7 @@ type DataFormat = {
 interface CustomDataTableProps {
   headers: string[];
   data: {[key: string]: string | number}[];
+  searchQuery?: string;
   showSwitch?: boolean;
   showOpenRegister?: boolean;
   showEdit?: boolean;
@@ -37,6 +38,7 @@ interface CustomDataTableProps {
 const CustomDataTable: React.FC<CustomDataTableProps> = ({
   headers,
   data,
+  searchQuery = '',
   onToggleSwitch,
   onOpenRegister,
   onEdit,
@@ -66,7 +68,16 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
     setSwitchStates(initialSwitchStates);
   }, [data]);
 
-  const currentRows = data.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+  const filteredData = data.filter(row =>
+    Object.values(row).some(value =>
+      String(value).toLowerCase().includes(searchQuery.toLowerCase()),
+    ),
+  );
+
+  const currentRows = filteredData.slice(
+    page * rowsPerPage,
+    (page + 1) * rowsPerPage,
+  );
 
   const toggleSwitch = (index: number, row: DataFormat) => {
     const newState = !switchStates[index];
@@ -221,10 +232,10 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
 
         <DataTable.Pagination
           page={page}
-          numberOfPages={Math.ceil(data.length / rowsPerPage)}
+          numberOfPages={Math.ceil(filteredData.length / rowsPerPage)}
           onPageChange={setPage}
           label={`${page * rowsPerPage + 1} - ${(page + 1) * rowsPerPage} of ${
-            data.length
+            filteredData.length
           }`}
         />
       </DataTable>

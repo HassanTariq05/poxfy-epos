@@ -20,6 +20,7 @@ function Tier() {
     [key: string]: string | number;
   } | null>(null);
   const [data, setData] = useState<any>([]);
+  const [tier, setTier] = useState('');
   const [refetch, setRefetch] = useState(false);
 
   useEffect(() => {
@@ -144,15 +145,16 @@ function Tier() {
             <MaterialCommunityIcons name="magnify" size={20} color="black" />
             <TextInput
               style={styles.searchText}
-              value={data}
+              value={tier}
               placeholder="Find Tier"
-              onChangeText={setData}
+              onChangeText={setTier}
               keyboardType="default"
             />
           </View>
           <CustomDataTable
             headers={headers}
             data={data}
+            searchQuery={tier}
             showEdit={true}
             onEdit={handleEdit}
             showDelete={true}

@@ -22,7 +22,7 @@ function Listing() {
     'Created By',
   ];
 
-  const [email, setEmail] = useState('');
+  const [register, setRegister] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [outletId, setOutletId] = useState<string | null>(null);
   const [data, setData] = useState<any[]>([]);
@@ -124,9 +124,9 @@ function Listing() {
           <MaterialCommunityIcons name="magnify" size={20} color="black" />
           <TextInput
             style={styles.searchText}
-            value={email}
+            value={register}
             placeholder="Find..."
-            onChangeText={setEmail}
+            onChangeText={setRegister}
             keyboardType="email-address"
           />
         </View>
@@ -135,6 +135,7 @@ function Listing() {
           <CustomDataTable
             headers={headers}
             data={data}
+            searchQuery={register}
             showOpenRegister={true}
             // onOpenRegister={() => setModalVisible(true)}
             onOpenRegister={handleOpenRegisterClick}

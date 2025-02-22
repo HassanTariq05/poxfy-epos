@@ -20,6 +20,7 @@ function Tag() {
     [key: string]: string | number;
   } | null>(null);
   const [data, setData] = useState<any>([]);
+  const [tag, setTag] = useState('');
   const [refetch, setRefetch] = useState(false);
 
   useEffect(() => {
@@ -144,15 +145,16 @@ function Tag() {
             <MaterialCommunityIcons name="magnify" size={20} color="black" />
             <TextInput
               style={styles.searchText}
-              value={data}
+              value={tag}
               placeholder="Find Tag"
-              onChangeText={setData}
+              onChangeText={setTag}
               keyboardType="default"
             />
           </View>
           <CustomDataTable
             headers={headers}
             data={data}
+            searchQuery={tag}
             showEdit={true}
             onEdit={handleEdit}
             showDelete={true}

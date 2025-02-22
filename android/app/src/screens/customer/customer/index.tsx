@@ -206,6 +206,7 @@ function Customer() {
           <CustomDataTable
             headers={headers}
             data={data}
+            searchQuery={customer}
             showEdit={true}
             onEdit={handleEdit}
             showDelete={true}
