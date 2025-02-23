@@ -100,21 +100,6 @@ const LoginScreen = ({onLogin}: any) => {
             Enter your credentials to access your account.
           </Text>
 
-          <Dropdown
-            style={styles.input}
-            data={[
-              {label: 'Admin', value: 'admin'},
-              {label: 'Guest', value: 'guest'},
-            ]}
-            labelField="label"
-            valueField="value"
-            placeholder="User"
-            placeholderStyle={{color: 'gray'}}
-            containerStyle={{borderRadius: 10}}
-            selectedTextStyle={{fontSize: 14}}
-            onChange={function (item: any): void {}}
-          />
-
           <Controller
             control={control}
             rules={{
