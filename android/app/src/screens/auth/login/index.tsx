@@ -23,8 +23,8 @@ const LoginScreen = ({onLogin}: any) => {
     formState: {errors},
   } = useForm({
     defaultValues: {
-      email: 'admin@poxfy.com',
-      password: 'au-12345678',
+      email: '',
+      password: '',
     },
   });
   const onSubmit = async (data: any) => {
