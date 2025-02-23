@@ -14,7 +14,7 @@ import {useForm, Controller} from 'react-hook-form';
 import {submitLogin} from './service';
 import {Dropdown} from 'react-native-element-dropdown';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Toast from 'react-native-root-toast';
+import {useAuth} from '../../../redux/feature/auth-reducer';
 
 const LoginScreen = ({onLogin}: any) => {
   const {
@@ -23,8 +23,8 @@ const LoginScreen = ({onLogin}: any) => {
     formState: {errors},
   } = useForm({
     defaultValues: {
-      email: '',
-      password: '',
+      email: 'admin@poxfy.com',
+      password: 'au-12345678',
     },
   });
   const onSubmit = async (data: any) => {
@@ -54,7 +54,10 @@ const LoginScreen = ({onLogin}: any) => {
     }
   };
 
+  const {dispatch} = useAuth();
+
   const handleLogin = () => {
+    dispatch({type: 'SIGN_IN'});
     onLogin();
   };
 

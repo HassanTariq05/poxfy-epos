@@ -17,6 +17,9 @@ import Purchase from './android/app/src/screens/inventory/purchase';
 import InventoryTransfer from './android/app/src/screens/inventory/inventory-transfer';
 import LoginScreen from './android/app/src/screens/auth/login';
 import {getUserToken} from './android/app/src/user';
+import {Switch} from 'react-native';
+import SplashScreen from './android/app/src/screens/splash';
+import useAuthStore from './android/app/src/redux/feature/store';
 
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
@@ -139,14 +142,21 @@ function DrawerNavigator() {
 }
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+
+  const {isAuthenticated, login} = useAuthStore();
 
   useEffect(() => {
     const checkAuth = async () => {
       const token = await getUserToken();
-      setIsAuthenticated(!!token);
+      if (token) {
+        login();
+      }
       setLoading(false);
+      setTimeout(() => {
+        setShowSplash(false);
+      }, 2000);
     };
     checkAuth();
   }, []);
@@ -158,18 +168,18 @@ export default function App() {
       </View>
     );
   }
+
   return (
     <View style={styles.navContainer}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{headerShown: false}}>
-          {!isAuthenticated ? (
+          {showSplash ? (
+            <Stack.Screen name="Splash">
+              {props => <SplashScreen />}
+            </Stack.Screen>
+          ) : !isAuthenticated ? (
             <Stack.Screen name="Login">
-              {props => (
-                <LoginScreen
-                  {...props}
-                  onLogin={() => setIsAuthenticated(true)}
-                />
-              )}
+              {props => <LoginScreen {...props} onLogin={login} />}
             </Stack.Screen>
           ) : (
             <Stack.Screen name="Dashboard" component={DrawerNavigator} />
@@ -177,7 +187,6 @@ export default function App() {
         </Stack.Navigator>
       </NavigationContainer>
     </View>
-    // <View style={styles.container} ><LoginScreen/></View>
   );
 }
 

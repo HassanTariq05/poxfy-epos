@@ -11,6 +11,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import {getAllOutletApi} from '../../services/outlet';
 import {Dropdown} from 'react-native-element-dropdown';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import useAuthStore from '../../redux/feature/store';
 
 export default function Header() {
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
@@ -66,8 +67,11 @@ export default function Header() {
     getStoredOutlet().then(getOutlet);
   }, []);
 
+  const {logout} = useAuthStore();
+
   const handleSignOut = async () => {
-    removeToken();
+    await removeToken();
+    logout();
   };
 
   const removeToken = async () => {
