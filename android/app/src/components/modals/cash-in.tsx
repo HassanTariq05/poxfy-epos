@@ -12,6 +12,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {cashInnOutApi} from '../../services/register';
+import useAuthStore from '../../redux/feature/store';
 
 interface SlideInModalProps {
   visible: boolean;
@@ -46,6 +47,7 @@ const CashInModal: React.FC<SlideInModalProps> = ({
 
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
+  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
 
   const handleOpen = async () => {
     let response;
@@ -57,6 +59,7 @@ const CashInModal: React.FC<SlideInModalProps> = ({
       };
       console.log('Payload:', payload);
       if (amount || notes) {
+        setIsLoadingTrue();
         response = await cashInnOutApi(
           registerData.cashRegister._id,
           registerData._id,
@@ -67,6 +70,7 @@ const CashInModal: React.FC<SlideInModalProps> = ({
       }
       if (response?.data.meta.success) {
         onClose();
+        setIsLoadingFalse();
         ToastAndroid.showWithGravityAndOffset(
           'Record added successfully',
           ToastAndroid.LONG,
@@ -77,10 +81,15 @@ const CashInModal: React.FC<SlideInModalProps> = ({
       }
     } catch (err) {
       console.log(err);
+      setIsLoadingFalse();
     }
   };
   return (
-    <Modal visible={visible} transparent animationType="none">
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      presentationStyle="overFullScreen">
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} onPress={onClose} />
         <Animated.View
@@ -124,7 +133,7 @@ const CashInModal: React.FC<SlideInModalProps> = ({
             />
           </View>
           <TouchableOpacity onPress={handleOpen} style={styles.button}>
-            <Text style={styles.buttonText}>Open</Text>
+            <Text style={styles.buttonText}>Add</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -155,7 +164,6 @@ const styles = StyleSheet.create({
     width: '40%',
     height: '52%',
     backgroundColor: 'white',
-    elevation: 10,
     shadowColor: '#000',
     shadowOpacity: 0.3,
     shadowOffset: {width: -2, height: 2},

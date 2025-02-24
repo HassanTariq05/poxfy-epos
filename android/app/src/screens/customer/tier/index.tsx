@@ -11,6 +11,7 @@ import {
 } from '../../../services/global';
 import CustomPopConfirm from '../../../components/pop-confirm';
 import {deleteslug, updateSlug} from '../../../services/product/brand';
+import useAuthStore from '../../../redux/feature/store';
 
 function Tier() {
   const headers = ['Name'];
@@ -22,10 +23,12 @@ function Tier() {
   const [data, setData] = useState<any>([]);
   const [tier, setTier] = useState('');
   const [refetch, setRefetch] = useState(false);
+  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setIsLoadingTrue();
         const {data: tierData} = await getSlugListOfValuesByKey(
           'customer-tier',
         );
@@ -43,7 +46,9 @@ function Tier() {
           console.log('New Data:', formattedData);
           return [...formattedData];
         });
+        setIsLoadingFalse();
       } catch {
+        setIsLoadingFalse();
         return null;
       }
     };
@@ -68,12 +73,15 @@ function Tier() {
 
   const handleDelete = async () => {
     if (tierToDelete) {
+      setIsLoadingTrue();
       console.log('Deleting tier:', tierToDelete);
       await deleteTier(tierToDelete);
 
       setData((prevData: any) =>
         prevData.filter((cust: any) => cust._id !== tierToDelete._id),
       );
+      setIsLoadingFalse();
+      setPopConfirmVisible(false);
       ToastAndroid.showWithGravityAndOffset(
         'Record deleted successfully',
         ToastAndroid.LONG,
@@ -81,7 +89,6 @@ function Tier() {
         25,
         50,
       );
-      setPopConfirmVisible(false);
     }
   };
 
@@ -97,8 +104,10 @@ function Tier() {
 
   const handleSwitch = async () => {
     if (tierToSwitch) {
+      setIsLoadingTrue();
       console.log('Switching tier:', tierToSwitch);
       await switchTier(tierToSwitch);
+      setIsLoadingFalse();
     }
   };
 

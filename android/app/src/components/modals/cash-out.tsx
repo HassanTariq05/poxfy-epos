@@ -12,6 +12,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {cashInnOutApi} from '../../services/register';
+import useAuthStore from '../../redux/feature/store';
 
 interface SlideInModalProps {
   visible: boolean;
@@ -44,6 +45,7 @@ const CashOutModal: React.FC<SlideInModalProps> = ({
 
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
+  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
 
   const handleOpen = async () => {
     let response;
@@ -55,6 +57,7 @@ const CashOutModal: React.FC<SlideInModalProps> = ({
       };
       console.log('Payload:', payload);
       if (amount || notes) {
+        setIsLoadingTrue();
         response = await cashInnOutApi(
           registerData.cashRegister._id,
           registerData._id,
@@ -65,6 +68,7 @@ const CashOutModal: React.FC<SlideInModalProps> = ({
       }
       if (response?.data.meta.success) {
         onClose();
+        setIsLoadingFalse();
         ToastAndroid.showWithGravityAndOffset(
           'Record added successfully',
           ToastAndroid.LONG,
@@ -75,6 +79,7 @@ const CashOutModal: React.FC<SlideInModalProps> = ({
       }
     } catch (err) {
       console.log(err);
+      setIsLoadingFalse();
     }
   };
 
@@ -123,7 +128,7 @@ const CashOutModal: React.FC<SlideInModalProps> = ({
             />
           </View>
           <TouchableOpacity onPress={handleOpen} style={styles.button}>
-            <Text style={styles.buttonText}>Open</Text>
+            <Text style={styles.buttonText}>Add</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>

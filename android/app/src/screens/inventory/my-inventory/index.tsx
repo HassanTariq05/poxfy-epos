@@ -2,7 +2,6 @@ import React, {useEffect, useState} from 'react';
 import {StyleSheet, ToastAndroid, View} from 'react-native';
 import CustomDataTable from '../../../components/data-table';
 import TableCard from '../../../components/table-card';
-import {dummyMyInventoryData} from '../../../data/dummyData';
 import {Dropdown} from 'react-native-element-dropdown';
 import {
   API_BASE_URL,
@@ -12,6 +11,7 @@ import {
 import {getAllOutletApi} from '../../../services/outlet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import useAuthStore from '../../../redux/feature/store';
 
 function MyInventory() {
   const headers = [
@@ -23,25 +23,17 @@ function MyInventory() {
     'Outlets',
   ];
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<{
-    [key: string]: string | number;
-  } | null>(null);
-
-  const handleAction = (row: {[key: string]: string | number}) => {
-    setSelectedRow(row);
-    setModalVisible(true);
-  };
-
   const [data, setData] = useState<any>([]);
   const [outlets, setOutlets] = useState<any>([]);
   const [selectedOutlet, setSelectedOutlet] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [refetch, setRefetch] = useState(false);
+  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
 
   const getOutlet = async () => {
     try {
+      setIsLoadingTrue();
       const {data: response} = await getAllOutletApi();
       if (response?.data?.length > 0) {
         const outletsData = response.data.map((outlet: any) => ({
@@ -50,9 +42,11 @@ function MyInventory() {
         }));
 
         setOutlets(outletsData);
+        setIsLoadingFalse();
       }
     } catch (err) {
       console.log('Error fetching outlets:', err);
+      setIsLoadingFalse();
     }
   };
 
@@ -86,6 +80,7 @@ function MyInventory() {
 
         console.log('Request URL:', url);
 
+        setIsLoadingTrue();
         const response = await axios.get(url, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -107,8 +102,10 @@ function MyInventory() {
         console.log('Formatted data:', formattedData);
 
         setData(formattedData);
+        setIsLoadingFalse();
       } catch (err) {
         console.error('Error fetching data:', err);
+        setIsLoadingFalse();
       }
     };
 
@@ -127,12 +124,14 @@ function MyInventory() {
       outletId: selectedOutlet,
       productId: row.productId,
     };
+    setIsLoadingTrue();
     const response = await axios.post(url, payload, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
+    setIsLoadingFalse();
     setRefetch((prev: any) => !prev);
     ToastAndroid.showWithGravityAndOffset(
       'Quantity updated successfully',
@@ -156,12 +155,14 @@ function MyInventory() {
         productId: row.productId,
       },
     ];
+    setIsLoadingTrue();
     const response = await axios.put(url, payload, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
+    setIsLoadingFalse();
     console.log('Response Sett PUT:', response);
     setRefetch((prev: any) => !prev);
     ToastAndroid.showWithGravityAndOffset(

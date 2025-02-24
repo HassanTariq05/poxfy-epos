@@ -11,6 +11,7 @@ import {
 } from '../../../services/global';
 import CustomPopConfirm from '../../../components/pop-confirm';
 import {deleteslug, updateSlug} from '../../../services/product/brand';
+import useAuthStore from '../../../redux/feature/store';
 
 function Tag() {
   const headers = ['Name'];
@@ -22,10 +23,12 @@ function Tag() {
   const [data, setData] = useState<any>([]);
   const [tag, setTag] = useState('');
   const [refetch, setRefetch] = useState(false);
+  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setIsLoadingTrue();
         const {data: tagData} = await getSlugListOfValuesByKey('customer-tag');
         console.log('Tag Fetch: ', tagData.data.data);
 
@@ -41,7 +44,9 @@ function Tag() {
           console.log('New Data:', formattedData);
           return [...formattedData];
         });
+        setIsLoadingFalse();
       } catch {
+        setIsLoadingFalse();
         return null;
       }
     };
@@ -66,12 +71,15 @@ function Tag() {
 
   const handleDelete = async () => {
     if (tagToDelete) {
+      setIsLoadingTrue();
       console.log('Deleting tag:', tagToDelete);
       await deleteTag(tagToDelete);
 
       setData((prevData: any) =>
         prevData.filter((cust: any) => cust._id !== tagToDelete._id),
       );
+
+      setIsLoadingFalse();
 
       ToastAndroid.showWithGravityAndOffset(
         'Record deleted successfully',
@@ -103,6 +111,7 @@ function Tag() {
   };
 
   const switchTag = async (tag: any) => {
+    setIsLoadingTrue();
     const payload = {
       ...tag,
       isActive: !tag.isActive,
@@ -110,6 +119,7 @@ function Tag() {
     const response = await updateSlug('customer-tag', payload, tag?._id);
     console.log('Switch Tag Response:', response);
     setRefetch((prev: any) => !prev);
+    setIsLoadingFalse();
     ToastAndroid.showWithGravityAndOffset(
       'Record updated successfully',
       ToastAndroid.LONG,

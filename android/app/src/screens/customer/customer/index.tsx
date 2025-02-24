@@ -15,6 +15,7 @@ import {API_BASE_URL} from '../../../constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CustomPopConfirm from '../../../components/pop-confirm';
 import {deleteCustmer, updateCustomer} from '../../../services/customer';
+import useAuthStore from '../../../redux/feature/store';
 
 function Customer() {
   const headers = ['Code', 'Name', 'Phone', 'Email', 'Country'];
@@ -30,10 +31,12 @@ function Customer() {
   const [tag, setTag] = useState([]);
   const [data, setData] = useState<any>([]);
   const [refetch, setRefetch] = useState(false);
+  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setIsLoadingTrue();
         const token = await AsyncStorage.getItem('userToken');
         const response = await axios.get(
           `${API_BASE_URL}/supplier/list?take=10&page=1`,
@@ -64,6 +67,7 @@ function Customer() {
           console.log('New Data:', formattedData);
           return [...formattedData];
         });
+        setIsLoadingFalse();
       } catch (err) {
         console.error('Error fetching data:', err);
       }
@@ -74,13 +78,17 @@ function Customer() {
 
   const fetchListOfValues = async () => {
     try {
+      setIsLoadingTrue();
       const {data: response} = await getSlugListOfValuesByKey('customer-tier');
       setTier(response.data.data);
+
       const {data: tagData} = await getSlugListOfValuesByKey('customer-tag');
       setTag(tagData.data.data);
       console.log('Tag: ', tagData.data.data);
       console.log('Tier: ', response.data.data);
+      setIsLoadingFalse();
     } catch {
+      setIsLoadingFalse();
       return null;
     }
   };
@@ -119,6 +127,7 @@ function Customer() {
 
   const handleDelete = async () => {
     if (customerToDelete) {
+      setIsLoadingTrue();
       console.log('Deleting customer:', customerToDelete);
       await deleteCustomer(customerToDelete);
 
@@ -127,6 +136,7 @@ function Customer() {
       );
 
       setPopConfirmVisible(false);
+      setIsLoadingFalse();
       ToastAndroid.showWithGravityAndOffset(
         'Record deleted successfully',
         ToastAndroid.LONG,
@@ -149,27 +159,33 @@ function Customer() {
 
   const handleSwitch = async () => {
     if (customerToSwitch) {
+      setIsLoadingTrue();
       console.log('Switching customer:', customerToSwitch);
       await switchCustomer(customerToSwitch);
+      setIsLoadingFalse();
     }
   };
 
   const switchCustomer = async (customer: any) => {
-    const payload = {
-      ...customer,
-      isActive: !customer.isActive,
-    };
-    const response = await updateCustomer(payload, customer?._id);
-    console.log('Switch Customer Response:', response);
-    setRefetch((prev: any) => !prev);
-    ToastAndroid.showWithGravityAndOffset(
-      'Updated successfully',
-      ToastAndroid.LONG,
-      ToastAndroid.BOTTOM,
-      25,
-      50,
-    );
-    setPopSwitchConfirmVisible(false);
+    try {
+      const payload = {
+        ...customer,
+        isActive: !customer.isActive,
+      };
+      const response = await updateCustomer(payload, customer?._id);
+      console.log('Switch Customer Response:', response);
+      setRefetch((prev: any) => !prev);
+      setPopSwitchConfirmVisible(false);
+      ToastAndroid.showWithGravityAndOffset(
+        'Updated successfully',
+        ToastAndroid.LONG,
+        ToastAndroid.BOTTOM,
+        25,
+        50,
+      );
+    } catch (error) {
+      return null;
+    }
   };
 
   const confirmSwitch = (customer: any) => {

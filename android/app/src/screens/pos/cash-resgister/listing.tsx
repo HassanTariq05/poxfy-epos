@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, TextInput, View} from 'react-native';
+import {ActivityIndicator, StyleSheet, TextInput, View} from 'react-native';
 import CustomDataTable from '../../../components/data-table';
 import TableCard from '../../../components/table-card';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -11,6 +11,7 @@ import {getSelectedOutlet} from '../../../user';
 import axios from 'axios';
 import {API_BASE_URL} from '../../../constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import useAuthStore from '../../../redux/feature/store';
 
 function Listing() {
   const headers = [
@@ -39,11 +40,14 @@ function Listing() {
     fetchOutletId();
   }, []);
 
+  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+
   useEffect(() => {
     if (!outletId) return;
 
     const fetchData = async () => {
       try {
+        setIsLoadingTrue();
         const token = await AsyncStorage.getItem('userToken');
         const response = await axios.get(
           `${API_BASE_URL}/cash-register/list?take=10&page=1&outletId=${outletId}`,
@@ -70,8 +74,10 @@ function Listing() {
         console.log('Formatted data:', formattedData);
 
         setData(formattedData);
+        setIsLoadingFalse();
       } catch (err) {
         console.error('Error fetching data:', err);
+        setIsLoadingFalse();
       }
     };
 
@@ -91,24 +97,18 @@ function Listing() {
       };
       console.log('Payload:', payload);
       if (outletId) {
+        setIsLoadingTrue();
         response = await openRegister(payload, selectedRow);
         console.log('Response Open resgister:', response.data.data);
       }
       if (response?.data.meta.success) {
-        // saveRegister(response.data.data);
         navigation.navigate('Listing');
         setModalVisible(false);
+        setIsLoadingFalse();
       }
     } catch (err) {
       console.log(err);
-    }
-  };
-
-  const saveRegister = async (register: any) => {
-    try {
-      await AsyncStorage.setItem('registerData', register);
-    } catch (error) {
-      console.error('Error saving register data:', error);
+      setIsLoadingFalse();
     }
   };
 
@@ -137,7 +137,6 @@ function Listing() {
             data={data}
             searchQuery={register}
             showOpenRegister={true}
-            // onOpenRegister={() => setModalVisible(true)}
             onOpenRegister={handleOpenRegisterClick}
           />
         )}
@@ -147,7 +146,6 @@ function Listing() {
       <SlideInModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        // onOpenPress={() => {navigation.navigate('Listing')}}
         onOpenPress={handleOpenRegister}
       />
     </View>

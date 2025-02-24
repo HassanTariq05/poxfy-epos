@@ -12,6 +12,7 @@ import {
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {updateSlug} from '../../services/product/brand';
 import {Controller, useForm} from 'react-hook-form';
+import useAuthStore from '../../redux/feature/store';
 
 interface SlideInModalProps {
   visible: boolean;
@@ -48,7 +49,10 @@ const EditTierModal: React.FC<SlideInModalProps> = ({
     }
   }, [visible]);
 
+  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+
   const onSubmit = async (data: any) => {
+    setIsLoadingTrue();
     console.log('Submitted Data: ', data);
 
     const payload = {
@@ -61,6 +65,7 @@ const EditTierModal: React.FC<SlideInModalProps> = ({
     console.log('Response Create Tier: ', response);
     setRefetch((prev: any) => !prev);
     onClose();
+    setIsLoadingFalse();
     ToastAndroid.showWithGravityAndOffset(
       'Record updated successfully',
       ToastAndroid.LONG,

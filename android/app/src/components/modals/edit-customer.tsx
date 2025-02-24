@@ -18,6 +18,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import {Controller, useForm} from 'react-hook-form';
 import {createCustomer, updateCustomer} from '../../services/customer';
 import PopupDatePicker from '../date-picker';
+import useAuthStore from '../../redux/feature/store';
 
 interface EditCustomerModalProps {
   visible: boolean;
@@ -131,7 +132,10 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
     customer?.dateOfBirth,
   );
 
+  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+
   const onSubmit = async (data: any) => {
+    setIsLoadingTrue();
     console.log('Submitted Data: ', data);
 
     const payload = {
@@ -164,6 +168,7 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
     console.log('Response Update Customer: ', response);
     setRefetch((prev: any) => !prev);
     onClose();
+    setIsLoadingFalse();
     ToastAndroid.showWithGravityAndOffset(
       'Record updated successfully',
       ToastAndroid.LONG,

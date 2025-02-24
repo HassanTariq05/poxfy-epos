@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Image,
   StyleSheet,
   ToastAndroid,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {BlurView} from '@react-native-community/blur';
@@ -14,7 +15,7 @@ import {useForm, Controller} from 'react-hook-form';
 import {submitLogin} from './service';
 import {Dropdown} from 'react-native-element-dropdown';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useAuth} from '../../../redux/feature/auth-reducer';
+import useAuthStore from '../../../redux/feature/store';
 
 const LoginScreen = ({onLogin}: any) => {
   const {
@@ -27,15 +28,21 @@ const LoginScreen = ({onLogin}: any) => {
       password: '',
     },
   });
+
+  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+
   const onSubmit = async (data: any) => {
     try {
+      setIsLoadingTrue()
       const response = await submitLogin(data);
       if (response?.status == 201 || response?.status == 200) {
         saveToken(response.data.data.accessToken);
+        setIsLoadingFalse()
         handleLogin();
       }
     } catch (err) {
       console.log(err);
+      setIsLoadingFalse()
       ToastAndroid.showWithGravityAndOffset(
         'Invalid email or password',
         ToastAndroid.LONG,
@@ -54,10 +61,7 @@ const LoginScreen = ({onLogin}: any) => {
     }
   };
 
-  const {dispatch} = useAuth();
-
   const handleLogin = () => {
-    dispatch({type: 'SIGN_IN'});
     onLogin();
   };
 
@@ -291,6 +295,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     color: 'rgb(191,191,191)',
   },
+  
 });
 
 export default LoginScreen;

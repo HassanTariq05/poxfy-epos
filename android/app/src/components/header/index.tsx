@@ -31,8 +31,11 @@ export default function Header() {
     }
   };
 
+  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore()
+
   const getOutlet = async () => {
     try {
+      setIsLoadingTrue()
       const {data: response} = await getAllOutletApi();
       if (response?.data?.length > 0) {
         const outletsData = response.data.map((outlet: any) => ({
@@ -42,6 +45,7 @@ export default function Header() {
 
         setOutlets(outletsData);
 
+        setIsLoadingFalse()
         if (!selectedOutlet) {
           setSelectedOutlet(outletsData[0].value);
           await AsyncStorage.setItem('selectedOutlet', outletsData[0].value);
@@ -50,6 +54,7 @@ export default function Header() {
       }
     } catch (err) {
       console.log('Error fetching outlets:', err);
+      setIsLoadingFalse()
     }
   };
 

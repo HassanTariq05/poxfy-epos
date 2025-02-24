@@ -19,6 +19,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import {Controller, useForm} from 'react-hook-form';
 import {createCustomer} from '../../services/customer';
 import PopupDatePicker from '../date-picker';
+import useAuthStore from '../../redux/feature/store';
 
 interface AddCustomerModalProps {
   visible: boolean;
@@ -62,6 +63,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
 
   const [tags, setTags] = useState([]);
   const [tiers, setTiers] = useState([]);
+  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
 
   useEffect(() => {
     // const genderData = gender.data.map((gender: any) => ({
@@ -102,19 +104,8 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  const [isLoyalityRewardEnabled, setIsLoyalityRewardEnabled] = useState(false);
-  const toggleLoyalityRewardSwitch = () =>
-    setIsLoyalityRewardEnabled(previousState => !previousState);
-
-  const [isCommunicationEnabled, setIsCommunicationEnabled] = useState(false);
-  const toggleCommunicationSwitch = () =>
-    setIsCommunicationEnabled(previousState => !previousState);
-
-  const [isTaxEnabled, setIsTaxEnabled] = useState(false);
-  const toggleTaxSwitch = () =>
-    setIsTaxEnabled(previousState => !previousState);
-
   const onSubmit = async (data: any) => {
+    setIsLoadingTrue();
     console.log('Submitted Data: ', data);
 
     const payload = {
@@ -145,6 +136,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     console.log('Response Create Customer: ', response);
     setRefetch((prev: any) => !prev);
     onClose();
+    setIsLoadingFalse();
     ToastAndroid.showWithGravityAndOffset(
       'Record created successfully',
       ToastAndroid.LONG,

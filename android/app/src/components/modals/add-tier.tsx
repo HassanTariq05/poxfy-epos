@@ -13,6 +13,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {createSlug} from '../../services/product/brand';
+import useAuthStore from '../../redux/feature/store';
 
 interface SlideInModalProps {
   visible: boolean;
@@ -48,7 +49,10 @@ const AddTierModal: React.FC<SlideInModalProps> = ({
     }
   }, [visible]);
 
+  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+
   const onSubmit = async (data: any) => {
+    setIsLoadingTrue();
     console.log('Submitted Data: ', data);
 
     const payload = {
@@ -61,6 +65,7 @@ const AddTierModal: React.FC<SlideInModalProps> = ({
     console.log('Response Create Tier: ', response);
     setRefetch((prev: any) => !prev);
     onClose();
+    setIsLoadingFalse();
     ToastAndroid.showWithGravityAndOffset(
       'Record created successfully',
       ToastAndroid.LONG,
