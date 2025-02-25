@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {View, StyleSheet, Text} from 'react-native';
+import {View, StyleSheet, Text, ActivityIndicator} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createDrawerNavigator} from '@react-navigation/drawer';
 import {createStackNavigator} from '@react-navigation/stack';
@@ -20,6 +20,8 @@ import {getUserToken} from './android/app/src/user';
 import {Switch} from 'react-native';
 import SplashScreen from './android/app/src/screens/splash';
 import useAuthStore from './android/app/src/redux/feature/store';
+import {updateBaseUrl, updateSocketUrl} from './android/app/src/network/client';
+// import {updateBaseUrl} from './android/app/src/network/client';
 
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
@@ -142,18 +144,32 @@ function DrawerNavigator() {
 }
 
 export default function App() {
-  const [loading, setLoading] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
 
-  const {isAuthenticated, login} = useAuthStore();
+  const {
+    isAuthenticated,
+    login,
+    isLoading,
+    setIsLoadingTrue,
+    setIsLoadingFalse,
+    setHeaderUrl,
+  } = useAuthStore();
 
   useEffect(() => {
     const checkAuth = async () => {
+      updateBaseUrl();
+      const socketUrl = await updateSocketUrl();
+      if (socketUrl) {
+        setHeaderUrl(socketUrl);
+      }
+      setIsLoadingTrue();
       const token = await getUserToken();
       if (token) {
+        console.log('Token:', token);
         login();
+        setIsLoadingFalse();
       }
-      setLoading(false);
+      setIsLoadingFalse();
       setTimeout(() => {
         setShowSplash(false);
       }, 2000);
@@ -161,16 +177,13 @@ export default function App() {
     checkAuth();
   }, []);
 
-  if (loading) {
-    return (
-      <View>
-        <Text>Loading...</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.navContainer}>
+      {isLoading && (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator animating={true} size="large" color="#00ff00" />
+        </View>
+      )}
       <NavigationContainer>
         <Stack.Navigator screenOptions={{headerShown: false}}>
           {showSplash ? (
@@ -205,5 +218,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 20,
     backgroundColor: 'rgb(232, 231, 232)',
+  },
+  loaderContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 9999,
   },
 });

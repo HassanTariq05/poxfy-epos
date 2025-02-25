@@ -29,12 +29,13 @@ function MyInventory() {
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [refetch, setRefetch] = useState(false);
-  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
 
   const getOutlet = async () => {
     try {
       setIsLoadingTrue();
-      const {data: response} = await getAllOutletApi();
+
+      const {data: response} = await getAllOutletApi(headerUrl);
       if (response?.data?.length > 0) {
         const outletsData = response.data.map((outlet: any) => ({
           label: outlet.name,
@@ -60,7 +61,7 @@ function MyInventory() {
         const token = await AsyncStorage.getItem('userToken');
 
         // Initialize base URL
-        let url = `${API_BASE_URL}/inventory-ledger?`;
+        let url = `${API_BASE_URL}inventory-ledger?`;
 
         // Define query parameters dynamically
         const queryParams: string[] = [];
@@ -85,6 +86,8 @@ function MyInventory() {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
+            origin: headerUrl,
+            referer: headerUrl,
           },
         });
 
@@ -129,6 +132,8 @@ function MyInventory() {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
+        origin: headerUrl,
+        referer: headerUrl,
       },
     });
     setIsLoadingFalse();
@@ -160,6 +165,8 @@ function MyInventory() {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
+        origin: headerUrl,
+        referer: headerUrl,
       },
     });
     setIsLoadingFalse();

@@ -40,7 +40,7 @@ function Listing() {
     fetchOutletId();
   }, []);
 
-  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
 
   useEffect(() => {
     if (!outletId) return;
@@ -49,15 +49,16 @@ function Listing() {
       try {
         setIsLoadingTrue();
         const token = await AsyncStorage.getItem('userToken');
-        const response = await axios.get(
-          `${API_BASE_URL}/cash-register/list?take=10&page=1&outletId=${outletId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
+        let url = `${API_BASE_URL}cash-register/list?take=10&page=1&outletId=${outletId}`;
+        console.log('URL:', url);
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            origin: headerUrl,
+            referer: headerUrl,
           },
-        );
+        });
 
         console.log('Response:', response.data.data.data);
 
@@ -98,7 +99,7 @@ function Listing() {
       console.log('Payload:', payload);
       if (outletId) {
         setIsLoadingTrue();
-        response = await openRegister(payload, selectedRow);
+        response = await openRegister(payload, selectedRow, headerUrl);
         console.log('Response Open resgister:', response.data.data);
       }
       if (response?.data.meta.success) {

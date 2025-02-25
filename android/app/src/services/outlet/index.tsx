@@ -1,5 +1,6 @@
 import {Api} from '../../network/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import useAuthStore from '../../redux/feature/store';
 
 export const changeOutletStatus = async (id, data) => {
   return Api.put(`outlet/${id}`, data);
@@ -10,13 +11,15 @@ export const createOutlet = async data => {
 export const updateOutlet = async (data, id) => {
   return Api.put(`outlet/${id}`, data);
 };
-export const getAllOutletApi = async () => {
+export const getAllOutletApi = async (headerUrl: string) => {
   try {
     const token = await AsyncStorage.getItem('userToken');
 
     const response = await Api.get('outlet', {
       headers: {
         Authorization: `Bearer ${token}`,
+        origin: headerUrl,
+        referer: headerUrl,
       },
     });
 

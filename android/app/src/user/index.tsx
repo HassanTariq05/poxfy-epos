@@ -20,3 +20,12 @@ export const getSelectedOutlet = async () => {
     return null;
   }
 };
+
+export const getUrlFromLocalStorage = async () => {
+  try {
+    const API_BASE_URL = await AsyncStorage.getItem('API_BASE_URL');
+    return API_BASE_URL;
+  } catch (error) {
+    return null;
+  }
+};

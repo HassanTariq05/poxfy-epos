@@ -20,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getRegisterDetailsApi} from '../../../services/register';
 import {useNavigation} from '@react-navigation/native';
 import {DrawerNavigationProp} from '@react-navigation/drawer';
+import useAuthStore from '../../../redux/feature/store';
 
 const CashRegister: React.FC<any> = () => {
   const handleCashInClick = () => {
@@ -35,20 +36,24 @@ const CashRegister: React.FC<any> = () => {
   const navigation = useNavigation<DrawerNavigationProp<any>>();
 
   const [registerData, setRegisterData] = useState<any>();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
   const handleOpenRegister = async () => {
     let response;
     try {
+      setIsLoadingTrue();
       const outletId = await AsyncStorage.getItem('selectedOutlet');
       setRegisterId(outletId || '');
       if (outletId) {
-        response = await getRegisterDetailsApi(outletId);
+        response = await getRegisterDetailsApi(outletId, headerUrl);
         console.log('Response Register Details:', response.data.data);
       }
       if (response?.data.meta.success) {
         setRegisterData(response.data.data);
+        setIsLoadingFalse();
       }
     } catch (err) {
       console.log(err);
+      setIsLoadingFalse();
     }
   };
 

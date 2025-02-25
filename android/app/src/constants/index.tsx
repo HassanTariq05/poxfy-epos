@@ -1,9 +1,12 @@
 // export const API_BASE_URL = "http://localhost:3001/api/v1";
 
 // heroku
-export const API_BASE_URL = 'http://18.204.116.214/api/v1';
+// export const API_BASE_URL = 'http://18.204.116.214/api/v1';
+// export const SUB_API_BASE_URL = '18.204.116.214/api/v1';
 
-// export const API_BASE_URL ="https://aka.poxfy.com/api/v1";
+export const API_BASE_URL = 'https://aka.poxfy.com/api/v1/';
+export const SUB_API_BASE_URL = 'poxfy.com/api/v1/';
+export const SOCKET_URL = 'poxfy.com';
 
 // client server alma linux
 // export const API_BASE_URL = "/api/v1";

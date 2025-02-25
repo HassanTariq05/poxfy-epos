@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,8 @@ import {submitLogin} from './service';
 import {Dropdown} from 'react-native-element-dropdown';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAuthStore from '../../../redux/feature/store';
+import {SOCKET_URL, SUB_API_BASE_URL} from '../../../constants';
+import {updateBaseUrlExplicitly} from '../../../network/client';
 
 const LoginScreen = ({onLogin}: any) => {
   const {
@@ -26,23 +28,38 @@ const LoginScreen = ({onLogin}: any) => {
     defaultValues: {
       email: '',
       password: '',
+      accountId: '',
     },
   });
 
-  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, setHeaderUrl} = useAuthStore();
 
   const onSubmit = async (data: any) => {
     try {
-      setIsLoadingTrue()
-      const response = await submitLogin(data);
+      let url;
+      if (data.accountId !== '') {
+        url = 'https://' + data.accountId + '.' + SUB_API_BASE_URL;
+        console.log('API_BASE_URL', url);
+        await AsyncStorage.setItem('API_BASE_URL', url);
+        updateBaseUrlExplicitly(url);
+      }
+      setIsLoadingTrue();
+      const payload = {
+        email: data.email,
+        password: data.password,
+      };
+      const header = 'https://' + data.accountId + '.' + SOCKET_URL;
+      await AsyncStorage.setItem('SOCKET_URL', header);
+      setHeaderUrl(header);
+      const response = await submitLogin(payload, header);
       if (response?.status == 201 || response?.status == 200) {
         saveToken(response.data.data.accessToken);
-        setIsLoadingFalse()
+        setIsLoadingFalse();
         handleLogin();
       }
     } catch (err) {
       console.log(err);
-      setIsLoadingFalse()
+      setIsLoadingFalse();
       ToastAndroid.showWithGravityAndOffset(
         'Invalid email or password',
         ToastAndroid.LONG,
@@ -103,6 +120,25 @@ const LoginScreen = ({onLogin}: any) => {
           <Text style={styles.subtitle}>
             Enter your credentials to access your account.
           </Text>
+
+          <Controller
+            control={control}
+            render={({field: {onChange, onBlur, value}}) => (
+              <TextInput
+                placeholder="Account ID"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+                style={[styles.input, errors.email ? styles.inputError : null]}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            )}
+            name="accountId"
+          />
+          {errors.accountId && (
+            <Text style={styles.errorText}>{errors.accountId.message}</Text>
+          )}
 
           <Controller
             control={control}
@@ -295,7 +331,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     color: 'rgb(191,191,191)',
   },
-  
 });
 
 export default LoginScreen;

@@ -31,12 +31,12 @@ export default function Header() {
     }
   };
 
-  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore()
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
 
   const getOutlet = async () => {
     try {
-      setIsLoadingTrue()
-      const {data: response} = await getAllOutletApi();
+      setIsLoadingTrue();
+      const {data: response} = await getAllOutletApi(headerUrl);
       if (response?.data?.length > 0) {
         const outletsData = response.data.map((outlet: any) => ({
           label: outlet.name,
@@ -45,7 +45,7 @@ export default function Header() {
 
         setOutlets(outletsData);
 
-        setIsLoadingFalse()
+        setIsLoadingFalse();
         if (!selectedOutlet) {
           setSelectedOutlet(outletsData[0].value);
           await AsyncStorage.setItem('selectedOutlet', outletsData[0].value);
@@ -54,7 +54,7 @@ export default function Header() {
       }
     } catch (err) {
       console.log('Error fetching outlets:', err);
-      setIsLoadingFalse()
+      setIsLoadingFalse();
     }
   };
 
@@ -76,11 +76,16 @@ export default function Header() {
 
   const handleSignOut = async () => {
     await removeToken();
+    await removeApiBaseUrl();
     logout();
   };
 
   const removeToken = async () => {
     return AsyncStorage.removeItem('userToken');
+  };
+
+  const removeApiBaseUrl = async () => {
+    return AsyncStorage.removeItem('API_BASE_URL');
   };
 
   return (

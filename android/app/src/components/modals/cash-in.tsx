@@ -47,7 +47,7 @@ const CashInModal: React.FC<SlideInModalProps> = ({
 
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
-  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
 
   const handleOpen = async () => {
     let response;
@@ -65,6 +65,7 @@ const CashInModal: React.FC<SlideInModalProps> = ({
           registerData._id,
           'IN',
           payload,
+          headerUrl,
         );
         console.log('Cash IN Response:', response.data.data);
       }

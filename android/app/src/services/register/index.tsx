@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Api} from '../../network/client';
 
-export const getRegisterDetailsApi = async (id: any) => {
+export const getRegisterDetailsApi = async (id: any, headerUrl: any) => {
   try {
     const token = await AsyncStorage.getItem('userToken');
 
@@ -12,6 +12,8 @@ export const getRegisterDetailsApi = async (id: any) => {
     return Api.get(`cash-register/current?outletId=${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
+        origin: headerUrl,
+        referer: headerUrl,
       },
     });
   } catch (error) {
@@ -23,7 +25,7 @@ export const closeRegister = async (id, payload, registerID) => {
   return Api.put(`cash-register/${id}/close/${registerID}`, payload);
 };
 
-export const openRegister = async (payload: any, id: any) => {
+export const openRegister = async (payload: any, id: any, headerUrl: any) => {
   try {
     const token = await AsyncStorage.getItem('userToken');
     if (!token) {
@@ -38,6 +40,8 @@ export const openRegister = async (payload: any, id: any) => {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
+        origin: headerUrl,
+        referer: headerUrl,
       },
     });
   } catch (error) {
@@ -51,6 +55,7 @@ export const cashInnOutApi = async (
   registerDetailsId: any,
   type: any,
   payload: any,
+  headerUrl: any,
 ) => {
   try {
     const token = await AsyncStorage.getItem('userToken');
@@ -66,6 +71,8 @@ export const cashInnOutApi = async (
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
+        origin: headerUrl,
+        referer: headerUrl,
       },
     });
   } catch (error) {
