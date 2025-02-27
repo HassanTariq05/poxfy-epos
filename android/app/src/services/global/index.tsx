@@ -5,11 +5,13 @@ export const getAll = async (endPoint: any) => {
   return Api.get(endPoint);
 };
 
-export const getSlugListOfValuesByKey = async (key: any) => {
+export const getSlugListOfValuesByKey = async (key: any, headerUrl: any) => {
   const token = await AsyncStorage.getItem('userToken');
   return Api.get(`product-slug/${key}`, {
     headers: {
       Authorization: `Bearer ${token}`,
+      origin: headerUrl,
+      referer: headerUrl,
     },
   });
 };

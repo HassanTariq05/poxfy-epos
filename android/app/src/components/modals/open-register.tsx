@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
   Animated,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import useAuthStore from '../../redux/feature/store';
 
 interface SlideInModalProps {
   visible: boolean;
@@ -22,29 +24,51 @@ const SlideInModal: React.FC<SlideInModalProps> = ({
   onOpenPress,
 }) => {
   const slideAnim = useRef(new Animated.Value(500)).current;
+  const nameInputRef = useRef<TextInput>(null);
 
   const [openingBalance, setOpeningBalance] = useState('');
   const [notes, setNotes] = useState('');
+  const [errors, setErrors] = useState<{
+    openingBalance?: string;
+    notes?: string;
+  }>({});
 
+  const {isLoading} = useAuthStore();
   useEffect(() => {
     if (visible) {
       Animated.timing(slideAnim, {
-        toValue: 0, // Slide in
+        toValue: 0,
         duration: 300,
         useNativeDriver: true,
       }).start();
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 300);
     } else {
       Animated.timing(slideAnim, {
-        toValue: 500, // Slide out
+        toValue: 500,
         duration: 300,
         useNativeDriver: true,
       }).start();
+      setOpeningBalance('');
+      setNotes('');
+      setErrors({});
     }
   }, [visible]);
 
+  const validateFields = () => {
+    let newErrors: {openingBalance?: string; notes?: string} = {};
+    if (!openingBalance.trim())
+      newErrors.openingBalance = 'Opening balance is required';
+    if (!notes.trim()) newErrors.notes = 'Notes are required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleOpenClick = () => {
-    onOpenPress({openingBalance, notes}); // Pass values back
-    onClose(); // Close modal after submission
+    if (!validateFields()) return;
+    onOpenPress({openingBalance, notes});
+    onClose();
   };
 
   return (
@@ -69,25 +93,46 @@ const SlideInModal: React.FC<SlideInModalProps> = ({
               <Text style={styles.required}>*</Text> Opening Balance
             </Text>
             <TextInput
-              style={styles.input}
+              ref={nameInputRef}
+              style={[styles.input, errors.openingBalance && styles.inputError]}
               placeholder="Enter opening balance"
               keyboardType="numeric"
               value={openingBalance}
-              onChangeText={setOpeningBalance} // Update state
+              onChangeText={setOpeningBalance}
             />
+            {errors.openingBalance && (
+              <Text style={styles.errorText}>{errors.openingBalance}</Text>
+            )}
 
-            <Text style={styles.label}>Notes</Text>
+            <Text style={styles.label}>
+              <Text style={styles.required}>*</Text> Notes
+            </Text>
             <TextInput
-              style={[styles.input, styles.textarea]}
+              style={[
+                styles.input,
+                styles.textarea,
+                errors.notes && styles.inputError,
+              ]}
               placeholder="Enter notes"
               multiline
               numberOfLines={4}
               value={notes}
-              onChangeText={setNotes} // Update state
+              onChangeText={setNotes}
             />
+            {errors.notes && (
+              <Text style={styles.errorText}>{errors.notes}</Text>
+            )}
           </View>
-          <TouchableOpacity onPress={handleOpenClick} style={styles.button}>
-            <Text style={styles.buttonText}>Open</Text>
+
+          <TouchableOpacity
+            onPress={handleOpenClick}
+            style={[styles.button, isLoading && {opacity: 0.7}]}
+            disabled={!openingBalance.trim() || !notes.trim() || isLoading}>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <Text style={styles.buttonText}>Open</Text>
+            )}
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -152,20 +197,24 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 45,
-    backgroundColor: 'none',
     borderRadius: 20,
     paddingHorizontal: 10,
     fontSize: 14,
-    marginBottom: 15,
+    marginBottom: 5,
     borderColor: 'rgb(240,240,240)',
     borderWidth: 1,
+  },
+  inputError: {
+    borderColor: 'red',
   },
   textarea: {
     height: 80,
     textAlignVertical: 'top',
-    backgroundColor: 'none',
-    borderWidth: 1,
-    borderColor: 'rgb(240,240,240)',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginBottom: 10,
   },
   button: {
     backgroundColor: '#ED6964',
@@ -174,6 +223,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 10,
+  },
+  disabledButton: {
+    backgroundColor: '#ED6964',
   },
   buttonText: {
     color: 'white',

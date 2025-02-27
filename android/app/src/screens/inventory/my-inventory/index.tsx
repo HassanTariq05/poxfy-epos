@@ -117,41 +117,75 @@ function MyInventory() {
 
   const outletsWithAll = [{id: 0, value: '', label: 'All'}, ...outlets];
 
-  const handleOnAddClick = async (row: any, key: string, value: any) => {
-    console.log('Updated:', row, key, value);
-    const token = await AsyncStorage.getItem('userToken');
-    const url = `${API_BASE_URL}/inventory-ledger`;
-    const payload = {
-      notes: '-',
-      quantity: value,
-      outletId: selectedOutlet,
-      productId: row.productId,
-    };
-    setIsLoadingTrue();
-    const response = await axios.post(url, payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        origin: headerUrl,
-        referer: headerUrl,
-      },
-    });
-    setIsLoadingFalse();
-    setRefetch((prev: any) => !prev);
-    ToastAndroid.showWithGravityAndOffset(
-      'Quantity updated successfully',
-      ToastAndroid.LONG,
-      ToastAndroid.BOTTOM,
-      25,
-      50,
-    );
-    console.log('Response Add POST:', response);
+  const handleOnAddClick = async (row: any, notes: any, value: any) => {
+    try {
+      console.log('Updated:', row, notes, value);
+
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+
+      if (!selectedOutlet) {
+        console.error('No outlet selected');
+        return;
+      }
+
+      if (!headerUrl) {
+        console.error('Header URL is undefined');
+        return;
+      }
+
+      const url = `${API_BASE_URL}inventory-ledger`;
+      const payload = {
+        notes: notes,
+        quantity: value,
+        outletId: selectedOutlet,
+        productId: row.productId,
+      };
+
+      setIsLoadingTrue();
+
+      const response = await axios.post(url, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          origin: headerUrl,
+          referer: headerUrl,
+        },
+      });
+
+      setIsLoadingFalse();
+      setRefetch((prev: any) => !prev);
+
+      ToastAndroid.showWithGravityAndOffset(
+        'Quantity updated successfully',
+        ToastAndroid.LONG,
+        ToastAndroid.BOTTOM,
+        25,
+        50,
+      );
+
+      console.log('Response Add POST:', response.data);
+    } catch (error) {
+      setIsLoadingFalse();
+      console.error('Error in handleOnAddClick:', error);
+
+      ToastAndroid.showWithGravityAndOffset(
+        'Failed to update quantity',
+        ToastAndroid.LONG,
+        ToastAndroid.BOTTOM,
+        25,
+        50,
+      );
+    }
   };
 
   const handleOnSetClick = async (row: any, key: string, value: any) => {
     console.log('Updated:', row, key, value);
     const token = await AsyncStorage.getItem('userToken');
-    const url = `${API_BASE_URL}/outlet/${selectedOutlet}/opening-balance`;
+    const url = `${API_BASE_URL}outlet/${selectedOutlet}/opening-balance`;
     console.log('URL: ', url);
     const payload = [
       {
@@ -232,12 +266,14 @@ function MyInventory() {
             showInputButton={true}
             addDisabled={!selectedOutlet}
             editableFields={['Edit Available Quantity']}
+            highlightColumns={true}
             onInputChange={(row, key, value) =>
               handleOnAddClick(row, key, value)
             }
             onInputChangeForSet={(row, key, value) =>
               handleOnSetClick(row, key, value)
             }
+            toolTip={true}
           />
         </TableCard>
       </View>

@@ -20,6 +20,7 @@ export default function Header() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [outlets, setOutlets] = useState([]);
   const [selectedOutlet, setSelectedOutlet] = useState<string | null>(null);
+  const [user, setUser] = useState<string | null>('null');
 
   /** Load stored outlet */
   const getStoredOutlet = async () => {
@@ -37,6 +38,7 @@ export default function Header() {
     try {
       setIsLoadingTrue();
       const {data: response} = await getAllOutletApi(headerUrl);
+
       if (response?.data?.length > 0) {
         const outletsData = response.data.map((outlet: any) => ({
           label: outlet.name,
@@ -44,16 +46,22 @@ export default function Header() {
         }));
 
         setOutlets(outletsData);
-
         setIsLoadingFalse();
+
         if (!selectedOutlet) {
           setSelectedOutlet(outletsData[0].value);
           await AsyncStorage.setItem('selectedOutlet', outletsData[0].value);
           console.log('Selected outlet:', outletsData[0].value);
         }
+      } else {
+        setOutlets([]);
+        setSelectedOutlet(null);
+        await AsyncStorage.removeItem('selectedOutlet');
+        console.log('No outlets found.');
       }
     } catch (err) {
       console.log('Error fetching outlets:', err);
+    } finally {
       setIsLoadingFalse();
     }
   };
@@ -72,11 +80,18 @@ export default function Header() {
     getStoredOutlet().then(getOutlet);
   }, []);
 
+  useEffect(() => {
+    AsyncStorage.getItem('user')
+      .then(user => setUser(user))
+      .catch(error => console.error('Failed to load user:', error));
+  }, []);
+
   const {logout} = useAuthStore();
 
   const handleSignOut = async () => {
     await removeToken();
     await removeApiBaseUrl();
+    await removeUser();
     logout();
   };
 
@@ -86,6 +101,10 @@ export default function Header() {
 
   const removeApiBaseUrl = async () => {
     return AsyncStorage.removeItem('API_BASE_URL');
+  };
+
+  const removeUser = async () => {
+    return AsyncStorage.removeItem('user');
   };
 
   return (
@@ -124,7 +143,7 @@ export default function Header() {
       <TouchableOpacity
         style={styles.adminButton}
         onPress={() => setAdminDropdownOpen(!adminDropdownOpen)}>
-        <Text style={styles.adminText}>Admin User</Text>
+        <Text style={styles.adminText}>{user}</Text>
         <Feather name="chevron-down" size={16} color="black" />
         <MaterialCommunityIcons
           name="account-circle"
@@ -136,8 +155,29 @@ export default function Header() {
 
       {adminDropdownOpen && (
         <View style={styles.dropdown}>
-          <TouchableOpacity onPress={handleSignOut} style={styles.dropdownItem}>
-            <Text>Sign Out</Text>
+          <TouchableOpacity
+            onPress={() => setAdminDropdownOpen(!adminDropdownOpen)}
+            style={styles.closeButton}>
+            <MaterialCommunityIcons name="close" size={24} color="#666" />
+          </TouchableOpacity>
+
+          <MaterialCommunityIcons
+            name="account-circle"
+            size={80}
+            color="#000"
+          />
+
+          <View style={styles.userInfo}>
+            <Text style={styles.username}>
+              Hi, <Text style={styles.bold}>{user}</Text>
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={handleSignOut}
+            style={styles.signOutButton}>
+            <Text style={styles.signOutText}>Sign Out</Text>
+            <MaterialCommunityIcons name="logout" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       )}
@@ -208,14 +248,61 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 8,
+    borderRadius: 16,
     paddingVertical: 10,
+    paddingHorizontal: 10,
     width: '20%',
     zIndex: 10,
     elevation: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  dropdownItem: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+  closeButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+  },
+  userInfo: {
+    flexDirection: 'row', // Aligns items horizontally
+    alignItems: 'center', // Centers items vertically
+    justifyContent: 'center', // Centers the row horizontally
+    marginBottom: 10,
+  },
+  username: {
+    fontSize: 18,
+    color: '#000',
+    marginLeft: 8, // Adds spacing between avatar and text
+  },
+  bold: {
+    fontWeight: 'bold',
+  },
+  disabledButton: {
+    backgroundColor: '#E5E5E5',
+    paddingVertical: 12,
+    width: '100%',
+    borderRadius: 25,
+    alignItems: 'center',
+    marginVertical: 5,
+  },
+  disabledText: {
+    color: '#999',
+    fontSize: 16,
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    backgroundColor: '#E85050',
+    paddingVertical: 14,
+    width: '100%',
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 15,
+  },
+  signOutText: {
+    color: '#fff',
+    fontSize: 16,
+    marginRight: 8,
   },
 });

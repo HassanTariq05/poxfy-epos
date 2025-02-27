@@ -23,13 +23,16 @@ function Tag() {
   const [data, setData] = useState<any>([]);
   const [tag, setTag] = useState('');
   const [refetch, setRefetch] = useState(false);
-  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoadingTrue();
-        const {data: tagData} = await getSlugListOfValuesByKey('customer-tag');
+        const {data: tagData} = await getSlugListOfValuesByKey(
+          'customer-tag',
+          headerUrl,
+        );
         console.log('Tag Fetch: ', tagData.data.data);
 
         const formattedData = tagData.data.data.map((item: any) => ({
@@ -94,7 +97,7 @@ function Tag() {
   };
 
   const deleteTag = async (tag: any) => {
-    const response = await deleteslug('customer-tag', tag?._id);
+    const response = await deleteslug('customer-tag', tag?._id, headerUrl);
     console.log('Delete Tag Response:', response);
   };
 
@@ -116,7 +119,12 @@ function Tag() {
       ...tag,
       isActive: !tag.isActive,
     };
-    const response = await updateSlug('customer-tag', payload, tag?._id);
+    const response = await updateSlug(
+      'customer-tag',
+      payload,
+      tag?._id,
+      headerUrl,
+    );
     console.log('Switch Tag Response:', response);
     setRefetch((prev: any) => !prev);
     setIsLoadingFalse();

@@ -31,22 +31,23 @@ function Customer() {
   const [tag, setTag] = useState([]);
   const [data, setData] = useState<any>([]);
   const [refetch, setRefetch] = useState(false);
-  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoadingTrue();
         const token = await AsyncStorage.getItem('userToken');
-        const response = await axios.get(
-          `${API_BASE_URL}/supplier/list?take=10&page=1`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
+        const url = `${API_BASE_URL}supplier/list?take=10&page=1`;
+        console.log('Customer get url: ', url);
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            origin: headerUrl,
+            referer: headerUrl,
           },
-        );
+        });
 
         console.log('Response Customer List:', response.data.data.data);
 
@@ -76,23 +77,6 @@ function Customer() {
     fetchData();
   }, [refetch]);
 
-  const fetchListOfValues = async () => {
-    try {
-      setIsLoadingTrue();
-      const {data: response} = await getSlugListOfValuesByKey('customer-tier');
-      setTier(response.data.data);
-
-      const {data: tagData} = await getSlugListOfValuesByKey('customer-tag');
-      setTag(tagData.data.data);
-      console.log('Tag: ', tagData.data.data);
-      console.log('Tier: ', response.data.data);
-      setIsLoadingFalse();
-    } catch {
-      setIsLoadingFalse();
-      return null;
-    }
-  };
-
   // const getListOfValues = async () => {
   //   try {
   //     const response = await getAllListOfValueByKey('gender');
@@ -105,10 +89,6 @@ function Customer() {
   // useEffect(() => {
   //   getListOfValues();
   // }, []);
-
-  useEffect(() => {
-    fetchListOfValues();
-  }, []);
 
   const handleHeadingAction = () => {
     setModalVisible(true);
@@ -129,7 +109,7 @@ function Customer() {
     if (customerToDelete) {
       setIsLoadingTrue();
       console.log('Deleting customer:', customerToDelete);
-      await deleteCustomer(customerToDelete);
+      await deleteCustomer(customerToDelete, headerUrl);
 
       setData((prevData: any) =>
         prevData.filter((cust: any) => cust._id !== customerToDelete._id),
@@ -147,8 +127,8 @@ function Customer() {
     }
   };
 
-  const deleteCustomer = async (customer: any) => {
-    const response = await deleteCustmer(customer?._id);
+  const deleteCustomer = async (customer: any, headerUrl: any) => {
+    const response = await deleteCustmer(customer?._id, headerUrl);
     console.log('Delete Customer Response:', response);
   };
 
@@ -172,7 +152,7 @@ function Customer() {
         ...customer,
         isActive: !customer.isActive,
       };
-      const response = await updateCustomer(payload, customer?._id);
+      const response = await updateCustomer(payload, customer?._id, headerUrl);
       console.log('Switch Customer Response:', response);
       setRefetch((prev: any) => !prev);
       setPopSwitchConfirmVisible(false);
@@ -255,8 +235,6 @@ function Customer() {
         <AddCustomerModal
           visible={modalVisible}
           gender={gender}
-          tag={tag}
-          tier={tier}
           setRefetch={setRefetch}
           onClose={handleOnCloseAddModal}
         />
@@ -266,9 +244,6 @@ function Customer() {
           visible={modalEditVisible}
           onClose={() => setEditModalVisible(false)}
           customer={selectedCustomer}
-          gender={gender}
-          tag={tag}
-          tier={tier}
         />
       </View>
     </>

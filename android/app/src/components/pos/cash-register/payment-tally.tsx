@@ -12,27 +12,25 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 interface PaymentProps {
   registerData: any;
+  countedCash: string;
+  setCountedCash: React.Dispatch<React.SetStateAction<string>>;
+  countedCard: string;
+  setCountedCard: React.Dispatch<React.SetStateAction<string>>;
+  countedCredit: string;
+  setCountedCredit: React.Dispatch<React.SetStateAction<string>>;
 }
 
-const PaymentTally: React.FC<PaymentProps> = ({registerData}) => {
+const PaymentTally: React.FC<PaymentProps> = ({
+  registerData,
+  countedCash,
+  setCountedCash,
+  countedCard,
+  setCountedCard,
+  countedCredit,
+  setCountedCredit,
+}) => {
   const [isPopupVisible, setPopupVisible] = useState(false);
-  const [countedCash, setCountedCash] = useState('');
-  const [countedCard, setCountedCard] = useState('');
-  const [countedCredit, setCountedCredit] = useState('');
   const [notes, setNotes] = useState('');
-  // const [registerData, setRegisterData] = useState<any>();
-
-  // const getRegisterData = async () => {
-  //   try {
-  //     const registerData = await AsyncStorage.getItem('registerData');
-  //     if (registerData) {
-  //       setRegisterData(JSON.parse(registerData));
-  //       setRegisterData(JSON.parse(registerData));
-  //     }
-  //   } catch (error) {}
-  // };
-  const safeNumber = (value: any) =>
-    isNaN(Number(value)) ? 0 : Number(value).toFixed(2);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

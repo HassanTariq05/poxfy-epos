@@ -23,7 +23,7 @@ function Tier() {
   const [data, setData] = useState<any>([]);
   const [tier, setTier] = useState('');
   const [refetch, setRefetch] = useState(false);
-  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,6 +31,7 @@ function Tier() {
         setIsLoadingTrue();
         const {data: tierData} = await getSlugListOfValuesByKey(
           'customer-tier',
+          headerUrl,
         );
         console.log('Tier Fetch: ', tierData.data.data);
 
@@ -93,7 +94,7 @@ function Tier() {
   };
 
   const deleteTier = async (tier: any) => {
-    const response = await deleteslug('customer-tier', tier?._id);
+    const response = await deleteslug('customer-tier', tier?._id, headerUrl);
     console.log('Delete Tier Response:', response);
   };
 
@@ -116,7 +117,12 @@ function Tier() {
       ...tier,
       isActive: !tier.isActive,
     };
-    const response = await updateSlug('customer-tier', payload, tier?._id);
+    const response = await updateSlug(
+      'customer-tier',
+      payload,
+      tier?._id,
+      headerUrl,
+    );
     console.log('Switch Tier Response:', response);
     setRefetch((prev: any) => !prev);
     ToastAndroid.showWithGravityAndOffset(

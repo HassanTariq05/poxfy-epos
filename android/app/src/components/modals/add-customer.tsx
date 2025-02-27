@@ -11,6 +11,7 @@ import {
   Switch,
   Button,
   ToastAndroid,
+  ActivityIndicator,
 } from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
 import {Platform} from 'react-native';
@@ -20,13 +21,12 @@ import {Controller, useForm} from 'react-hook-form';
 import {createCustomer} from '../../services/customer';
 import PopupDatePicker from '../date-picker';
 import useAuthStore from '../../redux/feature/store';
+import {getSlugListOfValuesByKey} from '../../services/global';
 
 interface AddCustomerModalProps {
   visible: boolean;
   onClose: () => void;
   gender: any;
-  tier: any;
-  tag: any;
   setRefetch: any;
 }
 
@@ -34,11 +34,15 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
   visible,
   onClose,
   gender,
-  tag,
-  tier,
   setRefetch,
 }) => {
-  const {control, handleSubmit, setValue, reset} = useForm({
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: {errors},
+  } = useForm({
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -60,31 +64,51 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     },
   });
   const slideAnim = useRef(new Animated.Value(500)).current;
+  const nameInputRef = useRef<TextInput>(null);
 
   const [tags, setTags] = useState([]);
   const [tiers, setTiers] = useState([]);
-  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl, isLoading} =
+    useAuthStore();
 
   useEffect(() => {
-    // const genderData = gender.data.map((gender: any) => ({
-    //   label: gender.name,
-    //   value: gender._id,
-    // }));
+    const fetchListOfValues = async () => {
+      try {
+        setIsLoadingTrue();
+        const {data: response} = await getSlugListOfValuesByKey(
+          'customer-tier',
+          headerUrl,
+        );
 
-    console.log('tag: ', tag);
-    const tagData = tag.map((tag: any) => ({
-      label: tag.name,
-      value: tag._id,
-    }));
+        const tierData = response.data.data.map((tier: any) => ({
+          label: tier.name,
+          value: tier._id,
+        }));
 
-    setTags(tagData);
-    const tierData = tier.map((tier: any) => ({
-      label: tier.name,
-      value: tier._id,
-    }));
+        setTiers(tierData);
 
-    setTiers(tierData);
-  }, [tier, tag]);
+        const {data: tagData} = await getSlugListOfValuesByKey(
+          'customer-tag',
+          headerUrl,
+        );
+
+        const tagDataFormatted = tagData.data.data.map((tag: any) => ({
+          label: tag.name,
+          value: tag._id,
+        }));
+
+        setTags(tagDataFormatted);
+        console.log('Tag: ', tagData.data.data);
+        console.log('Tier: ', response.data.data);
+        setIsLoadingFalse();
+      } catch {
+        setIsLoadingFalse();
+        return null;
+      }
+    };
+
+    fetchListOfValues();
+  }, [visible]);
 
   useEffect(() => {
     if (visible) {
@@ -93,6 +117,9 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
         duration: 300,
         useNativeDriver: true,
       }).start();
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 300);
     } else {
       Animated.timing(slideAnim, {
         toValue: 500,
@@ -132,7 +159,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       taxExempted: data.taxExempted,
     };
 
-    const response = await createCustomer(payload);
+    const response = await createCustomer(payload, headerUrl);
     console.log('Response Create Customer: ', response);
     setRefetch((prev: any) => !prev);
     onClose();
@@ -171,142 +198,235 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
               <View style={styles.leftContainer}>
                 <Text style={styles.label}>Primary Details</Text>
                 <View style={styles.subLeftContainer}>
-                  <Controller
-                    control={control}
-                    name="firstName"
-                    rules={{required: 'First name is required'}}
-                    render={({field: {onChange, value}}) => (
-                      <TextInput
-                        style={styles.input1}
-                        placeholder="First Name"
-                        onChangeText={onChange}
-                        value={value}
-                      />
-                    )}
-                  />
-                  <Controller
-                    control={control}
-                    name="lastName"
-                    render={({field: {onChange, value}}) => (
-                      <TextInput
-                        style={styles.input1}
-                        placeholder="Last Name"
-                        onChangeText={onChange}
-                        value={value}
-                      />
-                    )}
-                  />
+                  <View style={{width: '50%'}}>
+                    <Controller
+                      control={control}
+                      name="firstName"
+                      rules={{required: 'First name is required'}}
+                      render={({field: {onChange, value}}) => (
+                        <>
+                          <TextInput
+                            ref={nameInputRef}
+                            style={styles.input1}
+                            placeholder="First Name"
+                            onChangeText={onChange}
+                            value={value}
+                          />
+                          {errors.firstName && (
+                            <Text style={styles.errorText}>
+                              {errors.firstName.message}
+                            </Text>
+                          )}
+                        </>
+                      )}
+                    />
+                  </View>
+
+                  <View style={{width: '50%'}}>
+                    <Controller
+                      control={control}
+                      name="lastName"
+                      rules={{required: 'Last name is required'}}
+                      render={({field: {onChange, value}}) => (
+                        <>
+                          <TextInput
+                            style={styles.input1}
+                            placeholder="Last Name"
+                            onChangeText={onChange}
+                            value={value}
+                          />
+                          {errors.lastName && (
+                            <Text style={styles.errorText}>
+                              {errors.lastName.message}
+                            </Text>
+                          )}
+                        </>
+                      )}
+                    />
+                  </View>
                 </View>
 
                 <View style={styles.subLeftContainer}>
-                  <Controller
-                    control={control}
-                    name="email"
-                    render={({field: {onChange, value}}) => (
-                      <TextInput
-                        style={styles.input1}
-                        placeholder="Email"
-                        keyboardType="email-address"
-                        onChangeText={onChange}
-                        value={value}
-                      />
-                    )}
-                  />
-                  <Controller
-                    control={control}
-                    name="phone"
-                    render={({field: {onChange, value}}) => (
-                      <TextInput
-                        style={styles.input1}
-                        placeholder="Phone"
-                        keyboardType="phone-pad"
-                        onChangeText={onChange}
-                        value={value}
-                      />
-                    )}
-                  />
+                  <View style={{width: '50%'}}>
+                    <Controller
+                      control={control}
+                      name="email"
+                      rules={{required: 'Email is required'}}
+                      render={({field: {onChange, value}}) => (
+                        <>
+                          <TextInput
+                            style={styles.input1}
+                            placeholder="Email"
+                            onChangeText={onChange}
+                            value={value}
+                          />
+                          {errors.email && (
+                            <Text style={styles.errorText}>
+                              {errors.email.message}
+                            </Text>
+                          )}
+                        </>
+                      )}
+                    />
+                  </View>
+
+                  <View style={{width: '50%'}}>
+                    <Controller
+                      control={control}
+                      name="phone"
+                      rules={{required: 'Phone is required'}}
+                      render={({field: {onChange, value}}) => (
+                        <>
+                          <TextInput
+                            style={styles.input1}
+                            placeholder="Phone"
+                            onChangeText={onChange}
+                            value={value}
+                          />
+                          {errors.phone && (
+                            <Text style={styles.errorText}>
+                              {errors.phone.message}
+                            </Text>
+                          )}
+                        </>
+                      )}
+                    />
+                  </View>
                 </View>
 
                 <Controller
                   control={control}
                   name="notes"
+                  rules={{required: 'Notes is required'}}
                   render={({field: {onChange, value}}) => (
-                    <TextInput
-                      style={[styles.input, styles.textarea]}
-                      placeholder="Notes"
-                      multiline
-                      numberOfLines={4}
-                      onChangeText={onChange}
-                      value={value}
-                    />
+                    <>
+                      <TextInput
+                        style={[styles.input, styles.textarea]}
+                        placeholder="Notes"
+                        multiline
+                        numberOfLines={4}
+                        onChangeText={onChange}
+                        value={value}
+                      />
+                      {errors.notes && (
+                        <Text style={styles.errorText}>
+                          {errors.notes.message}
+                        </Text>
+                      )}
+                    </>
                   )}
                 />
                 <Text style={styles.label}>Company Details</Text>
                 <Controller
                   control={control}
                   name="companyName"
+                  rules={{required: 'Company Name is required'}}
                   render={({field: {onChange, value}}) => (
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Company Name"
-                      onChangeText={onChange}
-                      value={value}
-                    />
+                    <>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Company Name"
+                        onChangeText={onChange}
+                        value={value}
+                      />
+                      {errors.companyName && (
+                        <Text style={styles.errorText}>
+                          {errors.companyName.message}
+                        </Text>
+                      )}
+                    </>
                   )}
                 />
 
                 <Text style={styles.label}>Physical Address</Text>
+
                 <Controller
                   control={control}
                   name="streetAddress"
+                  rules={{required: 'Street Address is required'}}
                   render={({field: {onChange, value}}) => (
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Street Address"
-                      onChangeText={onChange}
-                      value={value}
-                    />
+                    <>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Street Address"
+                        onChangeText={onChange}
+                        value={value}
+                      />
+                      {errors.streetAddress && (
+                        <Text style={styles.errorText}>
+                          {errors.streetAddress.message}
+                        </Text>
+                      )}
+                    </>
                   )}
                 />
 
                 <View style={styles.subLeftContainer}>
-                  <Controller
-                    control={control}
-                    name="city"
-                    render={({field: {onChange, value}}) => (
-                      <TextInput
-                        style={[styles.input1, {textAlign: 'center'}]}
-                        placeholder="City"
-                        onChangeText={onChange}
-                        value={value}
-                      />
-                    )}
-                  />
+                  <View style={{width: '50%'}}>
+                    <Controller
+                      control={control}
+                      name="city"
+                      rules={{required: 'City is required'}}
+                      render={({field: {onChange, value}}) => (
+                        <>
+                          <TextInput
+                            style={styles.input1}
+                            placeholder="City"
+                            onChangeText={onChange}
+                            value={value}
+                          />
+                          {errors.city && (
+                            <Text style={styles.errorText}>
+                              {errors.city.message}
+                            </Text>
+                          )}
+                        </>
+                      )}
+                    />
+                  </View>
 
-                  <Controller
-                    control={control}
-                    name="state"
-                    render={({field: {onChange, value}}) => (
-                      <TextInput
-                        style={[styles.input1, {textAlign: 'center'}]}
-                        placeholder="State"
-                        onChangeText={onChange}
-                        value={value}
-                      />
-                    )}
-                  />
+                  <View style={{width: '50%'}}>
+                    <Controller
+                      control={control}
+                      name="state"
+                      rules={{required: 'State is required'}}
+                      render={({field: {onChange, value}}) => (
+                        <>
+                          <TextInput
+                            style={styles.input1}
+                            placeholder="State"
+                            onChangeText={onChange}
+                            value={value}
+                          />
+                          {errors.state && (
+                            <Text style={styles.errorText}>
+                              {errors.state.message}
+                            </Text>
+                          )}
+                        </>
+                      )}
+                    />
+                  </View>
                 </View>
 
                 <Controller
                   control={control}
                   name="country"
+                  rules={{required: 'Country is required'}}
                   render={({field: {onChange, value}}) => (
-                    <TextInput
-                      style={[styles.input, {textAlign: 'center'}]}
-                      placeholder="Country"
-                      onChangeText={onChange}
-                      value={value}
-                    />
+                    <>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Country"
+                        onChangeText={onChange}
+                        value={value}
+                      />
+                      {errors.country && (
+                        <Text style={styles.errorText}>
+                          {errors.country.message}
+                        </Text>
+                      )}
+                    </>
                   )}
                 />
               </View>
@@ -314,68 +434,101 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
               {/* Right Container - 50% */}
               <View style={styles.rightContainer}>
                 <Text style={styles.label}>Additional Information</Text>
+
                 <Controller
                   control={control}
                   name="additional"
+                  rules={{required: 'This is required'}}
                   render={({field: {onChange, value}}) => (
-                    <TextInput
-                      style={[styles.input, {textAlign: 'center'}]}
-                      placeholder="0"
-                      onChangeText={onChange}
-                      value={value}
-                    />
+                    <>
+                      <TextInput
+                        style={[styles.input, {textAlign: 'center'}]}
+                        placeholder="0"
+                        onChangeText={onChange}
+                        value={value}
+                      />
+                      {errors.additional && (
+                        <Text style={styles.errorText}>
+                          {errors.additional.message}
+                        </Text>
+                      )}
+                    </>
                   )}
                 />
 
                 <Controller
                   control={control}
                   name="gender"
+                  rules={{required: 'Gender is required'}}
                   render={({field: {onChange, value}}) => (
-                    <Dropdown
-                      style={styles.input}
-                      data={[
-                        {label: 'Male', value: 'male'},
-                        {label: 'Female', value: 'female'},
-                        {label: 'Other', value: 'other'},
-                      ]}
-                      labelField="label"
-                      valueField="value"
-                      placeholder="Gender"
-                      value={value}
-                      onChange={item => onChange(item.value)}
-                    />
+                    <>
+                      <Dropdown
+                        style={styles.input}
+                        data={[
+                          {label: 'Male', value: 'male'},
+                          {label: 'Female', value: 'female'},
+                          {label: 'Other', value: 'other'},
+                        ]}
+                        labelField="label"
+                        valueField="value"
+                        placeholder="Gender"
+                        value={value}
+                        onChange={item => onChange(item.value)}
+                      />
+                      {errors.gender && (
+                        <Text style={styles.errorText}>
+                          {errors.gender.message}
+                        </Text>
+                      )}
+                    </>
                   )}
                 />
 
                 <Controller
                   control={control}
                   name="tag"
+                  rules={{required: 'Tag is required'}}
                   render={({field: {onChange, value}}) => (
-                    <Dropdown
-                      style={styles.input}
-                      data={tags}
-                      labelField="label"
-                      valueField="value"
-                      placeholder="Tag"
-                      value={value}
-                      onChange={item => onChange(item.value)}
-                    />
+                    <>
+                      <Dropdown
+                        style={styles.input}
+                        data={tags}
+                        labelField="label"
+                        valueField="value"
+                        placeholder="Tag"
+                        value={value}
+                        onChange={item => onChange(item.value)}
+                      />
+                      {errors.tag && (
+                        <Text style={styles.errorText}>
+                          {errors.tag.message}
+                        </Text>
+                      )}
+                    </>
                   )}
                 />
 
                 <Controller
                   control={control}
                   name="tier"
+                  rules={{required: 'Group Tier is required'}}
                   render={({field: {onChange, value}}) => (
-                    <Dropdown
-                      style={styles.input}
-                      data={tiers}
-                      labelField="label"
-                      valueField="value"
-                      placeholder="Group Tier"
-                      value={value}
-                      onChange={item => onChange(item.value)}
-                    />
+                    <>
+                      <Dropdown
+                        style={styles.input}
+                        data={tiers}
+                        labelField="label"
+                        valueField="value"
+                        placeholder="Group Tier"
+                        value={value}
+                        onChange={item => onChange(item.value)}
+                      />
+                      {errors.tier && (
+                        <Text style={styles.errorText}>
+                          {errors.tier.message}
+                        </Text>
+                      )}
+                    </>
                   )}
                 />
 
@@ -447,8 +600,13 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
 
             <TouchableOpacity
               onPress={handleSubmit(onSubmit)}
-              style={styles.button}>
-              <Text style={styles.buttonText}>Save</Text>
+              style={[styles.button, isLoading && {opacity: 0.7}]}
+              disabled={isLoading}>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text style={styles.buttonText}>Save</Text>
+              )}
             </TouchableOpacity>
           </ScrollView>
         </Animated.View>
@@ -463,6 +621,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'flex-end',
+  },
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: 12,
+    marginBottom: 10,
+    marginLeft: 10,
+    alignSelf: 'flex-start',
   },
   backdrop: {
     flex: 1,
@@ -559,12 +724,12 @@ const styles = StyleSheet.create({
   },
   input1: {
     height: 40,
-    width: '50%',
+    width: '100%',
     backgroundColor: 'none',
     borderRadius: 20,
     paddingHorizontal: 15,
     fontSize: 14,
-    marginBottom: 15,
+    marginBottom: 10,
     borderColor: 'rgb(202,202,202)',
     borderWidth: 1,
   },

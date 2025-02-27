@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ToastAndroid,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {BlurView} from '@react-native-community/blur';
@@ -51,9 +52,11 @@ const LoginScreen = ({onLogin}: any) => {
       const header = 'https://' + data.accountId + '.' + SOCKET_URL;
       await AsyncStorage.setItem('SOCKET_URL', header);
       setHeaderUrl(header);
-      const response = await submitLogin(payload, header);
+      const appPlatform = Platform.OS === 'ios' ? 'iOS' : 'Android';
+      const response = await submitLogin(payload, header, appPlatform);
       if (response?.status == 201 || response?.status == 200) {
         saveToken(response.data.data.accessToken);
+        saveUser(response.data.data.fullName);
         setIsLoadingFalse();
         handleLogin();
       }
@@ -75,6 +78,14 @@ const LoginScreen = ({onLogin}: any) => {
       await AsyncStorage.setItem('userToken', token);
     } catch (error) {
       console.error('Error saving token:', error);
+    }
+  };
+
+  const saveUser = async (user: string) => {
+    try {
+      await AsyncStorage.setItem('user', user);
+    } catch (error) {
+      console.error('Error saving user name:', error);
     }
   };
 
@@ -123,14 +134,20 @@ const LoginScreen = ({onLogin}: any) => {
 
           <Controller
             control={control}
+            rules={{
+              required: 'Account ID is required',
+            }}
             render={({field: {onChange, onBlur, value}}) => (
               <TextInput
                 placeholder="Account ID"
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
-                style={[styles.input, errors.email ? styles.inputError : null]}
-                keyboardType="email-address"
+                style={[
+                  styles.input,
+                  errors.accountId ? styles.inputError : null,
+                ]}
+                keyboardType="default"
                 autoCapitalize="none"
               />
             )}
@@ -169,7 +186,7 @@ const LoginScreen = ({onLogin}: any) => {
           <Controller
             control={control}
             rules={{
-              required: true,
+              required: 'Password is required',
             }}
             render={({field: {onChange, onBlur, value}}) => (
               <TextInput
@@ -177,7 +194,10 @@ const LoginScreen = ({onLogin}: any) => {
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
-                style={[styles.input]}
+                style={[
+                  styles.input,
+                  errors.password ? styles.inputError : null,
+                ]}
                 keyboardType="default"
                 autoCapitalize="none"
                 secureTextEntry={true}
@@ -186,7 +206,7 @@ const LoginScreen = ({onLogin}: any) => {
             name="password"
           />
           {errors.password && (
-            <Text style={styles.errorText}>This is required.</Text>
+            <Text style={styles.errorText}>{errors.password.message}</Text>
           )}
 
           {/* <TouchableOpacity>

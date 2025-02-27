@@ -9,6 +9,7 @@ import {
   Animated,
   StyleSheet,
   ToastAndroid,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -26,12 +27,19 @@ const AddTierModal: React.FC<SlideInModalProps> = ({
   onClose,
   setRefetch,
 }) => {
-  const {control, handleSubmit, setValue, reset} = useForm({
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: {errors},
+  } = useForm({
     defaultValues: {
       name: '',
     },
   });
   const slideAnim = useRef(new Animated.Value(500)).current;
+  const nameInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (visible) {
@@ -40,6 +48,9 @@ const AddTierModal: React.FC<SlideInModalProps> = ({
         duration: 300,
         useNativeDriver: true,
       }).start();
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 300);
     } else {
       Animated.timing(slideAnim, {
         toValue: 500, // Slide out
@@ -49,7 +60,8 @@ const AddTierModal: React.FC<SlideInModalProps> = ({
     }
   }, [visible]);
 
-  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl, isLoading} =
+    useAuthStore();
 
   const onSubmit = async (data: any) => {
     setIsLoadingTrue();
@@ -61,7 +73,7 @@ const AddTierModal: React.FC<SlideInModalProps> = ({
       isActive: true,
     };
     console.log('Create Tier Payload: ', payload);
-    const response = await createSlug('customer-tier', payload);
+    const response = await createSlug('customer-tier', payload, headerUrl);
     console.log('Response Create Tier: ', response);
     setRefetch((prev: any) => !prev);
     onClose();
@@ -102,19 +114,30 @@ const AddTierModal: React.FC<SlideInModalProps> = ({
               name="name"
               rules={{required: 'Name is required'}}
               render={({field: {onChange, value}}) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter Brand Name"
-                  onChangeText={onChange}
-                  value={value}
-                />
+                <>
+                  <TextInput
+                    ref={nameInputRef}
+                    style={styles.input}
+                    placeholder="Enter Brand Name"
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                  {errors.name && (
+                    <Text style={styles.errorText}>{errors.name.message}</Text>
+                  )}
+                </>
               )}
             />
           </View>
           <TouchableOpacity
             onPress={handleSubmit(onSubmit)}
-            style={styles.button}>
-            <Text style={styles.buttonText}>Save</Text>
+            style={[styles.button, isLoading && {opacity: 0.7}]}
+            disabled={isLoading}>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <Text style={styles.buttonText}>Save</Text>
+            )}
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -181,6 +204,13 @@ const styles = StyleSheet.create({
   },
   required: {
     color: 'red',
+  },
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: 12,
+    marginBottom: 10,
+    marginLeft: 10,
+    alignSelf: 'flex-start',
   },
   input: {
     height: 45,

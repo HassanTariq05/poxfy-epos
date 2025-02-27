@@ -21,6 +21,11 @@ import {getRegisterDetailsApi} from '../../../services/register';
 import {useNavigation} from '@react-navigation/native';
 import {DrawerNavigationProp} from '@react-navigation/drawer';
 import useAuthStore from '../../../redux/feature/store';
+import CustomPopConfirm from '../../../components/pop-confirm';
+import {API_BASE_URL} from '../../../constants';
+import axios from 'axios';
+import {useFocusEffect} from '@react-navigation/native';
+import {useCallback} from 'react';
 
 const CashRegister: React.FC<any> = () => {
   const handleCashInClick = () => {
@@ -37,7 +42,8 @@ const CashRegister: React.FC<any> = () => {
 
   const [registerData, setRegisterData] = useState<any>();
   const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
-  const handleOpenRegister = async () => {
+
+  const handleOpenRegister = useCallback(async () => {
     let response;
     try {
       setIsLoadingTrue();
@@ -49,17 +55,19 @@ const CashRegister: React.FC<any> = () => {
       }
       if (response?.data.meta.success) {
         setRegisterData(response.data.data);
-        setIsLoadingFalse();
       }
     } catch (err) {
       console.log(err);
+    } finally {
       setIsLoadingFalse();
     }
-  };
-
-  useEffect(() => {
-    handleOpenRegister();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      handleOpenRegister();
+    }, [handleOpenRegister]),
+  );
 
   const [cashInModalVisible, setCashInModalVisible] = useState(false);
   const [selectedCashInRow, setSelectedCashInRow] = useState<{
@@ -67,8 +75,49 @@ const CashRegister: React.FC<any> = () => {
   } | null>(null);
 
   const [cashOutModalVisible, setCashOutModalVisible] = useState(false);
+  const [popConfirmVisible, setPopConfirmVisible] = useState(false);
 
-  const handleCloseRegister = () => {
+  const [countedCash, setCountedCash] = useState('0');
+  const [countedCard, setCountedCard] = useState('0');
+  const [countedCredit, setCountedCredit] = useState('0');
+
+  const handleCloseRegister = async () => {
+    try {
+      setIsLoadingTrue();
+      const token = await AsyncStorage.getItem('userToken');
+      let url = `${API_BASE_URL}cash-register/${registerData.cashRegister._id}/close/${registerData._id}`;
+      console.log('URL:', url);
+      const payload = {
+        countedCard: Number(countedCash),
+        countedCash: Number(countedCard),
+        countedCredit: Number(countedCredit),
+        isActive: true,
+      };
+      console.log('Close register payload: ', payload);
+      const response = await axios.put(url, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          origin: headerUrl,
+          referer: headerUrl,
+        },
+      });
+
+      console.log('Response Close Register:', response.data);
+
+      if (response.data.meta.success) {
+        console.log('Navigating to Cash Registers');
+        navigation.navigate('POS-Cash-Registers');
+        setCountedCard('0');
+        setCountedCash('0');
+        setCountedCredit('0');
+      }
+
+      setIsLoadingFalse();
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setIsLoadingFalse();
+    }
     navigation.navigate('POS-Cash-Registers');
   };
   return (
@@ -92,7 +141,15 @@ const CashRegister: React.FC<any> = () => {
         <View style={styles.row}>
           <View style={styles.column}>
             <BasicCard heading="Payment Tally">
-              <PaymentTally registerData={registerData} />
+              <PaymentTally
+                registerData={registerData}
+                countedCash={countedCash}
+                setCountedCash={setCountedCash}
+                countedCard={countedCard}
+                setCountedCard={setCountedCard}
+                countedCredit={countedCredit}
+                setCountedCredit={setCountedCredit}
+              />
             </BasicCard>
 
             <BasicCard heading="Sale Summary">
@@ -141,7 +198,7 @@ const CashRegister: React.FC<any> = () => {
             </BasicCard>
             <View style={styles.buttonView}>
               <TouchableOpacity
-                onPress={handleCloseRegister}
+                onPress={() => setPopConfirmVisible(true)}
                 style={styles.actionButton}>
                 <Text style={styles.buttonText}>Close Register</Text>
               </TouchableOpacity>
@@ -151,7 +208,6 @@ const CashRegister: React.FC<any> = () => {
       </ScrollView>
       <CashInModal
         registerData={registerData}
-        registerId={registerId}
         visible={cashInModalVisible}
         onClose={() => setCashInModalVisible(false)}
       />
@@ -159,6 +215,16 @@ const CashRegister: React.FC<any> = () => {
         registerData={registerData}
         visible={cashOutModalVisible}
         onClose={() => setCashOutModalVisible(false)}
+      />
+      <CustomPopConfirm
+        title="Confirm Close Register"
+        description="Are you sure you want to close register?"
+        onConfirm={handleCloseRegister}
+        onCancel={() => setPopConfirmVisible(false)}
+        okText="Confirm"
+        cancelText="Cancel"
+        visible={popConfirmVisible}
+        setVisible={setPopConfirmVisible}
       />
     </View>
   );

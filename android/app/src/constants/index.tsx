@@ -7,7 +7,7 @@
 export const API_BASE_URL = 'https://aka.poxfy.com/api/v1/';
 export const SUB_API_BASE_URL = 'poxfy.com/api/v1/';
 export const SOCKET_URL = 'poxfy.com';
-
+export const APP_VERSION = '1.0';
 // client server alma linux
 // export const API_BASE_URL = "/api/v1";
 

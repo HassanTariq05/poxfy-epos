@@ -46,7 +46,7 @@ function DrawerNavigator() {
         headerShown: false,
         drawerType: 'permanent',
         drawerStyle: {
-          width: collapsed ? 60 : 200,
+          width: collapsed ? 60 : 220,
           borderTopWidth: 20,
           borderBottomWidth: 20,
           borderLeftWidth: 20,

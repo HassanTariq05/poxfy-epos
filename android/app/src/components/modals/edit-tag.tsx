@@ -8,6 +8,7 @@ import {
   Animated,
   StyleSheet,
   ToastAndroid,
+  ActivityIndicator,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {updateSlug} from '../../services/product/brand';
@@ -27,12 +28,19 @@ const EditTagModal: React.FC<SlideInModalProps> = ({
   tag,
   setRefetch,
 }) => {
-  const {control, handleSubmit, setValue, reset} = useForm({
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: {errors},
+  } = useForm({
     defaultValues: {
       name: tag?.name || '',
     },
   });
   const slideAnim = useRef(new Animated.Value(500)).current;
+  const nameInputRef = useRef<TextInput>(null);
   useEffect(() => {
     if (visible) {
       Animated.timing(slideAnim, {
@@ -40,6 +48,9 @@ const EditTagModal: React.FC<SlideInModalProps> = ({
         duration: 300,
         useNativeDriver: true,
       }).start();
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 300);
     } else {
       Animated.timing(slideAnim, {
         toValue: 500, // Slide out
@@ -49,7 +60,8 @@ const EditTagModal: React.FC<SlideInModalProps> = ({
     }
   }, [visible]);
 
-  const {setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl, isLoading} =
+    useAuthStore();
 
   const onSubmit = async (data: any) => {
     setIsLoadingTrue();
@@ -61,7 +73,12 @@ const EditTagModal: React.FC<SlideInModalProps> = ({
       isActive: true,
     };
     console.log('Create Tag Payload: ', payload);
-    const response = await updateSlug('customer-tag', payload, tag?._id);
+    const response = await updateSlug(
+      'customer-tag',
+      payload,
+      tag?._id,
+      headerUrl,
+    );
     console.log('Response Create Tag: ', response);
     setRefetch((prev: any) => !prev);
     onClose();
@@ -90,11 +107,11 @@ const EditTagModal: React.FC<SlideInModalProps> = ({
   return (
     <Modal visible={visible} transparent animationType="none">
       <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} onPress={handleOnClose} />
+        <TouchableOpacity style={styles.backdrop} onPress={onClose} />
         <Animated.View
           style={[styles.modal, {transform: [{translateX: slideAnim}]}]}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={handleOnClose} style={styles.backButton}>
+            <TouchableOpacity onPress={onClose} style={styles.backButton}>
               <MaterialCommunityIcons
                 name="chevron-left"
                 size={30}
@@ -113,19 +130,30 @@ const EditTagModal: React.FC<SlideInModalProps> = ({
               name="name"
               rules={{required: 'Name is required'}}
               render={({field: {onChange, value}}) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter Brand Name"
-                  onChangeText={onChange}
-                  value={value}
-                />
+                <>
+                  <TextInput
+                    ref={nameInputRef}
+                    style={styles.input}
+                    placeholder="Enter Brand Name"
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                  {errors.name && (
+                    <Text style={styles.errorText}>{'Name is Required'}</Text>
+                  )}
+                </>
               )}
             />
           </View>
           <TouchableOpacity
             onPress={handleSubmit(onSubmit)}
-            style={styles.button}>
-            <Text style={styles.buttonText}>Save</Text>
+            style={[styles.button, isLoading && {opacity: 0.7}]}
+            disabled={isLoading}>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <Text style={styles.buttonText}>Save</Text>
+            )}
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -192,6 +220,13 @@ const styles = StyleSheet.create({
   },
   required: {
     color: 'red',
+  },
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: 12,
+    marginBottom: 10,
+    marginLeft: 10,
+    alignSelf: 'flex-start',
   },
   input: {
     height: 45,

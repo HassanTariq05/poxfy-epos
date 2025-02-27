@@ -12,6 +12,8 @@ import axios from 'axios';
 import {API_BASE_URL} from '../../../constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAuthStore from '../../../redux/feature/store';
+import {useFocusEffect} from '@react-navigation/native';
+import {useCallback} from 'react';
 
 function Listing() {
   const headers = [
@@ -84,6 +86,47 @@ function Listing() {
 
     fetchData();
   }, [outletId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!outletId) return;
+
+      const fetchCurrentRegister = async () => {
+        try {
+          setIsLoadingTrue();
+          const token = await AsyncStorage.getItem('userToken');
+          let url = `${API_BASE_URL}cash-register/current?outletId=${outletId}`;
+          console.log('URL:', url);
+          const response = await axios.get(url, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              origin: headerUrl,
+              referer: headerUrl,
+            },
+          });
+
+          console.log('Response Current Register:', response.data);
+
+          if (
+            !('success' in response.data?.data) ||
+            response.data?.data?.success
+          ) {
+            navigation.navigate('Listing');
+          }
+
+          setIsLoadingFalse();
+        } catch (err) {
+          console.error('Error fetching data:', err);
+          setIsLoadingFalse();
+        }
+      };
+
+      fetchCurrentRegister();
+
+      return () => {};
+    }, [outletId]),
+  );
 
   const handleOpenRegister = async (data: {
     openingBalance: string;

@@ -1,12 +1,19 @@
+import {APP_VERSION} from '../../../constants';
 import {Api} from '../../../network/client';
 
-export const submitLogin = async (data: any, baseURL: any) => {
+export const submitLogin = async (
+  data: any,
+  baseURL: any,
+  appPlatform: any,
+) => {
   console.log('Data:', data);
   console.log('Base URL:', baseURL);
   return Api.post(`auth/login`, data, {
     headers: {
       origin: baseURL,
       referer: baseURL,
+      'app-platform': appPlatform,
+      'app-version': APP_VERSION,
     },
   });
 };

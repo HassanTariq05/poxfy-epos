@@ -8,11 +8,13 @@ import {
   Animated,
   StyleSheet,
   ToastAndroid,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {cashInnOutApi} from '../../services/register';
 import useAuthStore from '../../redux/feature/store';
+import {Controller, useForm} from 'react-hook-form';
 
 interface SlideInModalProps {
   visible: boolean;
@@ -20,12 +22,25 @@ interface SlideInModalProps {
   registerData: any;
 }
 
-const CashOutModal: React.FC<SlideInModalProps> = ({
+const CashInModal: React.FC<SlideInModalProps> = ({
   visible,
   onClose,
   registerData,
 }) => {
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: {errors},
+  } = useForm({
+    defaultValues: {
+      amount: '',
+      notes: '',
+    },
+  });
   const slideAnim = useRef(new Animated.Value(500)).current;
+  const nameInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (visible) {
@@ -34,6 +49,9 @@ const CashOutModal: React.FC<SlideInModalProps> = ({
         duration: 300,
         useNativeDriver: true,
       }).start();
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 300);
     } else {
       Animated.timing(slideAnim, {
         toValue: 500, // Slide out
@@ -42,21 +60,19 @@ const CashOutModal: React.FC<SlideInModalProps> = ({
       }).start();
     }
   }, [visible]);
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl, isLoading} =
+    useAuthStore();
 
-  const [amount, setAmount] = useState('');
-  const [notes, setNotes] = useState('');
-  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
-
-  const handleOpen = async () => {
+  const onSubmit = async (data: any) => {
     let response;
     try {
       const payload = {
-        amount: Number(amount),
+        amount: Number(data.amount),
         isActive: true,
-        notes: notes,
+        notes: data.notes,
       };
       console.log('Payload:', payload);
-      if (amount || notes) {
+      if (data.amount || data.notes) {
         setIsLoadingTrue();
         response = await cashInnOutApi(
           registerData.cashRegister._id,
@@ -70,6 +86,7 @@ const CashOutModal: React.FC<SlideInModalProps> = ({
       if (response?.data.meta.success) {
         onClose();
         setIsLoadingFalse();
+        reset();
         ToastAndroid.showWithGravityAndOffset(
           'Record added successfully',
           ToastAndroid.LONG,
@@ -83,9 +100,12 @@ const CashOutModal: React.FC<SlideInModalProps> = ({
       setIsLoadingFalse();
     }
   };
-
   return (
-    <Modal visible={visible} transparent animationType="none">
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      presentationStyle="overFullScreen">
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} onPress={onClose} />
         <Animated.View
@@ -105,12 +125,23 @@ const CashOutModal: React.FC<SlideInModalProps> = ({
             <Text style={styles.label}>
               <Text style={styles.required}></Text> Amount
             </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0.00"
-              keyboardType="numeric"
-              onChangeText={setAmount}
+            <Controller
+              control={control}
+              name="amount"
+              rules={{required: 'Amount is required'}}
+              render={({field: {onChange, value}}) => (
+                <TextInput
+                  ref={nameInputRef}
+                  style={styles.input}
+                  placeholder="0.00"
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
             />
+            {errors.amount && (
+              <Text style={styles.errorText}>{errors.amount.message}</Text>
+            )}
             <View style={styles.iconContainer}>
               <Icon
                 name={'calendar-text-outline'}
@@ -120,16 +151,32 @@ const CashOutModal: React.FC<SlideInModalProps> = ({
               <Text style={styles.notesText}>Notes</Text>
             </View>
 
-            <TextInput
-              style={[styles.input, styles.textarea]}
-              placeholder=""
-              multiline
-              numberOfLines={4}
-              onChangeText={setNotes}
+            <Controller
+              control={control}
+              name="notes"
+              rules={{required: 'Notes are required'}}
+              render={({field: {onChange, value}}) => (
+                <TextInput
+                  style={styles.input}
+                  placeholder=""
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
             />
+            {errors.notes && (
+              <Text style={styles.errorText}>{errors.notes.message}</Text>
+            )}
           </View>
-          <TouchableOpacity onPress={handleOpen} style={styles.button}>
-            <Text style={styles.buttonText}>Add</Text>
+          <TouchableOpacity
+            onPress={handleSubmit(onSubmit)}
+            style={[styles.button, isLoading && {opacity: 0.7}]}
+            disabled={isLoading}>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <Text style={styles.buttonText}>Save</Text>
+            )}
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -160,7 +207,6 @@ const styles = StyleSheet.create({
     width: '40%',
     height: '52%',
     backgroundColor: 'white',
-    elevation: 10,
     shadowColor: '#000',
     shadowOpacity: 0.3,
     shadowOffset: {width: -2, height: 2},
@@ -185,6 +231,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: 12,
+    marginLeft: 5,
+    marginBottom: 5,
+    alignSelf: 'flex-start',
+  },
   form: {
     flex: 1,
   },
@@ -203,7 +256,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 10,
     fontSize: 14,
-    marginBottom: 15,
+    marginBottom: 10,
     borderColor: 'rgb(240,240,240)',
     borderWidth: 1,
   },
@@ -234,4 +287,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CashOutModal;
+export default CashInModal;
