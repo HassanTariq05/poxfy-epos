@@ -638,10 +638,10 @@ const styles = StyleSheet.create({
   },
   modal: {
     position: 'absolute',
-    top: '10%',
+    top: '5%',
     right: 0,
     width: '60%',
-    height: '65%',
+    height: '80%',
     backgroundColor: 'white',
     elevation: 10,
     shadowColor: '#000',

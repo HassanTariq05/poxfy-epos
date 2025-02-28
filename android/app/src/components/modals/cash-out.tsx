@@ -128,7 +128,13 @@ const CashInModal: React.FC<SlideInModalProps> = ({
             <Controller
               control={control}
               name="amount"
-              rules={{required: 'Amount is required'}}
+              rules={{
+                required: 'Amount is required',
+                pattern: {
+                  value: /^[0-9]+(\.[0-9]*)?$/, // Allows only numbers with optional decimal
+                  message: 'Amount must be a valid number',
+                },
+              }}
               render={({field: {onChange, value}}) => (
                 <TextInput
                   ref={nameInputRef}
@@ -202,10 +208,8 @@ const styles = StyleSheet.create({
   },
   modal: {
     position: 'absolute',
-    top: '30%',
     right: 0,
     width: '40%',
-    height: '52%',
     backgroundColor: 'white',
     shadowColor: '#000',
     shadowOpacity: 0.3,

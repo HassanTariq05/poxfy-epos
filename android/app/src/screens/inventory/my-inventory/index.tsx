@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     gap: 10,
-    width: '50%',
+    width: '70%',
     justifyContent: 'flex-end',
   },
   dropdown: {

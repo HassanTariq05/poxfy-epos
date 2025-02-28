@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {
   Modal,
   View,
@@ -10,12 +10,18 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import {useForm, Controller} from 'react-hook-form';
 import useAuthStore from '../../redux/feature/store';
+
+interface FormData {
+  openingBalance: string;
+  notes: string;
+}
 
 interface SlideInModalProps {
   visible: boolean;
   onClose: () => void;
-  onOpenPress: (data: {openingBalance: string; notes: string}) => void;
+  onOpenPress: (data: FormData) => void;
 }
 
 const SlideInModal: React.FC<SlideInModalProps> = ({
@@ -25,15 +31,20 @@ const SlideInModal: React.FC<SlideInModalProps> = ({
 }) => {
   const slideAnim = useRef(new Animated.Value(500)).current;
   const nameInputRef = useRef<TextInput>(null);
-
-  const [openingBalance, setOpeningBalance] = useState('');
-  const [notes, setNotes] = useState('');
-  const [errors, setErrors] = useState<{
-    openingBalance?: string;
-    notes?: string;
-  }>({});
-
   const {isLoading} = useAuthStore();
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: {errors},
+  } = useForm<FormData>({
+    defaultValues: {
+      openingBalance: '',
+      notes: '',
+    },
+  });
+
   useEffect(() => {
     if (visible) {
       Animated.timing(slideAnim, {
@@ -50,24 +61,12 @@ const SlideInModal: React.FC<SlideInModalProps> = ({
         duration: 300,
         useNativeDriver: true,
       }).start();
-      setOpeningBalance('');
-      setNotes('');
-      setErrors({});
+      reset();
     }
   }, [visible]);
 
-  const validateFields = () => {
-    let newErrors: {openingBalance?: string; notes?: string} = {};
-    if (!openingBalance.trim())
-      newErrors.openingBalance = 'Opening balance is required';
-    if (!notes.trim()) newErrors.notes = 'Notes are required';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleOpenClick = () => {
-    if (!validateFields()) return;
-    onOpenPress({openingBalance, notes});
+  const onSubmit = (data: FormData) => {
+    onOpenPress(data);
     onClose();
   };
 
@@ -92,42 +91,67 @@ const SlideInModal: React.FC<SlideInModalProps> = ({
             <Text style={styles.label}>
               <Text style={styles.required}>*</Text> Opening Balance
             </Text>
-            <TextInput
-              ref={nameInputRef}
-              style={[styles.input, errors.openingBalance && styles.inputError]}
-              placeholder="Enter opening balance"
-              keyboardType="numeric"
-              value={openingBalance}
-              onChangeText={setOpeningBalance}
+            <Controller
+              control={control}
+              name="openingBalance"
+              rules={{
+                required: 'Opening balance is required',
+                pattern: {
+                  value: /^\d+$/,
+                  message: 'Opening balance must be a number',
+                },
+              }}
+              render={({field: {onChange, value}}) => (
+                <TextInput
+                  ref={nameInputRef}
+                  style={[
+                    styles.input,
+                    errors.openingBalance && styles.inputError,
+                  ]}
+                  placeholder="Enter opening balance"
+                  keyboardType="numeric"
+                  value={value}
+                  onChangeText={onChange}
+                />
+              )}
             />
             {errors.openingBalance && (
-              <Text style={styles.errorText}>{errors.openingBalance}</Text>
+              <Text style={styles.errorText}>
+                {errors.openingBalance.message}
+              </Text>
             )}
 
             <Text style={styles.label}>
               <Text style={styles.required}>*</Text> Notes
             </Text>
-            <TextInput
-              style={[
-                styles.input,
-                styles.textarea,
-                errors.notes && styles.inputError,
-              ]}
-              placeholder="Enter notes"
-              multiline
-              numberOfLines={4}
-              value={notes}
-              onChangeText={setNotes}
+            <Controller
+              control={control}
+              name="notes"
+              rules={{required: 'Notes are required'}}
+              render={({field: {onChange, value}}) => (
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.textarea,
+                    errors.notes && styles.inputError,
+                  ]}
+                  placeholder="Enter notes"
+                  multiline
+                  numberOfLines={4}
+                  value={value}
+                  onChangeText={onChange}
+                />
+              )}
             />
             {errors.notes && (
-              <Text style={styles.errorText}>{errors.notes}</Text>
+              <Text style={styles.errorText}>{errors.notes.message}</Text>
             )}
           </View>
 
           <TouchableOpacity
-            onPress={handleOpenClick}
+            onPress={handleSubmit(onSubmit)}
             style={[styles.button, isLoading && {opacity: 0.7}]}
-            disabled={!openingBalance.trim() || !notes.trim() || isLoading}>
+            disabled={isLoading}>
             {isLoading ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
@@ -153,10 +177,8 @@ const styles = StyleSheet.create({
   },
   modal: {
     position: 'absolute',
-    top: '30%',
     right: 0,
     width: '40%',
-    height: '52%',
     backgroundColor: 'white',
     elevation: 10,
     shadowColor: '#000',

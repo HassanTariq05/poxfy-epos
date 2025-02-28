@@ -76,6 +76,7 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
   const cellRefs = useRef<any>({});
 
   const [notes, setNotes] = useState('');
+  const [notesForSet, setNotesForSet] = useState('');
   const [addTooltipVisible, setAddTooltipVisible] = useState(false);
   const [addTooltipContent, setAddTooltipContent] = useState('');
   const [addTooltipTarget, setAddTooltipTarget] = useState(null);
@@ -307,6 +308,30 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
     setNotes('');
   };
 
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const onSubmit = () => {
+    if (!notes.trim()) {
+      setErrorMessage('Notes are required!');
+      return;
+    }
+    setErrorMessage('');
+    handleTooltipSubmit(selectedRowIndex, 'notes', selectedRow);
+    setAddTooltipVisible(false);
+    setNotes('');
+  };
+
+  const onSubmitForSet = () => {
+    if (!notesForSet.trim()) {
+      setErrorMessage('Notes are required!');
+      return;
+    }
+    setErrorMessage('');
+    handleSettTooltipSubmit(selectedRowIndex, 'notes', selectedRow);
+    setAddTooltipVisible(false);
+    setNotesForSet('');
+  };
+
   return (
     <>
       <ScrollView horizontal style={styles.scrollView}>
@@ -382,9 +407,13 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                         <TextInput
                           style={styles.input}
                           value={inputValues[rowIndex]?.[header] || ''}
-                          onChangeText={text =>
-                            handleInputChange(rowIndex, header, text)
-                          }
+                          onChangeText={text => {
+                            const numericText = text.replace(/[^0-9.]/g, '');
+                            if (/^\d*\.?\d*$/.test(numericText)) {
+                              handleInputChange(rowIndex, header, numericText);
+                            }
+                          }}
+                          keyboardType="numeric"
                         />
 
                         {showInputButton && (
@@ -490,80 +519,97 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
               )}
             </DataTable.Row>
           ))}
-          <Tooltip
-            isVisible={addTooltipVisible}
-            content={
-              <View style={{padding: 8, width: 200}}>
-                <Text style={{color: 'black', marginBottom: 5}}>Notes</Text>
-                <TextInput
-                  style={styles.inputNotes}
-                  placeholder="Notes"
-                  value={notes}
-                  onChangeText={setNotes}
-                />
-                <TouchableOpacity
-                  onPress={() =>
-                    handleTooltipSubmit(selectedRowIndex, 'notes', selectedRow)
-                  }
-                  style={{
-                    backgroundColor: 'rgb(230,231,235)',
-                    padding: 8,
-                    borderRadius: 5,
-                    alignItems: 'center',
-                  }}>
-                  <Text style={{color: 'black'}}>Confirm</Text>
-                </TouchableOpacity>
+
+          <Modal
+            visible={addTooltipVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setAddTooltipVisible(false)}>
+            <View style={styles.notesModalOverlay}>
+              <View style={styles.notesModalContent}>
+                <View style={{padding: 8, width: 200}}>
+                  <Text
+                    style={{
+                      color: 'black',
+                      marginBottom: 5,
+                      fontWeight: 'bold',
+                    }}>
+                    Notes
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.inputNotes,
+                      errorMessage ? styles.inputError : null,
+                    ]}
+                    placeholder="Enter your notes..."
+                    value={notes}
+                    onChangeText={text => {
+                      setNotes(text);
+                      if (text.trim()) setErrorMessage('');
+                    }}
+                    multiline={true}
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                  />
+                  {errorMessage ? (
+                    <Text style={styles.errorText1}>{errorMessage}</Text>
+                  ) : null}
+
+                  <TouchableOpacity
+                    onPress={onSubmit}
+                    style={styles.confirmButton}>
+                    <Text style={{color: 'black'}}>Confirm</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            }
-            placement="top"
-            onClose={() => setAddTooltipVisible(false)}
-            showChildInTooltip={false}
-            contentStyle={{
-              backgroundColor: 'rgb(255, 255, 255)',
-              padding: 10,
-              borderRadius: 8,
-            }}>
-            <View ref={addTooltipTarget} />
-          </Tooltip>
-          <Tooltip
-            isVisible={SetTooltipVisible}
-            content={
-              <View style={{padding: 8, width: 200}}>
-                <Text style={{color: 'black', marginBottom: 5}}>Notes</Text>
-                <TextInput
-                  style={styles.inputNotes}
-                  placeholder="Notes"
-                  value={notes}
-                  onChangeText={setNotes}
-                />
-                <TouchableOpacity
-                  onPress={() =>
-                    handleSettTooltipSubmit(
-                      selectedRowIndex,
-                      'notes',
-                      selectedRow,
-                    )
-                  }
-                  style={{
-                    backgroundColor: 'rgb(230,231,235)',
-                    padding: 8,
-                    borderRadius: 5,
-                    alignItems: 'center',
-                  }}>
-                  <Text style={{color: 'black'}}>Confirm</Text>
-                </TouchableOpacity>
+            </View>
+          </Modal>
+
+          <Modal
+            visible={SetTooltipVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setSetTooltipVisible(false)}>
+            <View style={styles.notesModalOverlay}>
+              <View style={styles.notesModalContent}>
+                <View style={{padding: 8, width: 200}}>
+                  <Text
+                    style={{
+                      color: 'black',
+                      marginBottom: 5,
+                      fontWeight: 'bold',
+                    }}>
+                    Notes
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.inputNotes,
+                      errorMessage ? styles.inputError : null,
+                    ]}
+                    placeholder="Enter your notes..."
+                    value={notesForSet}
+                    onChangeText={text => {
+                      setNotesForSet(text);
+                      if (text.trim()) setErrorMessage('');
+                    }}
+                    multiline={true}
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                  />
+                  {errorMessage ? (
+                    <Text style={styles.errorText1}>{errorMessage}</Text>
+                  ) : null}
+
+                  <TouchableOpacity
+                    onPress={onSubmitForSet}
+                    style={styles.confirmButton}>
+                    <Text style={{color: 'black'}}>Confirm</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            }
-            placement="top"
-            onClose={() => setSetTooltipVisible(false)}
-            showChildInTooltip={false}
-            contentStyle={{
-              backgroundColor: 'rgb(255, 255, 255)',
-              padding: 10,
-              borderRadius: 8,
-            }}>
-            <View ref={SetTooltipTarget} />
-          </Tooltip>
+            </View>
+          </Modal>
+
           <Modal
             visible={tooltipVisible}
             transparent
@@ -610,13 +656,19 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
           />
         </DataTable>
       </ScrollView>
+      <View></View>
     </>
   );
 };
 
 const styles = StyleSheet.create({
   scrollView: {width: '100%'},
-  dataTable: {flex: 1, backgroundColor: 'white', minWidth: '100%'},
+  dataTable: {
+    flex: 1,
+    backgroundColor: 'white',
+    minWidth: '100%',
+    height: 'auto',
+  },
   header: {
     backgroundColor: 'rgb(250, 250, 250)',
     borderBottomWidth: 1,
@@ -660,7 +712,7 @@ const styles = StyleSheet.create({
   },
   row: {borderBottomWidth: 1, borderBottomColor: 'rgb(240,240,240)'},
   cell: {minWidth: '10%', textAlign: 'center', justifyContent: 'center'},
-  cell1: {minWidth: '10%', textAlign: 'left', justifyContent: 'flex-start'},
+  cell1: {minWidth: '15%', textAlign: 'left', justifyContent: 'flex-start'},
   actionCell: {
     minWidth: 100,
     paddingRight: 0,
@@ -679,10 +731,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
-    padding: 5,
-    marginBottom: 10,
+    padding: 8,
+    marginBottom: 5,
+    minHeight: 80, // Adjust height as needed
+    maxHeight: 150,
     width: '100%',
     textAlign: 'left',
+  },
+  inputError: {
+    borderColor: 'red', // Highlight border in red when error occurs
+  },
+  errorText1: {
+    color: 'red',
+    fontSize: 12,
+  },
+  confirmButton: {
+    backgroundColor: 'rgb(230,231,235)',
+    padding: 8,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 10,
   },
   switch: {alignSelf: 'flex-start'},
   editButton: {
@@ -778,6 +846,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  notesModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   overlay1: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.24)',
@@ -786,6 +860,12 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  notesModalContent: {
+    backgroundColor: 'rgb(255, 255, 255)',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',

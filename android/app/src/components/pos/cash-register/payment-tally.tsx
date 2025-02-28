@@ -48,7 +48,12 @@ const PaymentTally: React.FC<PaymentProps> = ({
           <TextInput
             style={styles.input}
             value={countedCash}
-            onChangeText={setCountedCash}
+            onChangeText={text => {
+              const numericText = text.replace(/[^0-9.]/g, '');
+              if (/^\d*\.?\d*$/.test(numericText)) {
+                setCountedCash(numericText);
+              }
+            }}
             placeholder="0.00"
             keyboardType="numeric"
           />
@@ -63,7 +68,12 @@ const PaymentTally: React.FC<PaymentProps> = ({
           <TextInput
             style={styles.input}
             value={countedCard}
-            onChangeText={setCountedCard}
+            onChangeText={text => {
+              const numericText = text.replace(/[^0-9.]/g, '');
+              if (/^\d*\.?\d*$/.test(numericText)) {
+                setCountedCard(numericText);
+              }
+            }}
             placeholder="0.00"
             keyboardType="numeric"
           />
@@ -78,7 +88,12 @@ const PaymentTally: React.FC<PaymentProps> = ({
           <TextInput
             style={styles.input}
             value={countedCredit}
-            onChangeText={setCountedCredit}
+            onChangeText={text => {
+              const numericText = text.replace(/[^0-9.]/g, '');
+              if (/^\d*\.?\d*$/.test(numericText)) {
+                setCountedCredit(numericText);
+              }
+            }}
             placeholder="0.00"
             keyboardType="numeric"
           />

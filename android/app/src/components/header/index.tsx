@@ -167,18 +167,21 @@ export default function Header() {
             color="#000"
           />
 
-          <View style={styles.userInfo}>
-            <Text style={styles.username}>
-              Hi, <Text style={styles.bold}>{user}</Text>
-            </Text>
-          </View>
+          {/* Centering Wrapper */}
+          <View style={styles.contentWrapper}>
+            <View style={styles.userInfo}>
+              <Text style={styles.username}>
+                Hi, <Text style={styles.bold}>{user}</Text>
+              </Text>
+            </View>
 
-          <TouchableOpacity
-            onPress={handleSignOut}
-            style={styles.signOutButton}>
-            <Text style={styles.signOutText}>Sign Out</Text>
-            <MaterialCommunityIcons name="logout" size={20} color="#fff" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleSignOut}
+              style={styles.signOutButton}>
+              <Text style={styles.signOutText}>Sign Out</Text>
+              <MaterialCommunityIcons name="logout" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </View>
@@ -264,6 +267,11 @@ const styles = StyleSheet.create({
     top: 15,
     right: 15,
   },
+  contentWrapper: {
+    alignItems: 'center', // Center the text and button inside
+    justifyContent: 'center',
+    alignSelf: 'center', // Makes sure the wrapper adjusts width
+  },
   userInfo: {
     flexDirection: 'row', // Aligns items horizontally
     alignItems: 'center', // Centers items vertically
@@ -273,31 +281,20 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 18,
     color: '#000',
-    marginLeft: 8, // Adds spacing between avatar and text
+    textAlign: 'center', // Centers text inside
   },
   bold: {
     fontWeight: 'bold',
-  },
-  disabledButton: {
-    backgroundColor: '#E5E5E5',
-    paddingVertical: 12,
-    width: '100%',
-    borderRadius: 25,
-    alignItems: 'center',
-    marginVertical: 5,
-  },
-  disabledText: {
-    color: '#999',
-    fontSize: 16,
   },
   signOutButton: {
     flexDirection: 'row',
     backgroundColor: '#E85050',
     paddingVertical: 14,
-    width: '100%',
+    paddingHorizontal: 20, // Allow button to fit content
     borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
+    alignSelf: 'center', // Prevents button from stretching
     marginTop: 15,
   },
   signOutText: {

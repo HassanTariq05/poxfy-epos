@@ -108,9 +108,9 @@ const CashRegister: React.FC<any> = () => {
       if (response.data.meta.success) {
         console.log('Navigating to Cash Registers');
         navigation.navigate('POS-Cash-Registers');
-        setCountedCard('0');
-        setCountedCash('0');
-        setCountedCredit('0');
+        setCountedCard('');
+        setCountedCash('');
+        setCountedCredit('');
       }
 
       setIsLoadingFalse();
