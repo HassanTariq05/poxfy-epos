@@ -8,6 +8,7 @@ import {
   Animated,
   StyleSheet,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useForm, Controller} from 'react-hook-form';
@@ -76,88 +77,90 @@ const SlideInModal: React.FC<SlideInModalProps> = ({
         <TouchableOpacity style={styles.backdrop} onPress={onClose} />
         <Animated.View
           style={[styles.modal, {transform: [{translateX: slideAnim}]}]}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.backButton}>
-              <MaterialCommunityIcons
-                name="chevron-left"
-                size={30}
-                color="black"
-              />
-            </TouchableOpacity>
-            <Text style={styles.title}>Open Register</Text>
-          </View>
-
-          <View style={styles.form}>
-            <Text style={styles.label}>
-              <Text style={styles.required}>*</Text> Opening Balance
-            </Text>
-            <Controller
-              control={control}
-              name="openingBalance"
-              rules={{
-                required: 'Opening balance is required',
-                pattern: {
-                  value: /^\d+$/,
-                  message: 'Opening balance must be a number',
-                },
-              }}
-              render={({field: {onChange, value}}) => (
-                <TextInput
-                  ref={nameInputRef}
-                  style={[
-                    styles.input,
-                    errors.openingBalance && styles.inputError,
-                  ]}
-                  placeholder="Enter opening balance"
-                  keyboardType="numeric"
-                  value={value}
-                  onChangeText={onChange}
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.header}>
+              <TouchableOpacity onPress={onClose} style={styles.backButton}>
+                <MaterialCommunityIcons
+                  name="chevron-left"
+                  size={30}
+                  color="black"
                 />
-              )}
-            />
-            {errors.openingBalance && (
-              <Text style={styles.errorText}>
-                {errors.openingBalance.message}
+              </TouchableOpacity>
+              <Text style={styles.title}>Open Register</Text>
+            </View>
+
+            <View style={styles.form}>
+              <Text style={styles.label}>
+                <Text style={styles.required}>*</Text> Opening Balance
               </Text>
-            )}
-
-            <Text style={styles.label}>
-              <Text style={styles.required}>*</Text> Notes
-            </Text>
-            <Controller
-              control={control}
-              name="notes"
-              rules={{required: 'Notes are required'}}
-              render={({field: {onChange, value}}) => (
-                <TextInput
-                  style={[
-                    styles.input,
-                    styles.textarea,
-                    errors.notes && styles.inputError,
-                  ]}
-                  placeholder="Enter notes"
-                  multiline
-                  numberOfLines={4}
-                  value={value}
-                  onChangeText={onChange}
-                />
+              <Controller
+                control={control}
+                name="openingBalance"
+                rules={{
+                  required: 'Opening balance is required',
+                  pattern: {
+                    value: /^\d+$/,
+                    message: 'Opening balance must be a number',
+                  },
+                }}
+                render={({field: {onChange, value}}) => (
+                  <TextInput
+                    ref={nameInputRef}
+                    style={[
+                      styles.input,
+                      errors.openingBalance && styles.inputError,
+                    ]}
+                    placeholder="Enter opening balance"
+                    keyboardType="numeric"
+                    value={value}
+                    onChangeText={onChange}
+                  />
+                )}
+              />
+              {errors.openingBalance && (
+                <Text style={styles.errorText}>
+                  {errors.openingBalance.message}
+                </Text>
               )}
-            />
-            {errors.notes && (
-              <Text style={styles.errorText}>{errors.notes.message}</Text>
-            )}
-          </View>
 
-          <TouchableOpacity
-            onPress={handleSubmit(onSubmit)}
-            style={[styles.button, isLoading && {opacity: 0.7}]}
-            disabled={isLoading}>
-            {isLoading ? (
-              <ActivityIndicator size="small" color="white" />
-            ) : (
-              <Text style={styles.buttonText}>Open</Text>
-            )}
-          </TouchableOpacity>
+              <Text style={styles.label}>
+                <Text style={styles.required}>*</Text> Notes
+              </Text>
+              <Controller
+                control={control}
+                name="notes"
+                rules={{required: 'Notes are required'}}
+                render={({field: {onChange, value}}) => (
+                  <TextInput
+                    style={[
+                      styles.input,
+                      styles.textarea,
+                      errors.notes && styles.inputError,
+                    ]}
+                    placeholder="Enter notes"
+                    multiline
+                    numberOfLines={4}
+                    value={value}
+                    onChangeText={onChange}
+                  />
+                )}
+              />
+              {errors.notes && (
+                <Text style={styles.errorText}>{errors.notes.message}</Text>
+              )}
+            </View>
+
+            <TouchableOpacity
+              onPress={handleSubmit(onSubmit)}
+              style={[styles.button, isLoading && {opacity: 0.7}]}
+              disabled={isLoading}>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text style={styles.buttonText}>Open</Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
         </Animated.View>
       </View>
     </Modal>
@@ -175,10 +178,14 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
   },
+  scrollContainer: {
+    paddingBottom: 10,
+  },
   modal: {
     position: 'absolute',
     right: 0,
     width: '40%',
+    maxHeight: '80%',
     backgroundColor: 'white',
     elevation: 10,
     shadowColor: '#000',

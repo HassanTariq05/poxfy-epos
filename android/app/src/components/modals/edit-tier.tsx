@@ -9,6 +9,7 @@ import {
   StyleSheet,
   ToastAndroid,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {updateSlug} from '../../services/product/brand';
@@ -110,51 +111,53 @@ const EditTierModal: React.FC<SlideInModalProps> = ({
         <TouchableOpacity style={styles.backdrop} onPress={onClose} />
         <Animated.View
           style={[styles.modal, {transform: [{translateX: slideAnim}]}]}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.backButton}>
-              <MaterialCommunityIcons
-                name="chevron-left"
-                size={30}
-                color="#ED6964"
-              />
-            </TouchableOpacity>
-            <Text style={styles.title}>Edit Tier</Text>
-          </View>
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.header}>
+              <TouchableOpacity onPress={onClose} style={styles.backButton}>
+                <MaterialCommunityIcons
+                  name="chevron-left"
+                  size={30}
+                  color="#ED6964"
+                />
+              </TouchableOpacity>
+              <Text style={styles.title}>Edit Tier</Text>
+            </View>
 
-          <View style={styles.form}>
-            <Text style={styles.label}>
-              <Text style={styles.required}>*</Text> Name
-            </Text>
-            <Controller
-              control={control}
-              name="name"
-              rules={{required: 'Name is required'}}
-              render={({field: {onChange, value}}) => (
-                <>
-                  <TextInput
-                    ref={nameInputRef}
-                    style={styles.input}
-                    placeholder="Enter Brand Name"
-                    onChangeText={onChange}
-                    value={value}
-                  />
-                  {errors.name && (
-                    <Text style={styles.errorText}>{'Name is required'}</Text>
-                  )}
-                </>
+            <View style={styles.form}>
+              <Text style={styles.label}>
+                <Text style={styles.required}>*</Text> Name
+              </Text>
+              <Controller
+                control={control}
+                name="name"
+                rules={{required: 'Name is required'}}
+                render={({field: {onChange, value}}) => (
+                  <>
+                    <TextInput
+                      ref={nameInputRef}
+                      style={styles.input}
+                      placeholder="Enter Brand Name"
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                    {errors.name && (
+                      <Text style={styles.errorText}>{'Name is required'}</Text>
+                    )}
+                  </>
+                )}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={handleSubmit(onSubmit)}
+              style={[styles.button, isLoading && {opacity: 0.7}]}
+              disabled={isLoading}>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text style={styles.buttonText}>Save</Text>
               )}
-            />
-          </View>
-          <TouchableOpacity
-            onPress={handleSubmit(onSubmit)}
-            style={[styles.button, isLoading && {opacity: 0.7}]}
-            disabled={isLoading}>
-            {isLoading ? (
-              <ActivityIndicator size="small" color="white" />
-            ) : (
-              <Text style={styles.buttonText}>Save</Text>
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </ScrollView>
         </Animated.View>
       </View>
     </Modal>
@@ -179,10 +182,9 @@ const styles = StyleSheet.create({
   },
   modal: {
     position: 'absolute',
-    top: '30%',
     right: 0,
     width: '40%',
-    height: '40%',
+    maxHeight: '80%',
     backgroundColor: 'white',
     elevation: 10,
     shadowColor: '#000',
@@ -193,6 +195,9 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 20,
     padding: 20,
     justifyContent: 'space-between',
+  },
+  scrollContainer: {
+    paddingBottom: 10,
   },
   header: {
     flexDirection: 'row',

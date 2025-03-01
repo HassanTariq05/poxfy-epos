@@ -22,6 +22,9 @@ import {createCustomer} from '../../services/customer';
 import PopupDatePicker from '../date-picker';
 import useAuthStore from '../../redux/feature/store';
 import {getSlugListOfValuesByKey} from '../../services/global';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {API_BASE_URL} from '../../constants';
 
 interface AddCustomerModalProps {
   visible: boolean;
@@ -68,6 +71,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
 
   const [tags, setTags] = useState([]);
   const [tiers, setTiers] = useState([]);
+  const [genders, setGenders] = useState([]);
   const {setIsLoadingTrue, setIsLoadingFalse, headerUrl, isLoading} =
     useAuthStore();
 
@@ -98,8 +102,34 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
         }));
 
         setTags(tagDataFormatted);
+
+        const token = await AsyncStorage.getItem('userToken');
+        const API_URL = await AsyncStorage.getItem('API_BASE_URL');
+        const url = `${API_URL}list-of-values?type=gender`;
+        const payload = {type: 'gender'};
+
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            origin: headerUrl,
+            referer: headerUrl,
+            'access-key': 12345,
+          },
+          params: payload,
+        };
+
+        const {data: genderData} = await axios.get(url, config);
+
+        const genderDataFormatted = genderData.data.data.map((gender: any) => ({
+          label: gender.value,
+          value: gender._id,
+        }));
+
+        setGenders(genderDataFormatted);
         console.log('Tag: ', tagData.data.data);
         console.log('Tier: ', response.data.data);
+        console.log('Genders: ', genderData.data.data);
         setIsLoadingFalse();
       } catch {
         setIsLoadingFalse();
@@ -251,12 +281,20 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                     <Controller
                       control={control}
                       name="email"
-                      rules={{required: 'Email is required'}}
+                      rules={{
+                        required: 'Email is required',
+                        pattern: {
+                          value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                          message: 'Enter a valid email address',
+                        },
+                      }}
                       render={({field: {onChange, value}}) => (
                         <>
                           <TextInput
-                            style={styles.input1}
+                            style={[styles.input1]}
                             placeholder="Email"
+                            keyboardType="email-address"
+                            autoCapitalize="none"
                             onChangeText={onChange}
                             value={value}
                           />
@@ -438,13 +476,25 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                 <Controller
                   control={control}
                   name="additional"
-                  rules={{required: 'This is required'}}
+                  rules={{
+                    required: 'This is required',
+                    pattern: {
+                      value: /^\d+$/,
+                      message: 'Only numbers are allowed',
+                    },
+                  }}
                   render={({field: {onChange, value}}) => (
                     <>
                       <TextInput
                         style={[styles.input, {textAlign: 'center'}]}
                         placeholder="0"
-                        onChangeText={onChange}
+                        keyboardType="numeric"
+                        onChangeText={text => {
+                          // Ensure only numbers are entered
+                          if (/^\d*$/.test(text)) {
+                            onChange(text);
+                          }
+                        }}
                         value={value}
                       />
                       {errors.additional && (
@@ -464,11 +514,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                     <>
                       <Dropdown
                         style={styles.input}
-                        data={[
-                          {label: 'Male', value: 'male'},
-                          {label: 'Female', value: 'female'},
-                          {label: 'Other', value: 'other'},
-                        ]}
+                        data={genders}
                         labelField="label"
                         valueField="value"
                         placeholder="Gender"

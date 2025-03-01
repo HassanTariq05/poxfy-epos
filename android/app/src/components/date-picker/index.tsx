@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, Text, Modal, TouchableOpacity, StyleSheet} from 'react-native';
 import DatePicker from 'react-native-date-picker';
 
@@ -14,6 +14,9 @@ const PopupDatePicker: React.FC<PopupDatePickerProps> = ({
   const [date, setDate] = useState(
     initialVal ? new Date(initialVal) : new Date(),
   );
+  useEffect(() => {
+    console.log('Initial Date', initialVal);
+  }, []);
   const [open, setOpen] = useState(false);
 
   const handleConfirm = () => {

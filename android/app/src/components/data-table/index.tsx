@@ -711,10 +711,14 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   row: {borderBottomWidth: 1, borderBottomColor: 'rgb(240,240,240)'},
-  cell: {minWidth: '10%', textAlign: 'center', justifyContent: 'center'},
-  cell1: {minWidth: '15%', textAlign: 'left', justifyContent: 'flex-start'},
+  cell: {width: 100, textAlign: 'center', justifyContent: 'center'},
+  cell1: {
+    width: 40,
+    textAlign: 'left',
+    justifyContent: 'flex-start',
+  },
   actionCell: {
-    minWidth: 100,
+    width: 100,
     paddingRight: 0,
     textAlign: 'center',
     justifyContent: 'flex-end',

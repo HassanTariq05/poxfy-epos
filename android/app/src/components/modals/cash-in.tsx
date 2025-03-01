@@ -9,6 +9,7 @@ import {
   StyleSheet,
   ToastAndroid,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -112,80 +113,82 @@ const CashInModal: React.FC<SlideInModalProps> = ({
         <TouchableOpacity style={styles.backdrop} onPress={onClose} />
         <Animated.View
           style={[styles.modal, {transform: [{translateX: slideAnim}]}]}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.backButton}>
-              <MaterialCommunityIcons
-                name="chevron-left"
-                size={30}
-                color="black"
-              />
-            </TouchableOpacity>
-            <Text style={styles.title}>Cash In</Text>
-          </View>
-
-          <View style={styles.form}>
-            <Text style={styles.label}>
-              <Text style={styles.required}></Text> Amount
-            </Text>
-            <Controller
-              control={control}
-              name="amount"
-              rules={{
-                required: 'Amount is required',
-                pattern: {
-                  value: /^[0-9]+(\.[0-9]*)?$/, // Allows only numbers with optional decimal
-                  message: 'Amount must be a valid number',
-                },
-              }}
-              render={({field: {onChange, value}}) => (
-                <TextInput
-                  ref={nameInputRef}
-                  style={styles.input}
-                  placeholder="0.00"
-                  onChangeText={onChange}
-                  value={value}
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.header}>
+              <TouchableOpacity onPress={onClose} style={styles.backButton}>
+                <MaterialCommunityIcons
+                  name="chevron-left"
+                  size={30}
+                  color="black"
                 />
-              )}
-            />
-            {errors.amount && (
-              <Text style={styles.errorText}>{errors.amount.message}</Text>
-            )}
-            <View style={styles.iconContainer}>
-              <Icon
-                name={'calendar-text-outline'}
-                size={22}
-                color={'rgb(103, 223, 135)'}
-              />
-              <Text style={styles.notesText}>Notes</Text>
+              </TouchableOpacity>
+              <Text style={styles.title}>Cash In</Text>
             </View>
 
-            <Controller
-              control={control}
-              name="notes"
-              rules={{required: 'Notes are required'}}
-              render={({field: {onChange, value}}) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder=""
-                  onChangeText={onChange}
-                  value={value}
-                />
+            <View style={styles.form}>
+              <Text style={styles.label}>
+                <Text style={styles.required}></Text> Amount
+              </Text>
+              <Controller
+                control={control}
+                name="amount"
+                rules={{
+                  required: 'Amount is required',
+                  pattern: {
+                    value: /^[0-9]+(\.[0-9]*)?$/, // Allows only numbers with optional decimal
+                    message: 'Amount must be a valid number',
+                  },
+                }}
+                render={({field: {onChange, value}}) => (
+                  <TextInput
+                    ref={nameInputRef}
+                    style={styles.input}
+                    placeholder="0.00"
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                )}
+              />
+              {errors.amount && (
+                <Text style={styles.errorText}>{errors.amount.message}</Text>
               )}
-            />
-            {errors.notes && (
-              <Text style={styles.errorText}>{errors.notes.message}</Text>
-            )}
-          </View>
-          <TouchableOpacity
-            onPress={handleSubmit(onSubmit)}
-            style={[styles.button, isLoading && {opacity: 0.7}]}
-            disabled={isLoading}>
-            {isLoading ? (
-              <ActivityIndicator size="small" color="white" />
-            ) : (
-              <Text style={styles.buttonText}>Save</Text>
-            )}
-          </TouchableOpacity>
+              <View style={styles.iconContainer}>
+                <Icon
+                  name={'calendar-text-outline'}
+                  size={22}
+                  color={'rgb(103, 223, 135)'}
+                />
+                <Text style={styles.notesText}>Notes</Text>
+              </View>
+
+              <Controller
+                control={control}
+                name="notes"
+                rules={{required: 'Notes are required'}}
+                render={({field: {onChange, value}}) => (
+                  <TextInput
+                    style={styles.input}
+                    placeholder=""
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                )}
+              />
+              {errors.notes && (
+                <Text style={styles.errorText}>{errors.notes.message}</Text>
+              )}
+            </View>
+            <TouchableOpacity
+              onPress={handleSubmit(onSubmit)}
+              style={[styles.button, isLoading && {opacity: 0.7}]}
+              disabled={isLoading}>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text style={styles.buttonText}>Save</Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
         </Animated.View>
       </View>
     </Modal>
@@ -212,6 +215,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     width: '40%',
+    maxHeight: '80%',
     backgroundColor: 'white',
     shadowColor: '#000',
     shadowOpacity: 0.3,
@@ -243,6 +247,9 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     marginBottom: 5,
     alignSelf: 'flex-start',
+  },
+  scrollContainer: {
+    paddingBottom: 10,
   },
   form: {
     flex: 1,

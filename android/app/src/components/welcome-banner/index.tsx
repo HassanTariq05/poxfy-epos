@@ -1,7 +1,14 @@
-import React from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, {useEffect, useState} from 'react';
 import {View, Text, Image, StyleSheet} from 'react-native';
 
 export default function WelcomeBanner() {
+  const [user, setUser] = useState<string | null>();
+  useEffect(() => {
+    AsyncStorage.getItem('user')
+      .then(user => setUser(user))
+      .catch(error => console.error('Failed to load user:', error));
+  }, []);
   return (
     <View style={styles.container}>
       <Image
@@ -10,7 +17,7 @@ export default function WelcomeBanner() {
       />
       <View style={styles.content}>
         <Text style={styles.welcomeText}>
-          Welcome, <Text style={styles.userName}>{'Admin User'}</Text>
+          Welcome, <Text style={styles.userName}>{user}</Text>
           <View style={styles.emojiView}>
             <Image
               source={require('../../assets/images/happy-emoji.png')}
