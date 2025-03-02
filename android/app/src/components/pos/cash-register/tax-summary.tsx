@@ -31,7 +31,8 @@ const TaxSummary: React.FC<TaxSummaryProps> = ({registerData}) => {
         <Text style={styles.cell} />
         <Text style={[styles.cell, styles.left, styles.bold]}>Total</Text>
         <Text style={[styles.cell, styles.right, styles.green]}>
-          {(transaction?.total || 0) * (1 + (transaction?.gst || 0) / 100)}
+          {(Number(transaction?.total) || 0) *
+            (1 + (Number(transaction?.gst) || 0) / 100)}
         </Text>
       </View>
     </View>

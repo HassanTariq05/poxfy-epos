@@ -1,13 +1,16 @@
 import {create} from 'zustand';
+
 interface AuthState {
   isAuthenticated: boolean;
   headerUrl: string;
   isLoading: boolean;
+  outletChange: boolean;
   login: () => void;
   logout: () => void;
   setIsLoadingTrue: () => void;
   setIsLoadingFalse: () => void;
   setHeaderUrl: (url: string) => void;
+  toggleOutletChange: () => void;
 }
 
 const useAuthStore = create<AuthState>(set => ({
@@ -19,6 +22,8 @@ const useAuthStore = create<AuthState>(set => ({
   isLoading: false,
   setIsLoadingTrue: () => set({isLoading: true}),
   setIsLoadingFalse: () => set({isLoading: false}),
+  outletChange: false,
+  toggleOutletChange: () => set(state => ({outletChange: !state.outletChange})),
 }));
 
 export default useAuthStore;

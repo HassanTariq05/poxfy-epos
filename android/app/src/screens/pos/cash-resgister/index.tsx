@@ -41,7 +41,8 @@ const CashRegister: React.FC<any> = () => {
   const navigation = useNavigation<DrawerNavigationProp<any>>();
 
   const [registerData, setRegisterData] = useState<any>();
-  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl, outletChange} =
+    useAuthStore();
 
   const handleOpenRegister = useCallback(async () => {
     let response;
@@ -61,7 +62,7 @@ const CashRegister: React.FC<any> = () => {
     } finally {
       setIsLoadingFalse();
     }
-  }, []);
+  }, [outletChange]);
 
   useFocusEffect(
     useCallback(() => {

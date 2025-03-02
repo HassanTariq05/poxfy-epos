@@ -27,30 +27,20 @@ function Listing() {
 
   const [register, setRegister] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [outletId, setOutletId] = useState<string | null>(null);
   const [data, setData] = useState<any[]>([]);
   const [selectedRow, setSelectedRow] = useState<string | null>(null);
 
   const navigation = useNavigation<DrawerNavigationProp<any>>();
 
-  useEffect(() => {
-    const fetchOutletId = async () => {
-      const id = await getSelectedOutlet();
-      setOutletId(id);
-    };
-
-    fetchOutletId();
-  }, []);
-
-  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl, outletChange} =
+    useAuthStore();
 
   useEffect(() => {
-    if (!outletId) return;
-
     const fetchData = async () => {
       try {
         setIsLoadingTrue();
         const token = await AsyncStorage.getItem('userToken');
+        const outletId = await AsyncStorage.getItem('selectedOutlet');
         let url = `${API_BASE_URL}cash-register/list?take=10&page=1&outletId=${outletId}`;
         console.log('URL:', url);
         const response = await axios.get(url, {
@@ -85,16 +75,15 @@ function Listing() {
     };
 
     fetchData();
-  }, [outletId]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      if (!outletId) return;
-
       const fetchCurrentRegister = async () => {
         try {
           setIsLoadingTrue();
           const token = await AsyncStorage.getItem('userToken');
+          const outletId = await AsyncStorage.getItem('selectedOutlet');
           let url = `${API_BASE_URL}cash-register/current?outletId=${outletId}`;
           console.log('URL:', url);
           const response = await axios.get(url, {
@@ -125,7 +114,7 @@ function Listing() {
       fetchCurrentRegister();
 
       return () => {};
-    }, [outletId]),
+    }, [outletChange]),
   );
 
   const handleOpenRegister = async (data: {
@@ -140,11 +129,9 @@ function Listing() {
         closingNotes: data.notes,
       };
       console.log('Payload:', payload);
-      if (outletId) {
-        setIsLoadingTrue();
-        response = await openRegister(payload, selectedRow, headerUrl);
-        console.log('Response Open resgister:', response.data.data);
-      }
+      setIsLoadingTrue();
+      response = await openRegister(payload, selectedRow, headerUrl);
+      console.log('Response Open resgister:', response.data.data);
       if (response?.data.meta.success) {
         navigation.navigate('Listing');
         setModalVisible(false);
@@ -175,15 +162,13 @@ function Listing() {
           />
         </View>
 
-        {outletId && (
-          <CustomDataTable
-            headers={headers}
-            data={data}
-            searchQuery={register}
-            showOpenRegister={true}
-            onOpenRegister={handleOpenRegisterClick}
-          />
-        )}
+        <CustomDataTable
+          headers={headers}
+          data={data}
+          searchQuery={register}
+          showOpenRegister={true}
+          onOpenRegister={handleOpenRegisterClick}
+        />
       </TableCard>
 
       {/* Slide-in Modal */}

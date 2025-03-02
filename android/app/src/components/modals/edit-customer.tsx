@@ -82,7 +82,7 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         gender: customer?.genderId || '',
         tag: customer?.customerGroupTag || '',
         tier: customer?.customerGroupTierId || '',
-        additional: customer?.accountLimit.toString() || '0',
+        additional: customer?.accountLimit?.toString() || '0',
         signupLoyalty: customer?.signUpForLoyality || false,
         receiveMarketing: customer?.optOutForMarketing || false,
         taxExempted: customer?.taxExempted || false,
@@ -130,8 +130,8 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         );
 
         const tierData = response.data.data.map((tier: any) => ({
-          label: tier.name,
-          value: tier._id,
+          label: tier?.name,
+          value: tier?._id,
         }));
 
         setTiers(tierData);
@@ -142,8 +142,8 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         );
 
         const tagDataFormatted = tagData.data.data.map((tag: any) => ({
-          label: tag.name,
-          value: tag._id,
+          label: tag?.name,
+          value: tag?._id,
         }));
 
         setTags(tagDataFormatted);
@@ -167,8 +167,8 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         const {data: genderData} = await axios.get(url, config);
 
         const genderDataFormatted = genderData.data.data.map((gender: any) => ({
-          label: gender.value,
-          value: gender._id,
+          label: gender?.value,
+          value: gender?._id,
         }));
 
         setGenders(genderDataFormatted);

@@ -12,6 +12,7 @@ import {DataTable, Title} from 'react-native-paper';
 import Feather from 'react-native-vector-icons/Feather';
 import {Switch} from 'react-native-switch';
 import Tooltip from 'react-native-walkthrough-tooltip';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type DataFormat = {
   [key: string]: string | number | boolean;
@@ -155,6 +156,7 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
     setSelectedRow(row);
     setSelectedRowIndex(rowIndex);
     console.log(`Sett button pressed for row ${rowIndex}, key: ${key}`);
+    console.log(`Sett button pressed for row`, row);
 
     if (ref) {
       setSetTooltipTarget(ref);
@@ -337,19 +339,24 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
       <ScrollView horizontal style={styles.scrollView}>
         <DataTable style={styles.dataTable}>
           <DataTable.Header style={styles.header}>
-            {headers.map((header, index) =>
-              index === 0 ? (
-                <DataTable.Title key={index} textStyle={styles.headerText1}>
-                  {header}
-                </DataTable.Title>
-              ) : (
-                <DataTable.Title key={index} textStyle={styles.headerText}>
-                  {header}
-                </DataTable.Title>
-              ),
-            )}
+            {headers.map((header, index) => (
+              <DataTable.Title
+                key={index}
+                style={{
+                  flex: index == 4 ? 2 : 1,
+                }}
+                textStyle={{
+                  color: 'black',
+                  textAlign: index == 0 ? 'flex-start' : 'center',
+                  flex: 1,
+                }}>
+                {header}
+              </DataTable.Title>
+            ))}
             {(showSwitch || showOpenRegister || showEdit || showDelete) && (
-              <DataTable.Title textStyle={styles.headerActionText}>
+              <DataTable.Title
+                textStyle={styles.headerActionText}
+                style={{flex: 1}}>
                 <Text style={styles.headerActionTextInside}>Action</Text>
               </DataTable.Title>
             )}
@@ -371,13 +378,20 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                     key={cellIndex}
                     style={[
                       cellStyle,
-                      cellIndex === 0 ? styles.cell1 : styles.cell,
+                      {
+                        flex: cellIndex == 4 ? 2 : 1,
+                        justifyContent:
+                          cellIndex == 0 ? 'flex-start' : 'center',
+                        alignItems: 'center',
+                      },
                     ]}>
                     {editableFields.includes(header) ? (
                       <View style={styles.editableView}>
                         {showInputButton && (
                           <TouchableOpacity
-                            disabled={addDisabled}
+                            disabled={
+                              addDisabled || !inputValues[rowIndex]?.[header]
+                            } // Disable unless input has a value
                             onPress={() =>
                               handleAddPress(
                                 row,
@@ -395,7 +409,8 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                             }}
                             style={[
                               styles.addButton,
-                              addDisabled && {
+                              (addDisabled ||
+                                !inputValues[rowIndex]?.[header]) && {
                                 backgroundColor: 'rgba(230, 231, 235, 0.39)',
                                 borderColor: 'rgba(230, 231, 235, 0.39)',
                               },
@@ -418,7 +433,9 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
 
                         {showInputButton && (
                           <TouchableOpacity
-                            disabled={addDisabled}
+                            disabled={
+                              addDisabled || !inputValues[rowIndex]?.[header]
+                            } // Disable unless input has a value
                             onPress={() =>
                               handleSetPress(
                                 row,
@@ -434,7 +451,14 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                                   `${rowIndex}-${cellIndex}`
                                 ] = ref;
                             }}
-                            style={styles.settButton}>
+                            style={[
+                              styles.settButton,
+                              (addDisabled ||
+                                !inputValues[rowIndex]?.[header]) && {
+                                backgroundColor: 'rgba(230, 231, 235, 0.39)',
+                                borderColor: 'rgba(230, 231, 235, 0.39)',
+                              },
+                            ]}>
                             <Text style={styles.inputButtonText}>Set</Text>
                           </TouchableOpacity>
                         )}
@@ -454,9 +478,13 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                             cellRefs.current[`${rowIndex}-${cellIndex}`],
                             row,
                           )
-                        }
-                        style={{padding: 5}}>
-                        <Text>{row[header]}</Text>
+                        }>
+                        <Text
+                          style={{
+                            textAlign: cellIndex == 0 ? 'flex-start' : 'center',
+                          }}>
+                          {row[header]}
+                        </Text>
                       </TouchableOpacity>
                     )}
                   </DataTable.Cell>
@@ -464,7 +492,11 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
               })}
 
               {(showSwitch || showOpenRegister || showEdit || showDelete) && (
-                <DataTable.Cell style={styles.actionCell}>
+                <DataTable.Cell
+                  style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                  }}>
                   {showSwitch && (
                     <View style={{paddingLeft: 5, paddingRight: 5}}>
                       <Switch
@@ -572,6 +604,15 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
             onRequestClose={() => setSetTooltipVisible(false)}>
             <View style={styles.notesModalOverlay}>
               <View style={styles.notesModalContent}>
+                <TouchableOpacity
+                  onPress={() => setSetTooltipVisible(false)}
+                  style={styles.modalCloseButton}>
+                  <MaterialCommunityIcons
+                    name="close"
+                    size={24}
+                    color="black"
+                  />
+                </TouchableOpacity>
                 <View style={{padding: 8, width: 200}}>
                   <Text
                     style={{
@@ -664,7 +705,7 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
 const styles = StyleSheet.create({
   scrollView: {width: '100%'},
   dataTable: {
-    flex: 1,
+    width: 1000,
     backgroundColor: 'white',
     minWidth: '100%',
     height: 'auto',
@@ -673,9 +714,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgb(250, 250, 250)',
     borderBottomWidth: 1,
     borderBottomColor: 'rgb(240, 240, 240)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   headerText: {
     color: 'black',
@@ -685,43 +723,55 @@ const styles = StyleSheet.create({
 
   headerText1: {
     color: 'black',
-    textAlign: 'left',
-    flex: 1,
+    textAlign: 'center',
   },
   headerActionText: {
     color: 'black',
-    display: 'flex',
-    textAlign: 'right',
-    width: '100%',
+    textAlign: 'center',
+    flex: 1,
   },
   headerActionTextInside: {
-    textAlign: 'right',
+    textAlign: 'center',
+    flex: 1,
   },
   actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgb(237,105,100)',
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
-    width: 120,
   },
   buttonText: {
     color: 'white',
     fontWeight: '400',
+    fontSize: 11,
   },
   row: {borderBottomWidth: 1, borderBottomColor: 'rgb(240,240,240)'},
-  cell: {width: 100, textAlign: 'center', justifyContent: 'center'},
+  cell: {
+    flex: 1,
+    textAlign: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
   cell1: {
     width: 40,
-    textAlign: 'left',
-    justifyContent: 'flex-start',
+    textAlign: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'yellow',
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    padding: 5,
+    zIndex: 10,
   },
   actionCell: {
-    width: 100,
     paddingRight: 0,
     textAlign: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
   },
   input: {
     borderWidth: 1,

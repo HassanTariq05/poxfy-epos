@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {getAllOutletApi} from '../../services/outlet';
 import {Dropdown} from 'react-native-element-dropdown';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAuthStore from '../../redux/feature/store';
+import {useFocusEffect} from '@react-navigation/native';
 
 export default function Header() {
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
@@ -32,7 +33,8 @@ export default function Header() {
     }
   };
 
-  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl, toggleOutletChange} =
+    useAuthStore();
 
   const getOutlet = async () => {
     try {
@@ -46,12 +48,28 @@ export default function Header() {
         }));
 
         setOutlets(outletsData);
-        setIsLoadingFalse();
 
-        if (!selectedOutlet) {
-          setSelectedOutlet(outletsData[0].value);
-          await AsyncStorage.setItem('selectedOutlet', outletsData[0].value);
-          console.log('Selected outlet:', outletsData[0].value);
+        // Get the stored outlet from AsyncStorage
+        const savedOutlet = await AsyncStorage.getItem('selectedOutlet');
+
+        // Check if the saved outlet is still valid (exists in the new list)
+        const isValidOutlet = outletsData.some(
+          outlet => outlet.value === savedOutlet,
+        );
+
+        if (isValidOutlet) {
+          // Restore previously selected outlet
+          setSelectedOutlet(savedOutlet);
+          if (savedOutlet) {
+            await AsyncStorage.setItem('selectedOutlet', savedOutlet);
+          }
+          console.log('Restored selected outlet:', savedOutlet);
+        } else {
+          // Select the first outlet if no valid saved outlet exists
+          const firstOutlet = outletsData[0].value;
+          setSelectedOutlet(firstOutlet);
+          await AsyncStorage.setItem('selectedOutlet', firstOutlet);
+          console.log('Selected first outlet:', firstOutlet);
         }
       } else {
         setOutlets([]);
@@ -70,15 +88,19 @@ export default function Header() {
     try {
       setSelectedOutlet(item.value);
       await AsyncStorage.setItem('selectedOutlet', item.value);
+      toggleOutletChange();
       console.log('Selected outlet:', item.value);
     } catch (error) {
       console.log('Error storing outlet:', error);
     }
   };
 
-  useEffect(() => {
-    getStoredOutlet().then(getOutlet);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getStoredOutlet().then(getOutlet);
+      return () => {};
+    }, []),
+  );
 
   useEffect(() => {
     AsyncStorage.getItem('user')

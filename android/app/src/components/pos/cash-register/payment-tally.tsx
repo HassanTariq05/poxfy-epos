@@ -44,7 +44,7 @@ const PaymentTally: React.FC<PaymentProps> = ({
 
         <View style={styles.tableRow}>
           <Text style={styles.rowText}>Cash</Text>
-          <Text style={styles.rowText}>{registerData?.transaction.cash}</Text>
+          <Text style={styles.rowText}>{registerData?.transaction?.cash}</Text>
           <TextInput
             style={styles.input}
             value={countedCash}
@@ -58,13 +58,13 @@ const PaymentTally: React.FC<PaymentProps> = ({
             keyboardType="numeric"
           />
           <Text style={styles.rowText}>
-            {Number(countedCash) - Number(registerData?.transaction.cash)}
+            {Number(countedCash) - Number(registerData?.transaction?.cash)}
           </Text>
         </View>
 
         <View style={styles.tableRow}>
           <Text style={styles.rowText}>Card</Text>
-          <Text style={styles.rowText}>{registerData?.transaction.card}</Text>
+          <Text style={styles.rowText}>{registerData?.transaction?.card}</Text>
           <TextInput
             style={styles.input}
             value={countedCard}
@@ -78,13 +78,15 @@ const PaymentTally: React.FC<PaymentProps> = ({
             keyboardType="numeric"
           />
           <Text style={styles.rowText}>
-            {Number(countedCard) - Number(registerData?.transaction.card)}
+            {Number(countedCard) - Number(registerData?.transaction?.card)}
           </Text>
         </View>
 
         <View style={styles.tableRow}>
           <Text style={styles.rowText}>Store Credit</Text>
-          <Text style={styles.rowText}>{registerData?.transaction.credit}</Text>
+          <Text style={styles.rowText}>
+            {registerData?.transaction?.credit}
+          </Text>
           <TextInput
             style={styles.input}
             value={countedCredit}
@@ -98,7 +100,7 @@ const PaymentTally: React.FC<PaymentProps> = ({
             keyboardType="numeric"
           />
           <Text style={styles.rowText}>
-            {Number(countedCredit) - Number(registerData?.transaction.credit)}
+            {Number(countedCredit) - Number(registerData?.transaction?.credit)}
           </Text>
         </View>
       </View>
