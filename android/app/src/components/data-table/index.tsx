@@ -20,6 +20,7 @@ type DataFormat = {
 };
 
 interface CustomDataTableProps {
+  flexes: number[];
   headers: string[];
   data: {[key: string]: string | number}[];
   searchQuery?: string;
@@ -41,6 +42,7 @@ interface CustomDataTableProps {
 }
 
 const CustomDataTable: React.FC<CustomDataTableProps> = ({
+  flexes,
   headers,
   data,
   searchQuery = '',
@@ -336,373 +338,436 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
 
   return (
     <>
-      <ScrollView horizontal style={styles.scrollView}>
-        <DataTable style={styles.dataTable}>
-          <DataTable.Header style={styles.header}>
-            {headers.map((header, index) => (
-              <DataTable.Title
-                key={index}
-                style={{
-                  flex: index == 4 ? 2 : 1,
-                }}
-                textStyle={{
-                  color: 'black',
-                  textAlign: index == 0 ? 'flex-start' : 'center',
-                  flex: 1,
-                }}>
-                {header}
-              </DataTable.Title>
-            ))}
-            {(showSwitch || showOpenRegister || showEdit || showDelete) && (
-              <DataTable.Title
-                textStyle={styles.headerActionText}
-                style={{flex: 1}}>
-                <Text style={styles.headerActionTextInside}>Action</Text>
-              </DataTable.Title>
-            )}
-          </DataTable.Header>
+      <View style={styles.dataTableView}>
+        <ScrollView
+          persistentScrollbar={true}
+          horizontal={false}
+          style={styles.scrollView}>
+          <ScrollView
+            horizontal
+            persistentScrollbar={true}
+            showsHorizontalScrollIndicator={true}
+            showsVerticalScrollIndicator={true}
+            contentContainerStyle={{flexGrow: 1}}>
+            <DataTable style={styles.dataTable}>
+              <DataTable.Header style={styles.header}>
+                {headers.map((header, index) => (
+                  <DataTable.Title
+                    key={index}
+                    style={{
+                      flex: flexes[index],
+                    }}
+                    textStyle={{
+                      color: 'black',
+                      textAlign: index == 0 ? 'flex-start' : 'center',
+                      flex: 1,
+                    }}>
+                    {header}
+                  </DataTable.Title>
+                ))}
+                {(showSwitch || showOpenRegister || showEdit || showDelete) && (
+                  <DataTable.Title
+                    textStyle={styles.headerActionText}
+                    style={{flex: 2}}>
+                    <Text style={styles.headerActionTextInside}>Action</Text>
+                  </DataTable.Title>
+                )}
+              </DataTable.Header>
 
-          {currentRows.map((row, rowIndex) => (
-            <DataTable.Row key={rowIndex} style={styles.row}>
-              {headers.map((header, cellIndex) => {
-                let cellStyle;
+              {currentRows.map((row, rowIndex) => (
+                <DataTable.Row key={rowIndex} style={styles.row}>
+                  {headers.map((header, cellIndex) => {
+                    let cellStyle;
 
-                if (highlightColumns) {
-                  if (cellIndex === 1) cellStyle = styles.cellBlue;
-                  if (cellIndex === 2) cellStyle = styles.cellOrange;
-                  if (cellIndex === 3) cellStyle = styles.cellGreen;
-                }
+                    if (highlightColumns) {
+                      if (cellIndex === 1) cellStyle = styles.cellBlue;
+                      if (cellIndex === 2) cellStyle = styles.cellOrange;
+                      if (cellIndex === 3) cellStyle = styles.cellGreen;
+                    }
 
-                return (
-                  <DataTable.Cell
-                    key={cellIndex}
-                    style={[
-                      cellStyle,
-                      {
-                        flex: cellIndex == 4 ? 2 : 1,
-                        justifyContent:
-                          cellIndex == 0 ? 'flex-start' : 'center',
-                        alignItems: 'center',
-                      },
-                    ]}>
-                    {editableFields.includes(header) ? (
-                      <View style={styles.editableView}>
-                        {showInputButton && (
-                          <TouchableOpacity
-                            disabled={
-                              addDisabled || !inputValues[rowIndex]?.[header]
-                            } // Disable unless input has a value
-                            onPress={() =>
-                              handleAddPress(
-                                row,
-                                rowIndex,
-                                header,
-                                addCellRefs.current[`${rowIndex}-${cellIndex}`],
-                              )
-                            }
-                            key={cellIndex}
-                            ref={ref => {
-                              if (ref)
-                                addCellRefs.current[
-                                  `${rowIndex}-${cellIndex}`
-                                ] = ref;
-                            }}
-                            style={[
-                              styles.addButton,
-                              (addDisabled ||
-                                !inputValues[rowIndex]?.[header]) && {
-                                backgroundColor: 'rgba(230, 231, 235, 0.39)',
-                                borderColor: 'rgba(230, 231, 235, 0.39)',
-                              },
-                            ]}>
-                            <Text style={styles.inputButtonText}>Add</Text>
-                          </TouchableOpacity>
-                        )}
-
-                        <TextInput
-                          style={styles.input}
-                          value={inputValues[rowIndex]?.[header] || ''}
-                          onChangeText={text => {
-                            const numericText = text.replace(/[^0-9.]/g, '');
-                            if (/^\d*\.?\d*$/.test(numericText)) {
-                              handleInputChange(rowIndex, header, numericText);
-                            }
-                          }}
-                          keyboardType="numeric"
-                        />
-
-                        {showInputButton && (
-                          <TouchableOpacity
-                            disabled={
-                              addDisabled || !inputValues[rowIndex]?.[header]
-                            } // Disable unless input has a value
-                            onPress={() =>
-                              handleSetPress(
-                                row,
-                                rowIndex,
-                                header,
-                                setCellRefs.current[`${rowIndex}-${cellIndex}`],
-                              )
-                            }
-                            key={cellIndex}
-                            ref={ref => {
-                              if (ref)
-                                setCellRefs.current[
-                                  `${rowIndex}-${cellIndex}`
-                                ] = ref;
-                            }}
-                            style={[
-                              styles.settButton,
-                              (addDisabled ||
-                                !inputValues[rowIndex]?.[header]) && {
-                                backgroundColor: 'rgba(230, 231, 235, 0.39)',
-                                borderColor: 'rgba(230, 231, 235, 0.39)',
-                              },
-                            ]}>
-                            <Text style={styles.inputButtonText}>Set</Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    ) : (
-                      // Wrap non-editable cell text in a TouchableOpacity
-                      <TouchableOpacity
+                    return (
+                      <DataTable.Cell
                         key={cellIndex}
-                        ref={ref => {
-                          if (ref)
-                            cellRefs.current[`${rowIndex}-${cellIndex}`] = ref;
-                        }}
-                        onPress={() =>
-                          handleCellClick(
-                            cellIndex,
-                            row[header],
-                            cellRefs.current[`${rowIndex}-${cellIndex}`],
-                            row,
-                          )
-                        }>
-                        <Text
-                          style={{
-                            textAlign: cellIndex == 0 ? 'flex-start' : 'center',
-                          }}>
-                          {row[header]}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </DataTable.Cell>
-                );
-              })}
+                        style={[
+                          cellStyle,
+                          {
+                            flex: flexes[cellIndex],
+                            justifyContent:
+                              cellIndex == 0 ? 'flex-start' : 'center',
+                            alignItems: 'center',
+                          },
+                        ]}>
+                        {editableFields.includes(header) ? (
+                          <View style={styles.editableView}>
+                            {showInputButton && (
+                              <TouchableOpacity
+                                disabled={
+                                  addDisabled ||
+                                  !inputValues[rowIndex]?.[header]
+                                } // Disable unless input has a value
+                                onPress={() =>
+                                  handleAddPress(
+                                    row,
+                                    rowIndex,
+                                    header,
+                                    addCellRefs.current[
+                                      `${rowIndex}-${cellIndex}`
+                                    ],
+                                  )
+                                }
+                                key={cellIndex}
+                                ref={ref => {
+                                  if (ref)
+                                    addCellRefs.current[
+                                      `${rowIndex}-${cellIndex}`
+                                    ] = ref;
+                                }}
+                                style={[
+                                  styles.addButton,
+                                  (addDisabled ||
+                                    !inputValues[rowIndex]?.[header]) && {
+                                    backgroundColor:
+                                      'rgba(230, 231, 235, 0.39)',
+                                    borderColor: 'rgba(230, 231, 235, 0.39)',
+                                  },
+                                ]}>
+                                <Text style={styles.inputButtonText}>Add</Text>
+                              </TouchableOpacity>
+                            )}
 
-              {(showSwitch || showOpenRegister || showEdit || showDelete) && (
-                <DataTable.Cell
-                  style={{
-                    flex: 1,
-                    justifyContent: 'center',
-                  }}>
-                  {showSwitch && (
-                    <View style={{paddingLeft: 5, paddingRight: 5}}>
-                      <Switch
-                        value={switchStates[rowIndex]}
-                        onValueChange={() => toggleSwitch(rowIndex, row)}
-                        disabled={false}
-                        activeText=""
-                        inActiveText=""
-                        circleSize={22}
-                        barHeight={24}
-                        circleBorderWidth={1}
-                        backgroundActive={'#eb6b6b'}
-                        backgroundInactive={'#e0e0e0'}
-                        circleActiveColor={'#fff'}
-                        circleInActiveColor={'#fff'}
-                        changeValueImmediately={true}
-                        innerCircleStyle={{
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                        switchLeftPx={10}
-                        switchRightPx={10}
-                        switchWidthMultiplier={1.6}
+                            <TextInput
+                              style={styles.input}
+                              value={inputValues[rowIndex]?.[header] || ''}
+                              onChangeText={text => {
+                                const numericText = text.replace(
+                                  /[^0-9.]/g,
+                                  '',
+                                );
+                                if (/^\d*\.?\d*$/.test(numericText)) {
+                                  handleInputChange(
+                                    rowIndex,
+                                    header,
+                                    numericText,
+                                  );
+                                }
+                              }}
+                              keyboardType="numeric"
+                            />
+
+                            {showInputButton && (
+                              <TouchableOpacity
+                                disabled={
+                                  addDisabled ||
+                                  !inputValues[rowIndex]?.[header]
+                                } // Disable unless input has a value
+                                onPress={() =>
+                                  handleSetPress(
+                                    row,
+                                    rowIndex,
+                                    header,
+                                    setCellRefs.current[
+                                      `${rowIndex}-${cellIndex}`
+                                    ],
+                                  )
+                                }
+                                key={cellIndex}
+                                ref={ref => {
+                                  if (ref)
+                                    setCellRefs.current[
+                                      `${rowIndex}-${cellIndex}`
+                                    ] = ref;
+                                }}
+                                style={[
+                                  styles.settButton,
+                                  (addDisabled ||
+                                    !inputValues[rowIndex]?.[header]) && {
+                                    backgroundColor:
+                                      'rgba(230, 231, 235, 0.39)',
+                                    borderColor: 'rgba(230, 231, 235, 0.39)',
+                                  },
+                                ]}>
+                                <Text style={styles.inputButtonText}>Set</Text>
+                              </TouchableOpacity>
+                            )}
+                          </View>
+                        ) : (
+                          // Wrap non-editable cell text in a TouchableOpacity
+                          <TouchableOpacity
+                            key={cellIndex}
+                            ref={ref => {
+                              if (ref)
+                                cellRefs.current[`${rowIndex}-${cellIndex}`] =
+                                  ref;
+                            }}
+                            onPress={() =>
+                              handleCellClick(
+                                cellIndex,
+                                row[header],
+                                cellRefs.current[`${rowIndex}-${cellIndex}`],
+                                row,
+                              )
+                            }>
+                            <Text
+                              style={{
+                                textAlign:
+                                  cellIndex == 0 ? 'flex-start' : 'center',
+                              }}>
+                              {row[header]}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </DataTable.Cell>
+                    );
+                  })}
+
+                  {(showSwitch ||
+                    showOpenRegister ||
+                    showEdit ||
+                    showDelete) && (
+                    <DataTable.Cell
+                      style={{
+                        flex: 2,
+                        justifyContent: 'center',
+                      }}>
+                      {showSwitch && (
+                        <View style={{paddingLeft: 5, paddingRight: 5}}>
+                          <Switch
+                            value={switchStates[rowIndex]}
+                            onValueChange={() => toggleSwitch(rowIndex, row)}
+                            disabled={false}
+                            activeText=""
+                            inActiveText=""
+                            circleSize={22}
+                            barHeight={24}
+                            circleBorderWidth={1}
+                            backgroundActive={'#eb6b6b'}
+                            backgroundInactive={'#e0e0e0'}
+                            circleActiveColor={'#fff'}
+                            circleInActiveColor={'#fff'}
+                            changeValueImmediately={true}
+                            innerCircleStyle={{
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                            switchLeftPx={10}
+                            switchRightPx={10}
+                            switchWidthMultiplier={1.6}
+                          />
+                        </View>
+                      )}
+
+                      {showOpenRegister && onOpenRegister && (
+                        <TouchableOpacity
+                          onPress={() => onOpenRegister(row)}
+                          style={styles.actionButton}>
+                          <Text style={styles.buttonText}>Open Register</Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {showEdit && onEdit && (
+                        <TouchableOpacity
+                          onPress={() => onEdit(row)}
+                          style={styles.editButton}>
+                          <Feather name="edit-3" size={22} color="black" />
+                        </TouchableOpacity>
+                      )}
+
+                      {showDelete && onDelete && (
+                        <TouchableOpacity
+                          onPress={() => onDelete(row)}
+                          style={styles.crossButton}>
+                          <Feather name="x" size={22} color="black" />
+                        </TouchableOpacity>
+                      )}
+                    </DataTable.Cell>
+                  )}
+                </DataTable.Row>
+              ))}
+
+              <Modal
+                visible={addTooltipVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setAddTooltipVisible(false)}>
+                <View style={styles.notesModalOverlay}>
+                  <View style={styles.notesModalContent}>
+                    <TouchableOpacity
+                      onPress={() => setAddTooltipVisible(false)}
+                      style={styles.modalCloseButton}>
+                      <MaterialCommunityIcons
+                        name="close"
+                        size={24}
+                        color="black"
                       />
+                    </TouchableOpacity>
+                    <View style={{padding: 8, width: 300}}>
+                      <Text
+                        style={{
+                          color: 'black',
+                          marginBottom: 5,
+                          paddingRight: 25,
+                          fontWeight: 'bold',
+                          fontSize: 16,
+                        }}>
+                        {`${selectedRow?.['Inventory Item']} - Add Quantity`}
+                      </Text>
+                      <Text
+                        style={{
+                          color: 'black',
+                          marginBottom: 5,
+                          fontWeight: 'bold',
+                        }}>
+                        Notes
+                      </Text>
+                      <TextInput
+                        style={[
+                          styles.inputNotes,
+                          errorMessage ? styles.inputError : null,
+                        ]}
+                        placeholder="Enter your notes..."
+                        value={notes}
+                        onChangeText={text => {
+                          setNotes(text);
+                          if (text.trim()) setErrorMessage('');
+                        }}
+                        multiline={true}
+                        numberOfLines={4}
+                        textAlignVertical="top"
+                      />
+                      {errorMessage ? (
+                        <Text style={styles.errorText1}>{errorMessage}</Text>
+                      ) : null}
+
+                      <TouchableOpacity
+                        onPress={onSubmit}
+                        style={styles.confirmButton}>
+                        <Text style={{color: 'white'}}>Confirm</Text>
+                      </TouchableOpacity>
                     </View>
-                  )}
-
-                  {showOpenRegister && onOpenRegister && (
-                    <TouchableOpacity
-                      onPress={() => onOpenRegister(row)}
-                      style={styles.actionButton}>
-                      <Text style={styles.buttonText}>Open Register</Text>
-                    </TouchableOpacity>
-                  )}
-
-                  {showEdit && onEdit && (
-                    <TouchableOpacity
-                      onPress={() => onEdit(row)}
-                      style={styles.editButton}>
-                      <Feather name="edit-3" size={22} color="black" />
-                    </TouchableOpacity>
-                  )}
-
-                  {showDelete && onDelete && (
-                    <TouchableOpacity
-                      onPress={() => onDelete(row)}
-                      style={styles.crossButton}>
-                      <Feather name="x" size={22} color="black" />
-                    </TouchableOpacity>
-                  )}
-                </DataTable.Cell>
-              )}
-            </DataTable.Row>
-          ))}
-
-          <Modal
-            visible={addTooltipVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setAddTooltipVisible(false)}>
-            <View style={styles.notesModalOverlay}>
-              <View style={styles.notesModalContent}>
-                <View style={{padding: 8, width: 200}}>
-                  <Text
-                    style={{
-                      color: 'black',
-                      marginBottom: 5,
-                      fontWeight: 'bold',
-                    }}>
-                    Notes
-                  </Text>
-                  <TextInput
-                    style={[
-                      styles.inputNotes,
-                      errorMessage ? styles.inputError : null,
-                    ]}
-                    placeholder="Enter your notes..."
-                    value={notes}
-                    onChangeText={text => {
-                      setNotes(text);
-                      if (text.trim()) setErrorMessage('');
-                    }}
-                    multiline={true}
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                  />
-                  {errorMessage ? (
-                    <Text style={styles.errorText1}>{errorMessage}</Text>
-                  ) : null}
-
-                  <TouchableOpacity
-                    onPress={onSubmit}
-                    style={styles.confirmButton}>
-                    <Text style={{color: 'black'}}>Confirm</Text>
-                  </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            </View>
-          </Modal>
+              </Modal>
 
-          <Modal
-            visible={SetTooltipVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setSetTooltipVisible(false)}>
-            <View style={styles.notesModalOverlay}>
-              <View style={styles.notesModalContent}>
-                <TouchableOpacity
-                  onPress={() => setSetTooltipVisible(false)}
-                  style={styles.modalCloseButton}>
-                  <MaterialCommunityIcons
-                    name="close"
-                    size={24}
-                    color="black"
-                  />
-                </TouchableOpacity>
-                <View style={{padding: 8, width: 200}}>
-                  <Text
-                    style={{
-                      color: 'black',
-                      marginBottom: 5,
-                      fontWeight: 'bold',
-                    }}>
-                    Notes
-                  </Text>
-                  <TextInput
-                    style={[
-                      styles.inputNotes,
-                      errorMessage ? styles.inputError : null,
-                    ]}
-                    placeholder="Enter your notes..."
-                    value={notesForSet}
-                    onChangeText={text => {
-                      setNotesForSet(text);
-                      if (text.trim()) setErrorMessage('');
-                    }}
-                    multiline={true}
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                  />
-                  {errorMessage ? (
-                    <Text style={styles.errorText1}>{errorMessage}</Text>
-                  ) : null}
+              <Modal
+                visible={SetTooltipVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setSetTooltipVisible(false)}>
+                <View style={styles.notesModalOverlay}>
+                  <View style={styles.notesModalContent}>
+                    <TouchableOpacity
+                      onPress={() => setSetTooltipVisible(false)}
+                      style={styles.modalCloseButton}>
+                      <MaterialCommunityIcons
+                        name="close"
+                        size={24}
+                        color="black"
+                      />
+                    </TouchableOpacity>
+                    <View style={{padding: 8, width: 300}}>
+                      <Text
+                        style={{
+                          color: 'black',
+                          marginBottom: 5,
+                          paddingRight: 25,
+                          fontWeight: 'bold',
+                          fontSize: 16,
+                        }}>
+                        {`${selectedRow?.['Inventory Item']} - Set Quantity`}
+                      </Text>
+                      <Text
+                        style={{
+                          color: 'black',
+                          marginBottom: 5,
+                          fontWeight: 'bold',
+                        }}>
+                        Notes
+                      </Text>
+                      <TextInput
+                        style={[
+                          styles.inputNotes,
+                          errorMessage ? styles.inputError : null,
+                        ]}
+                        placeholder="Enter your notes..."
+                        value={notesForSet}
+                        onChangeText={text => {
+                          setNotesForSet(text);
+                          if (text.trim()) setErrorMessage('');
+                        }}
+                        multiline={true}
+                        numberOfLines={4}
+                        textAlignVertical="top"
+                      />
+                      {errorMessage ? (
+                        <Text style={styles.errorText1}>{errorMessage}</Text>
+                      ) : null}
 
-                  <TouchableOpacity
-                    onPress={onSubmitForSet}
-                    style={styles.confirmButton}>
-                    <Text style={{color: 'black'}}>Confirm</Text>
-                  </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={onSubmitForSet}
+                        style={styles.confirmButton}>
+                        <Text style={{color: 'white'}}>Confirm</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            </View>
-          </Modal>
+              </Modal>
 
-          <Modal
-            visible={tooltipVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setTooltipVisible(false)}>
-            <View style={styles.overlay}>
-              <View style={styles.modalContent}>
-                <Text style={styles.text}>{tooltipContent}</Text>
-                <View style={styles.closeButtonView}>
-                  <TouchableOpacity
-                    onPress={() => setTooltipVisible(false)}
-                    style={styles.closeButton2}>
-                    <Text style={styles.closeText}>Close</Text>
-                  </TouchableOpacity>
+              <Modal
+                visible={tooltipVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setTooltipVisible(false)}>
+                <View style={styles.overlay}>
+                  <View style={styles.modalContent}>
+                    <Text style={styles.text}>{tooltipContent}</Text>
+                    <View style={styles.closeButtonView}>
+                      <TouchableOpacity
+                        onPress={() => setTooltipVisible(false)}
+                        style={styles.closeButton2}>
+                        <Text style={styles.closeText}>Close</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            </View>
-          </Modal>
+              </Modal>
 
-          <Modal
-            visible={outletTooltipVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setOutletTooltipVisible(false)}>
-            <View style={styles.overlay1}>
-              <View style={styles.modalContent1}>
-                {outletTooltipContent}
-                <TouchableOpacity
-                  onPress={() => setOutletTooltipVisible(false)}
-                  style={styles.closeButton1}>
-                  <Text style={styles.closeText}>Close</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
+              <Modal
+                visible={outletTooltipVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setOutletTooltipVisible(false)}>
+                <View style={styles.overlay1}>
+                  <View style={styles.modalContent1}>
+                    {outletTooltipContent}
+                    <TouchableOpacity
+                      onPress={() => setOutletTooltipVisible(false)}
+                      style={styles.closeButton1}>
+                      <Text style={styles.closeText}>Close</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Modal>
 
-          <DataTable.Pagination
-            page={page}
-            numberOfPages={Math.ceil(filteredData.length / rowsPerPage)}
-            onPageChange={setPage}
-            label={`${page * rowsPerPage + 1} - ${
-              (page + 1) * rowsPerPage
-            } of ${filteredData.length}`}
-          />
-        </DataTable>
-      </ScrollView>
-      <View></View>
+              <DataTable.Pagination
+                page={page}
+                numberOfPages={Math.ceil(filteredData.length / rowsPerPage)}
+                onPageChange={setPage}
+                label={`${page * rowsPerPage + 1} - ${
+                  (page + 1) * rowsPerPage
+                } of ${filteredData.length}`}
+              />
+            </DataTable>
+          </ScrollView>
+        </ScrollView>
+      </View>
     </>
   );
 };
 
 const styles = StyleSheet.create({
+  dataTableView: {
+    height: 'auto',
+  },
   scrollView: {width: '100%'},
   dataTable: {
     width: 1000,
@@ -799,11 +864,19 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 12,
   },
+  // confirmButton: {
+  //   backgroundColor: 'rgb(230,231,235)',
+  //   padding: 8,
+  //   borderRadius: 5,
+  //   alignItems: 'center',
+  //   marginTop: 10,
+  // },
   confirmButton: {
-    backgroundColor: 'rgb(230,231,235)',
-    padding: 8,
-    borderRadius: 5,
+    backgroundColor: '#ED6964',
+    height: 50,
+    borderRadius: 25,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 10,
   },
   switch: {alignSelf: 'flex-start'},
@@ -920,7 +993,7 @@ const styles = StyleSheet.create({
   },
   notesModalContent: {
     backgroundColor: 'rgb(255, 255, 255)',
-    padding: 15,
+    padding: 5,
     borderRadius: 8,
     alignItems: 'center',
   },

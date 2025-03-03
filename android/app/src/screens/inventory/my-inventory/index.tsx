@@ -228,11 +228,13 @@ function MyInventory() {
                 labelField="label"
                 valueField="value"
                 placeholder="Select Inventory Type"
+                placeholderStyle={{color: 'gray', fontSize: 13}}
                 value={selectedItem}
-                placeholderStyle={{color: 'gray'}}
                 containerStyle={{borderRadius: 10}}
-                selectedTextStyle={{fontSize: 14}}
+                selectedTextStyle={{fontSize: 13}}
                 onChange={item => setSelectedItem(item.value)}
+                itemTextStyle={{fontSize: 13}}
+                selectedTextProps={{numberOfLines: 1}}
               />
               <Dropdown
                 style={styles.dropdown}
@@ -241,10 +243,12 @@ function MyInventory() {
                 valueField="value"
                 placeholder="Select Product Type"
                 value={selectedProduct}
-                placeholderStyle={{color: 'gray'}}
+                placeholderStyle={{color: 'gray', fontSize: 13}}
                 containerStyle={{borderRadius: 10}}
-                selectedTextStyle={{fontSize: 14}}
+                selectedTextStyle={{fontSize: 13}}
                 onChange={item => setSelectedProduct(item.value)}
+                itemTextStyle={{fontSize: 13}}
+                selectedTextProps={{numberOfLines: 1}}
               />
               <Dropdown
                 style={styles.dropdown}
@@ -253,14 +257,17 @@ function MyInventory() {
                 valueField="value"
                 placeholder="Select Outlet"
                 value={selectedOutlet}
-                placeholderStyle={{color: 'gray'}}
+                placeholderStyle={{color: 'gray', fontSize: 13}}
                 containerStyle={{borderRadius: 10}}
-                selectedTextStyle={{fontSize: 14}}
+                selectedTextStyle={{fontSize: 13}}
                 onChange={item => setSelectedOutlet(item.value)}
+                itemTextStyle={{fontSize: 13}}
+                selectedTextProps={{numberOfLines: 1}}
               />
             </View>
           }>
           <CustomDataTable
+            flexes={[2, 1, 1, 1, 2, 1]}
             headers={headers}
             data={data}
             showInputButton={true}
@@ -318,11 +325,11 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     gap: 10,
-    width: '70%',
+    width: '60%',
     justifyContent: 'flex-end',
   },
   dropdown: {
-    height: 30,
+    height: 40,
     backgroundColor: 'none',
     borderRadius: 20,
     paddingHorizontal: 10,

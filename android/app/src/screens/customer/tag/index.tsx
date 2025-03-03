@@ -170,6 +170,7 @@ function Tag() {
             />
           </View>
           <CustomDataTable
+            flexes={[1]}
             headers={headers}
             data={data}
             searchQuery={tag}

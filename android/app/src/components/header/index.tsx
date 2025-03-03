@@ -143,6 +143,8 @@ export default function Header() {
           selectedTextStyle={{fontSize: 14}}
           value={selectedOutlet}
           onChange={handleOutletChange}
+          itemTextStyle={{fontSize: 13}}
+          selectedTextProps={{numberOfLines: 1}}
         />
         <View
           style={[
@@ -200,8 +202,15 @@ export default function Header() {
             <TouchableOpacity
               onPress={handleSignOut}
               style={styles.signOutButton}>
-              <Text style={styles.signOutText}>Sign Out</Text>
-              <MaterialCommunityIcons name="logout" size={20} color="#fff" />
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <Text style={styles.signOutText}>Sign Out</Text>
+                {/* <MaterialCommunityIcons name="logout" size={20} color="#fff" /> */}
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -242,6 +251,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
+    borderColor: '#ccc',
+    borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 0,
     borderRadius: 20,
@@ -276,7 +287,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 10,
     paddingHorizontal: 10,
-    width: '20%',
+    width: '30%',
     zIndex: 10,
     elevation: 10,
     display: 'flex',
@@ -303,7 +314,7 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 18,
     color: '#000',
-    textAlign: 'center', // Centers text inside
+    textAlign: 'center',
   },
   bold: {
     fontWeight: 'bold',
@@ -311,17 +322,20 @@ const styles = StyleSheet.create({
   signOutButton: {
     flexDirection: 'row',
     backgroundColor: '#E85050',
-    paddingVertical: 14,
-    paddingHorizontal: 20, // Allow button to fit content
+    width: 'auto', // Ensures it wraps content
+    minWidth: 150, // Optional: keeps button at a reasonable size
     borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center', // Prevents button from stretching
+    paddingVertical: 10,
+    alignItems: 'center', // Centers items vertically
+    justifyContent: 'center', // Centers items horizontally
+    alignSelf: 'center',
     marginTop: 15,
   },
   signOutText: {
     color: '#fff',
     fontSize: 16,
-    marginRight: 8,
+    textAlign: 'center', // Ensures text is centered inside Text component
+    fontWeight: 'bold', // Makes it more noticeable
+    flex: 1, // Ensures it takes up space and centers properly
   },
 });

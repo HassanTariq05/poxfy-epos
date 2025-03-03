@@ -229,6 +229,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                 <Text style={styles.label}>Primary Details</Text>
                 <View style={styles.subLeftContainer}>
                   <View style={{width: '50%'}}>
+                    <Text style={styles.floatingLabel}>First Name *</Text>
                     <Controller
                       control={control}
                       name="firstName"
@@ -238,7 +239,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                           <TextInput
                             ref={nameInputRef}
                             style={styles.input1}
-                            placeholder="First Name"
+                            placeholder="Enter First Name"
                             onChangeText={onChange}
                             value={value}
                           />
@@ -253,6 +254,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                   </View>
 
                   <View style={{width: '50%'}}>
+                    <Text style={styles.floatingLabel}>Last Name *</Text>
                     <Controller
                       control={control}
                       name="lastName"
@@ -261,7 +263,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                         <>
                           <TextInput
                             style={styles.input1}
-                            placeholder="Last Name"
+                            placeholder="Enter Last Name"
                             onChangeText={onChange}
                             value={value}
                           />
@@ -278,6 +280,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
 
                 <View style={styles.subLeftContainer}>
                   <View style={{width: '50%'}}>
+                    <Text style={styles.floatingLabel}>Email *</Text>
                     <Controller
                       control={control}
                       name="email"
@@ -291,8 +294,8 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                       render={({field: {onChange, value}}) => (
                         <>
                           <TextInput
-                            style={[styles.input1]}
-                            placeholder="Email"
+                            style={styles.input1}
+                            placeholder="Enter Email"
                             keyboardType="email-address"
                             autoCapitalize="none"
                             onChangeText={onChange}
@@ -309,6 +312,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                   </View>
 
                   <View style={{width: '50%'}}>
+                    <Text style={styles.floatingLabel}>Phone *</Text>
                     <Controller
                       control={control}
                       name="phone"
@@ -317,7 +321,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                         <>
                           <TextInput
                             style={styles.input1}
-                            placeholder="Phone"
+                            placeholder="Enter Phone Number"
                             onChangeText={onChange}
                             value={value}
                           />
@@ -332,6 +336,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                   </View>
                 </View>
 
+                <Text style={styles.floatingLabel}>Notes *</Text>
                 <Controller
                   control={control}
                   name="notes"
@@ -340,7 +345,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                     <>
                       <TextInput
                         style={[styles.input, styles.textarea]}
-                        placeholder="Notes"
+                        placeholder="Enter Notes"
                         multiline
                         numberOfLines={4}
                         onChangeText={onChange}
@@ -355,6 +360,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                   )}
                 />
                 <Text style={styles.label}>Company Details</Text>
+                <Text style={styles.floatingLabel}>Company Name *</Text>
                 <Controller
                   control={control}
                   name="companyName"
@@ -363,7 +369,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                     <>
                       <TextInput
                         style={styles.input}
-                        placeholder="Company Name"
+                        placeholder="Enter Company Name"
                         onChangeText={onChange}
                         value={value}
                       />
@@ -378,6 +384,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
 
                 <Text style={styles.label}>Physical Address</Text>
 
+                <Text style={styles.floatingLabel}>Street Address *</Text>
                 <Controller
                   control={control}
                   name="streetAddress"
@@ -386,7 +393,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                     <>
                       <TextInput
                         style={styles.input}
-                        placeholder="Street Address"
+                        placeholder="Enter Street Address"
                         onChangeText={onChange}
                         value={value}
                       />
@@ -401,6 +408,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
 
                 <View style={styles.subLeftContainer}>
                   <View style={{width: '50%'}}>
+                    <Text style={styles.floatingLabel}>City *</Text>
                     <Controller
                       control={control}
                       name="city"
@@ -409,7 +417,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                         <>
                           <TextInput
                             style={styles.input1}
-                            placeholder="City"
+                            placeholder="Enter City"
                             onChangeText={onChange}
                             value={value}
                           />
@@ -424,6 +432,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                   </View>
 
                   <View style={{width: '50%'}}>
+                    <Text style={styles.floatingLabel}>State *</Text>
                     <Controller
                       control={control}
                       name="state"
@@ -432,7 +441,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                         <>
                           <TextInput
                             style={styles.input1}
-                            placeholder="State"
+                            placeholder="Enter State"
                             onChangeText={onChange}
                             value={value}
                           />
@@ -447,6 +456,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                   </View>
                 </View>
 
+                <Text style={styles.floatingLabel}>Country *</Text>
                 <Controller
                   control={control}
                   name="country"
@@ -455,7 +465,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                     <>
                       <TextInput
                         style={styles.input}
-                        placeholder="Country"
+                        placeholder="Enter Country"
                         onChangeText={onChange}
                         value={value}
                       />
@@ -473,6 +483,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
               <View style={styles.rightContainer}>
                 <Text style={styles.label}>Additional Information</Text>
 
+                <Text style={styles.floatingLabel}>Amount *</Text>
                 <Controller
                   control={control}
                   name="additional"
@@ -506,6 +517,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                   )}
                 />
 
+                <Text style={styles.floatingLabel}>Gender *</Text>
                 <Controller
                   control={control}
                   name="gender"
@@ -530,6 +542,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                   )}
                 />
 
+                <Text style={styles.floatingLabel}>Tag *</Text>
                 <Controller
                   control={control}
                   name="tag"
@@ -554,6 +567,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                   )}
                 />
 
+                <Text style={styles.floatingLabel}>Tier *</Text>
                 <Controller
                   control={control}
                   name="tier"
@@ -578,7 +592,10 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                   )}
                 />
 
-                <PopupDatePicker onDateSelect={setSelectedDate} />
+                <View>
+                  <Text style={styles.floatingLabel}>Date of Birth *</Text>
+                  <PopupDatePicker onDateSelect={setSelectedDate} />
+                </View>
 
                 <View style={styles.switchContainer}>
                   <Text style={styles.subHeading}>
@@ -743,6 +760,13 @@ const styles = StyleSheet.create({
     color: 'rgb(103, 223, 135)',
     borderBottomColor: 'rgb(240,240,240)',
     borderBottomWidth: 1,
+  },
+
+  floatingLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    paddingBottom: 10,
+    color: 'black',
   },
 
   switchContainer: {

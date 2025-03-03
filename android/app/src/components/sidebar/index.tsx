@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Image,
   ScrollView,
   Animated,
+  Modal,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Feather from 'react-native-vector-icons/Feather';
@@ -34,6 +35,8 @@ export default function LeftMenuCard({
   const widthAnim = useRef(new Animated.Value(collapsed ? 60 : 200)).current;
   const opacityAnim = useRef(new Animated.Value(collapsed ? 0 : 1)).current;
 
+  const [submenuModalVisible, setSubmenuModalVisible] = useState(false);
+  const [selectedSubMenu, setSelectedSubMenu] = useState<any>([]);
   useEffect(() => {
     Animated.timing(widthAnim, {
       toValue: collapsed ? 60 : 200,
@@ -50,6 +53,9 @@ export default function LeftMenuCard({
 
   const toggleExpand = (item: string | undefined) => {
     if (item) {
+      if (collapsed) {
+        setSubmenuModalVisible(true);
+      }
       setExpanded(prev => ({...prev, [item]: !prev[item]}));
     }
   };
@@ -133,9 +139,12 @@ export default function LeftMenuCard({
                 <TouchableOpacity
                   style={[
                     styles.menuItem,
-                    isChildSelected ? styles.selectedMenuItem : null, // Only change background when a child is selected
+                    isChildSelected ? styles.selectedMenuItem : null,
                   ]}
-                  onPress={() => toggleExpand(item?.name)}>
+                  onPress={() => {
+                    toggleExpand(item?.name);
+                    setSelectedSubMenu(item?.subItems || []);
+                  }}>
                   <View
                     style={[
                       styles.iconContainer,
@@ -194,6 +203,33 @@ export default function LeftMenuCard({
           })}
         </ScrollView>
       </View>
+      <Modal visible={submenuModalVisible} transparent animationType="fade">
+        <View style={styles.overlay}>
+          <TouchableOpacity
+            style={styles.backdrop}
+            onPress={() => setSubmenuModalVisible(false)}
+          />
+          <Animated.View style={[styles.modal]}>
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
+              {selectedSubMenu?.map((subItem: any, subIndex: any) => (
+                <TouchableOpacity
+                  key={subIndex}
+                  style={[
+                    styles.subMenuItemCollapsed,
+                    subIndex !== selectedSubMenu.length - 1 &&
+                      styles.borderBottom,
+                  ]}
+                  onPress={() => {
+                    handleSelectComponent(subItem?.component, subItem?.name);
+                    setSubmenuModalVisible(false);
+                  }}>
+                  <Text style={styles.menuText}>{subItem?.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </Animated.View>
+        </View>
+      </Modal>
     </Animated.View>
   );
 }
@@ -261,12 +297,24 @@ const styles = StyleSheet.create({
     marginRight: 6,
     backgroundColor: 'rgb(244, 244, 244)',
   },
+  subMenuItemCollapsed: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    backgroundColor: 'rgb(255, 255, 255)',
+    // borderBottomColor: '#ccc',
+    // borderBottomWidth: 1,
+  },
+  borderBottom: {
+    borderBottomColor: '#ccc',
+    borderBottomWidth: 1,
+  },
   selectedMenuItem: {
     backgroundColor: 'rgb(237, 111, 106)',
     color: 'white',
   },
   selectedSubMenuItem: {
-    backgroundColor: 'rgb(244, 244, 244)', // Keep the background same for sub-items
+    backgroundColor: 'rgb(244, 244, 244)',
   },
   selectedMenuText: {
     color: 'white',
@@ -305,4 +353,96 @@ const styles = StyleSheet.create({
     marginHorizontal: 'auto',
     tintColor: 'brightness(100)',
   },
+
+  notesText: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: 'rgb(103, 223, 135)',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0)',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
+  backdrop: {
+    flex: 1,
+    width: '100%',
+  },
+  modal: {
+    position: 'absolute',
+    top: '50%',
+    left: '7%',
+    width: '20%',
+    backgroundColor: 'white',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: {width: -2, height: 2},
+    shadowRadius: 5,
+    borderRadius: 16,
+    padding: 10,
+    justifyContent: 'space-between',
+  },
+  scrollContainer: {
+    paddingBottom: 0,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  form: {
+    flex: 1,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '400',
+    marginBottom: 5,
+    color: 'gray',
+  },
+  required: {
+    color: 'red',
+  },
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: 12,
+    marginBottom: 10,
+    marginLeft: 10,
+    alignSelf: 'flex-start',
+  },
+  input: {
+    height: 45,
+    backgroundColor: 'none',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    fontSize: 14,
+    marginBottom: 15,
+    borderColor: 'rgb(240,240,240)',
+    borderWidth: 1,
+  },
+  textarea: {
+    height: 80,
+    textAlignVertical: 'top',
+    backgroundColor: 'none',
+    borderWidth: 1,
+    borderColor: 'rgb(240,240,240)',
+  },
+  button: {
+    backgroundColor: '#ED6964',
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  // iconContainer: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   marginBottom: 8,
+  // },
 });

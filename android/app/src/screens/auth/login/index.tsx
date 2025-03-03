@@ -64,7 +64,7 @@ const LoginScreen = ({onLogin}: any) => {
       console.log(err);
       setIsLoadingFalse();
       ToastAndroid.showWithGravityAndOffset(
-        'Invalid email or password',
+        '❌ Invalid email or password',
         ToastAndroid.LONG,
         ToastAndroid.BOTTOM,
         25,
@@ -138,18 +138,23 @@ const LoginScreen = ({onLogin}: any) => {
               required: 'Account ID is required',
             }}
             render={({field: {onChange, onBlur, value}}) => (
-              <TextInput
-                placeholder="Account ID"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                style={[
-                  styles.input,
-                  errors.accountId ? styles.inputError : null,
-                ]}
-                keyboardType="default"
-                autoCapitalize="none"
-              />
+              <>
+                <View style={styles.accountIdView}>
+                  <TextInput
+                    placeholder="Account ID"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    style={[
+                      styles.accountIdInput,
+                      errors.accountId ? styles.inputError : null,
+                    ]}
+                    keyboardType="default"
+                    autoCapitalize="none"
+                  />
+                  <Text style={styles.accTitle}>.poxfy.com</Text>
+                </View>
+              </>
             )}
             name="accountId"
           />
@@ -350,6 +355,30 @@ const styles = StyleSheet.create({
   separatorText: {
     marginHorizontal: 4,
     color: 'rgb(191,191,191)',
+  },
+  accountIdView: {
+    flexDirection: 'row',
+    alignItems: 'center', // Ensures vertical centering
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: '#fff',
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    marginBottom: 8,
+  },
+  accountIdInput: {
+    flex: 1, // Makes input take available space
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    fontSize: 16,
+  },
+  accTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 5,
+    color: 'black',
   },
 });
 

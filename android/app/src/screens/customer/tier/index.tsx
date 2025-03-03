@@ -167,6 +167,7 @@ function Tier() {
             />
           </View>
           <CustomDataTable
+            flexes={[1]}
             headers={headers}
             data={data}
             searchQuery={tier}
