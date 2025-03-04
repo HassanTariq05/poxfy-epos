@@ -268,6 +268,14 @@ function MyInventory() {
           }>
           <CustomDataTable
             flexes={[2, 1, 1, 1, 2, 1]}
+            alignments={[
+              'flex-start',
+              'center',
+              'center',
+              'center',
+              'center',
+              'center',
+            ]}
             headers={headers}
             data={data}
             showInputButton={true}

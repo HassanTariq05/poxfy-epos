@@ -171,6 +171,7 @@ function Tag() {
           </View>
           <CustomDataTable
             flexes={[1]}
+            alignments={['flex-start']}
             headers={headers}
             data={data}
             searchQuery={tag}

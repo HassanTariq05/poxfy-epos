@@ -9,6 +9,9 @@ import {
   ToastAndroid,
   ActivityIndicator,
   Platform,
+  ScrollView,
+  Alert,
+  Modal,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {BlurView} from '@react-native-community/blur';
@@ -21,6 +24,8 @@ import {SOCKET_URL, SUB_API_BASE_URL} from '../../../constants';
 import {updateBaseUrlExplicitly} from '../../../network/client';
 
 const LoginScreen = ({onLogin}: any) => {
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+
   const {
     control,
     handleSubmit,
@@ -63,13 +68,18 @@ const LoginScreen = ({onLogin}: any) => {
     } catch (err) {
       console.log(err);
       setIsLoadingFalse();
-      ToastAndroid.showWithGravityAndOffset(
-        '❌ Invalid email or password',
-        ToastAndroid.LONG,
-        ToastAndroid.BOTTOM,
-        25,
-        50,
-      );
+      // ToastAndroid.showWithGravityAndOffset(
+      //   '❌ Invalid email or password',
+      //   ToastAndroid.LONG,
+      //   ToastAndroid.BOTTOM,
+      //   25,
+      //   50,
+      // );
+      // Alert.alert(
+      //   'Error!',
+      //   '❌ Invalid email or password, please input correct credentials.',
+      // );
+      setErrorModalVisible(true);
     }
   };
 
@@ -125,118 +135,164 @@ const LoginScreen = ({onLogin}: any) => {
 
       <View style={styles.separator} />
 
-      <View style={styles.rightSide}>
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>Sign In</Text>
-          <Text style={styles.subtitle}>
-            Enter your credentials to access your account.
-          </Text>
+      <ScrollView style={{flex: 1}} keyboardShouldPersistTaps="handled">
+        <View style={styles.rightSide}>
+          <View style={styles.formContainer}>
+            <Text style={styles.title}>Sign In</Text>
+            <Text style={styles.subtitle}>
+              Enter your credentials to access your account.
+            </Text>
 
-          <Controller
-            control={control}
-            rules={{
-              required: 'Account ID is required',
-            }}
-            render={({field: {onChange, onBlur, value}}) => (
-              <>
-                <View style={styles.accountIdView}>
+            {/* Account ID Input */}
+            <Controller
+              control={control}
+              rules={{required: 'Account ID is required'}}
+              render={({field: {onChange, onBlur, value}}) => (
+                <View
+                  style={[
+                    styles.accountIdView,
+                    errors.accountId ? styles.inputError : null,
+                  ]}>
                   <TextInput
                     placeholder="Account ID"
                     onBlur={onBlur}
                     onChangeText={onChange}
                     value={value}
-                    style={[
-                      styles.accountIdInput,
-                      errors.accountId ? styles.inputError : null,
-                    ]}
+                    style={[styles.accountIdInput]}
                     keyboardType="default"
                     autoCapitalize="none"
                   />
                   <Text style={styles.accTitle}>.poxfy.com</Text>
                 </View>
-              </>
+              )}
+              name="accountId"
+            />
+            {errors.accountId && (
+              <Text style={styles.errorText}>{errors.accountId.message}</Text>
             )}
-            name="accountId"
-          />
-          {errors.accountId && (
-            <Text style={styles.errorText}>{errors.accountId.message}</Text>
-          )}
 
-          <Controller
-            control={control}
-            rules={{
-              required: 'Email is required',
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: 'Invalid email address',
-              },
-            }}
-            render={({field: {onChange, onBlur, value}}) => (
-              <TextInput
-                placeholder="dummy@admin.com"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                style={[styles.input, errors.email ? styles.inputError : null]}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+            {/* Email Input */}
+            <Controller
+              control={control}
+              rules={{
+                required: 'Email is required',
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: 'Invalid email address',
+                },
+              }}
+              render={({field: {onChange, onBlur, value}}) => (
+                <TextInput
+                  placeholder="dummy@admin.com"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  style={[
+                    styles.input,
+                    errors.email ? styles.inputError : null,
+                  ]}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              )}
+              name="email"
+            />
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email.message}</Text>
             )}
-            name="email"
-          />
-          {errors.email && (
-            <Text style={styles.errorText}>{errors.email.message}</Text>
-          )}
 
-          <Controller
-            control={control}
-            rules={{
-              required: 'Password is required',
-            }}
-            render={({field: {onChange, onBlur, value}}) => (
-              <TextInput
-                placeholder="**********"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                style={[
-                  styles.input,
-                  errors.password ? styles.inputError : null,
-                ]}
-                keyboardType="default"
-                autoCapitalize="none"
-                secureTextEntry={true}
-              />
+            {/* Password Input */}
+            <Controller
+              control={control}
+              rules={{required: 'Password is required'}}
+              render={({field: {onChange, onBlur, value}}) => (
+                <TextInput
+                  placeholder="**********"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  style={[
+                    styles.input,
+                    errors.password ? styles.inputError : null,
+                  ]}
+                  keyboardType="default"
+                  autoCapitalize="none"
+                  secureTextEntry={true}
+                />
+              )}
+              name="password"
+            />
+            {errors.password && (
+              <Text style={styles.errorText}>{errors.password.message}</Text>
             )}
-            name="password"
-          />
-          {errors.password && (
-            <Text style={styles.errorText}>{errors.password.message}</Text>
-          )}
 
-          {/* <TouchableOpacity>
-            <Text style={styles.forgotPassword}>Forget your password?</Text>
-          </TouchableOpacity> */}
+            {/* Login Button */}
+            <TouchableOpacity
+              onPress={handleSubmit(onSubmit)}
+              style={styles.loginButton}>
+              <Text style={styles.loginButtonText}>Login</Text>
+            </TouchableOpacity>
+          </View>
 
-          {/* Login Button */}
-          <TouchableOpacity
-            onPress={handleSubmit(onSubmit)}
-            style={styles.loginButton}>
-            <Text style={styles.loginButtonText}>Login</Text>
+          <TouchableOpacity style={styles.footer}>
+            <Text style={styles.separatorText}>Terms of Use</Text>
+            <Text style={styles.separatorText}>•</Text>
+            <Text style={styles.separatorText}>Privacy Policy</Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.footer}>
-          <Text style={styles.separatorText}>Terms of Use</Text>
-          <Text style={styles.separatorText}>•</Text>
-          <Text style={styles.separatorText}>Privacy Policy</Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
+      <Modal
+        visible={errorModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setErrorModalVisible(false)}>
+        <View style={styles.overlay}>
+          <View style={styles.modalContent}>
+            <Image
+              width={10}
+              height={10}
+              source={require('../../../assets/images/error.png')}
+            />
+            <Text style={styles.text}>
+              Error! Invalid email or password, please input correct
+              credentials.
+            </Text>
+            <View style={styles.closeButtonView}>
+              <TouchableOpacity
+                onPress={() => setErrorModalVisible(false)}
+                style={styles.closeButton2}>
+                <Text style={styles.closeText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overlay1: {
+    flex: 1,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  logo: {
+    width: '50%',
+  },
   container: {
     flex: 1,
     flexDirection: 'row',
@@ -244,6 +300,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     backgroundColor: 'rgb(232, 231, 233)',
+  },
+  closeButtonView: {
+    backgroundColor: 'none',
+    width: 180,
   },
   gradientBackground: {
     position: 'absolute',
@@ -266,6 +326,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     opacity: 0.3,
+  },
+  closeButton2: {
+    backgroundColor: 'rgb(218, 218, 218)',
+    padding: 10,
+    borderRadius: 8,
+    width: '100%',
+    textAlign: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  closeText: {
+    color: '#000',
+    fontWeight: 'bold',
+    alignSelf: 'center',
+    textAlign: 'center',
+    justifyContent: 'center',
+  },
+  text: {
+    marginTop: 20,
+    color: 'black',
+    margin: 10,
   },
   blurBackground: {
     ...StyleSheet.absoluteFillObject,

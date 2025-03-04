@@ -200,7 +200,16 @@ function Customer() {
             />
           </View>
           <CustomDataTable
-            flexes={[1, 1, 2, 2, 2]}
+            flexes={[1, 2, 2, 3, 2]}
+            alignments={[
+              'center',
+              'flex-start',
+              'flex-start',
+              'flex-start',
+              'flex-start',
+              'center',
+              'center',
+            ]}
             headers={headers}
             data={data}
             searchQuery={customer}

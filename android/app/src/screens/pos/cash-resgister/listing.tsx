@@ -163,7 +163,15 @@ function Listing() {
         </View>
 
         <CustomDataTable
-          flexes={[2, 1, 1, 1, 2, 2]}
+          flexes={[1, 1, 1, 1, 2, 1]}
+          alignments={[
+            'flex-start',
+            'center',
+            'flex-start',
+            'flex-start',
+            'flex-start',
+            'flex-start',
+          ]}
           headers={headers}
           data={data}
           searchQuery={register}

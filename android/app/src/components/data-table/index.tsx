@@ -21,6 +21,7 @@ type DataFormat = {
 
 interface CustomDataTableProps {
   flexes: number[];
+  alignments: string[];
   headers: string[];
   data: {[key: string]: string | number}[];
   searchQuery?: string;
@@ -43,6 +44,7 @@ interface CustomDataTableProps {
 
 const CustomDataTable: React.FC<CustomDataTableProps> = ({
   flexes,
+  alignments,
   headers,
   data,
   searchQuery = '',
@@ -359,7 +361,7 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                     }}
                     textStyle={{
                       color: 'black',
-                      textAlign: index == 0 ? 'flex-start' : 'center',
+                      textAlign: alignments[index],
                       flex: 1,
                     }}>
                     {header}
@@ -392,8 +394,7 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                           cellStyle,
                           {
                             flex: flexes[cellIndex],
-                            justifyContent:
-                              cellIndex == 0 ? 'flex-start' : 'center',
+                            justifyContent: alignments[cellIndex],
                             alignItems: 'center',
                           },
                         ]}>
@@ -883,13 +884,11 @@ const styles = StyleSheet.create({
   editButton: {
     alignSelf: 'flex-start',
     paddingBottom: 5,
-    marginTop: 5,
     paddingHorizontal: 10,
   },
   crossButton: {
     alignSelf: 'flex-start',
     paddingBottom: 5,
-    marginTop: 5,
   },
   errorText: {color: 'red', textAlign: 'center', marginVertical: 10},
   editableView: {
