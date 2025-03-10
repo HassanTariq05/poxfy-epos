@@ -21,7 +21,7 @@ type DataFormat = {
 
 interface CustomDataTableProps {
   flexes: number[];
-  alignments: string[];
+  alignments: any[];
   headers: string[];
   data: {[key: string]: string | number}[];
   searchQuery?: string;
@@ -29,17 +29,20 @@ interface CustomDataTableProps {
   showOpenRegister?: boolean;
   showEdit?: boolean;
   showDelete?: boolean;
+  showRefund?: boolean;
   editableFields?: string[];
   showInputButton?: boolean;
   onToggleSwitch?: (row: any, value: boolean) => void;
   onOpenRegister?: (row: DataFormat) => void;
   onEdit?: (row: any) => void;
+  onRefund?: (row: any) => void;
   onDelete?: (row: DataFormat) => void;
   onInputChange?: (row: DataFormat, key: string, value: any) => void;
   onInputChangeForSet?: (row: DataFormat, key: string, value: string) => void;
   addDisabled?: boolean;
   highlightColumns?: boolean;
   toolTip?: boolean;
+  propWidth?: number;
 }
 
 const CustomDataTable: React.FC<CustomDataTableProps> = ({
@@ -51,6 +54,7 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
   onToggleSwitch,
   onOpenRegister,
   onEdit,
+  onRefund,
   onDelete,
   onInputChange,
   onInputChangeForSet,
@@ -58,11 +62,13 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
   showOpenRegister = false,
   showEdit = false,
   showDelete = false,
+  showRefund,
   editableFields = [],
   showInputButton = false,
   addDisabled = false,
   highlightColumns = false,
   toolTip = false,
+  propWidth,
 }) => {
   const rowsPerPage = 5;
   const [page, setPage] = useState(0);
@@ -351,7 +357,8 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
             showsHorizontalScrollIndicator={true}
             showsVerticalScrollIndicator={true}
             contentContainerStyle={{flexGrow: 1}}>
-            <DataTable style={styles.dataTable}>
+            <DataTable
+              style={[styles.dataTable, propWidth ? {width: propWidth} : {}]}>
               <DataTable.Header style={styles.header}>
                 {headers.map((header, index) => (
                   <DataTable.Title
@@ -367,7 +374,11 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                     {header}
                   </DataTable.Title>
                 ))}
-                {(showSwitch || showOpenRegister || showEdit || showDelete) && (
+                {(showSwitch ||
+                  showOpenRegister ||
+                  showEdit ||
+                  showDelete ||
+                  showRefund) && (
                   <DataTable.Title
                     textStyle={styles.headerActionText}
                     style={{flex: 2}}>
@@ -524,7 +535,8 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                   {(showSwitch ||
                     showOpenRegister ||
                     showEdit ||
-                    showDelete) && (
+                    showDelete ||
+                    showRefund) && (
                     <DataTable.Cell
                       style={{
                         flex: 2,
@@ -570,6 +582,12 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                           onPress={() => onEdit(row)}
                           style={styles.editButton}>
                           <Feather name="edit-3" size={22} color="black" />
+                        </TouchableOpacity>
+                      )}
+
+                      {showRefund && onRefund && (
+                        <TouchableOpacity onPress={() => onRefund(row)}>
+                          <Feather name="repeat" size={22} color="black" />
                         </TouchableOpacity>
                       )}
 

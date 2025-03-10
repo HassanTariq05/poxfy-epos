@@ -21,6 +21,8 @@ import {Switch} from 'react-native';
 import SplashScreen from './android/app/src/screens/splash';
 import useAuthStore from './android/app/src/redux/feature/store';
 import {updateBaseUrl, updateSocketUrl} from './android/app/src/network/client';
+import SalesHistory from './android/app/src/screens/pos/sales-history';
+import ProcessSales from './android/app/src/screens/pos/process-sales';
 // import {updateBaseUrl} from './android/app/src/network/client';
 
 const Drawer = createDrawerNavigator();
@@ -74,6 +76,20 @@ function DrawerNavigator() {
         {() => (
           <ScreenWrapper>
             <Listing />
+          </ScreenWrapper>
+        )}
+      </Drawer.Screen>
+      <Drawer.Screen name="POS-Sales-History">
+        {() => (
+          <ScreenWrapper>
+            <SalesHistory />
+          </ScreenWrapper>
+        )}
+      </Drawer.Screen>
+      <Drawer.Screen name="POS-Process-Sales">
+        {() => (
+          <ScreenWrapper>
+            <ProcessSales />
           </ScreenWrapper>
         )}
       </Drawer.Screen>

@@ -18,7 +18,7 @@ export const menuItems = [
     icon: 'history',
     color: '#00BFFF',
     backgroundTint: 'rgb(227, 247, 254)',
-    component: 'POS-Sale-History',
+    component: 'POS-Sales-History',
   },
   {
     name: 'Cash Registers',
