@@ -56,6 +56,9 @@ function ProcessSales() {
         if (existingProductIndex !== -1) {
           const updatedCart = [...prevCart];
           updatedCart[existingProductIndex].quantity += 1;
+          updatedCart[existingProductIndex].totalPrice =
+            updatedCart[existingProductIndex].quantity *
+            updatedCart[existingProductIndex].price; // ✅ Update total price
           return updatedCart;
         } else {
           return [
@@ -66,11 +69,26 @@ function ProcessSales() {
               price: selectedProduct.price,
               image: selectedProduct.image,
               quantity: 1,
+              totalPrice: selectedProduct.price, // ✅ Initialize total price
             },
           ];
         }
       });
     }
+  };
+
+  const handleUpdateQuantity = (productId: string, newQuantity: number) => {
+    setCartItems((prevCart: any) =>
+      prevCart.map((item: any) =>
+        item.product._id === productId
+          ? {
+              ...item,
+              quantity: newQuantity,
+              totalPrice: newQuantity * item.price, // ✅ Recalculate total price
+            }
+          : item,
+      ),
+    );
   };
 
   const handleRemoveProduct = (productId: string, attributes?: any) => {
@@ -198,6 +216,9 @@ function ProcessSales() {
       if (existingProductIndex !== -1) {
         const updatedCart = [...prevCart];
         updatedCart[existingProductIndex].quantity += 1;
+        updatedCart[existingProductIndex].totalPrice =
+          updatedCart[existingProductIndex].quantity *
+          updatedCart[existingProductIndex].price; // ✅ Update total price
         return updatedCart;
       } else {
         return [
@@ -209,6 +230,7 @@ function ProcessSales() {
             image: selectedProductVariant.product.image,
             attributes: {...selectedProductVariant.attributes},
             quantity: selectedProductVariant.quantity || 1,
+            totalPrice: selectedProductVariant.price, // ✅ Initialize total price
           },
         ];
       }
@@ -305,7 +327,6 @@ function ProcessSales() {
         <Card style={styles.card}>
           <ScrollView contentContainerStyle={{flexGrow: 1}}>
             <View style={styles.cardView}>
-              {/* Add Customer Section */}
               <View style={styles.section}>
                 <TouchableOpacity
                   onPress={() => setModalVisible(true)}
@@ -375,7 +396,6 @@ function ProcessSales() {
                     );
                     return (
                       <View style={styles.product} key={index}>
-                        {/* Product Image & Quantity */}
                         <View style={styles.productImageContainer}>
                           <View style={styles.quantityBadge}>
                             <Text style={styles.quantityText}>
@@ -394,7 +414,6 @@ function ProcessSales() {
                           />
                         </View>
 
-                        {/* Product Name & Price */}
                         <View style={styles.productDetails}>
                           <Text style={styles.productName}>
                             {product.product.name}
@@ -407,9 +426,25 @@ function ProcessSales() {
                                     attr =>
                                       product.attributes[attr] ||
                                       product.attributes[attr.toLowerCase()],
-                                  ) // Handle different key cases
-                                  .filter(Boolean) // Remove undefined or empty values
-                                  .join(' / ')}
+                                  )
+                                  .filter(Boolean)
+                                  .map(
+                                    value =>
+                                      value.charAt(0).toUpperCase() +
+                                      value.slice(1).toLowerCase(),
+                                  )
+                                  .join(' / ') ||
+                                  Object.entries(product.attributes)
+                                    .map(([key, value]) => {
+                                      if (typeof value === 'string') {
+                                        return `${key}: ${
+                                          value.charAt(0).toUpperCase() +
+                                          value.slice(1).toLowerCase()
+                                        }`;
+                                      }
+                                      return `${key}: ${String(value)}`;
+                                    })
+                                    .join(' / ')}
                               </Text>
                             )}
                         </View>
@@ -422,8 +457,6 @@ function ProcessSales() {
                                 : product.product.price?.toFixed(2)}
                             </Text>
                           </TouchableOpacity>
-
-                          {/* Remove Button */}
                           <TouchableOpacity
                             onPress={() =>
                               handleRemoveProduct(
@@ -445,12 +478,10 @@ function ProcessSales() {
                 </ScrollView>
               </View>
 
-              {/* Open Register Button */}
               <TouchableOpacity style={styles.openRegisterButton}>
                 <Text style={styles.openRegisterText}>Open Register</Text>
               </TouchableOpacity>
 
-              {/* Notes Section */}
               <View style={styles.section}>
                 <Icon
                   name={'calendar-text-outline'}
@@ -467,7 +498,6 @@ function ProcessSales() {
                 placeholderTextColor="#A3A3A3"
               />
 
-              {/* Payment Summary Section */}
               <View style={styles.section}>
                 <Icon
                   name="wallet-outline"
@@ -749,11 +779,6 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     paddingHorizontal: 18,
   },
-  //   productsView: {
-  //     backgroundColor: 'pink',
-  //     height: 205,
-  //     width: '100%',
-  //   },
   productsView: {
     height: 205,
     width: '100%',
@@ -763,8 +788,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingLeft: 5,
-    // backgroundColor: '#fff',
-    // marginBottom: 10,
     width: '100%',
     borderBottomColor: '#E5E7EB',
     borderBottomWidth: 1,
@@ -782,14 +805,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 30,
     backgroundColor: 'white',
-
-    // Shadow for iOS
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
     shadowRadius: 4,
-
-    // Shadow for Android
     elevation: 5,
   },
 
@@ -839,12 +858,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#A3A3A3',
   },
-  //   productCardsView: {
-  //     marginTop: 10,
-  //     flexDirection: 'row',
-  //     gap: 10,
-  //     flexWrap: 'wrap',
-  //   },
   productCardsView: {
     flexDirection: 'row',
     flexWrap: 'wrap',

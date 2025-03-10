@@ -30,13 +30,7 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
   selectedProduct,
   onConfirm,
 }) => {
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    reset,
-    formState: {errors},
-  } = useForm({
+  const {control, handleSubmit, setValue, reset} = useForm({
     defaultValues: {
       name: '',
     },
@@ -70,6 +64,7 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
   const [selectedAttributes, setSelectedAttributes] = useState<{
     [key: string]: string;
   }>({});
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   const handleSelection = (attrType: string, value: string) => {
     setSelectedAttributes(prev => ({
@@ -79,6 +74,21 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
   };
 
   const handleConfirm = () => {
+    let newErrors: {[key: string]: string} = {};
+
+    if (Array.isArray(selectedProduct?.attributes)) {
+      selectedProduct.attributes.forEach((attr: any) => {
+        if (!selectedAttributes[attr.type]) {
+          newErrors[attr.type] = `${attr.type} is required`;
+        }
+      });
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
+
     const selectedData = {
       product: selectedProduct,
       quantity,
@@ -89,6 +99,7 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
     console.log('Product Confirmed: ', selectedData);
     setSelectedAttributes({});
     setQuantity(1);
+    setErrors({});
     onClose();
   };
 
@@ -136,43 +147,52 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
 
             {Array.isArray(selectedProduct?.attributes) &&
               selectedProduct.attributes.map((attr: any) => (
-                <View key={attr.type} style={styles.row}>
-                  <Text style={styles.label}>* {attr.type} :</Text>
-                  <View style={styles.optionsRow}>
-                    {Array.isArray(attr.values) &&
-                      attr.values.map((value: any, index: number) => (
-                        <TouchableOpacity
-                          key={`${attr.type}-${value}`}
-                          style={[
-                            styles.option,
-                            selectedAttributes[attr.type] === value &&
-                              styles.selectedOption,
-                            index === 0
-                              ? {
-                                  borderTopLeftRadius: 18,
-                                  borderBottomLeftRadius: 18,
-                                }
-                              : {},
-                            index === attr.values.length - 1
-                              ? {
-                                  borderTopRightRadius: 18,
-                                  borderBottomRightRadius: 18,
-                                }
-                              : {},
-                          ]}
-                          onPress={() => handleSelection(attr.type, value)}>
-                          <Text
+                <>
+                  <View key={attr.type} style={styles.row}>
+                    <Text style={styles.label}>* {attr.type} :</Text>
+                    <View style={styles.optionsRow}>
+                      {Array.isArray(attr.values) &&
+                        attr.values.map((value: any, index: number) => (
+                          <TouchableOpacity
+                            key={`${attr.type}-${value}`}
                             style={[
-                              styles.optionText,
+                              styles.option,
                               selectedAttributes[attr.type] === value &&
-                                styles.selectedText,
-                            ]}>
-                            {value?.toUpperCase()}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                                styles.selectedOption,
+                              index === 0
+                                ? {
+                                    borderTopLeftRadius: 18,
+                                    borderBottomLeftRadius: 18,
+                                  }
+                                : {},
+                              index === attr.values.length - 1
+                                ? {
+                                    borderTopRightRadius: 18,
+                                    borderBottomRightRadius: 18,
+                                  }
+                                : {},
+                            ]}
+                            onPress={() => {
+                              handleSelection(attr.type, value);
+                              setErrors(prev => ({...prev, [attr.type]: ''}));
+                            }}>
+                            <Text
+                              style={[
+                                styles.optionText,
+                                selectedAttributes[attr.type] === value &&
+                                  styles.selectedText,
+                              ]}>
+                              {value?.toUpperCase()}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                    </View>
                   </View>
-                </View>
+
+                  {errors[attr.type] && (
+                    <Text style={styles.errorText}>{errors[attr.type]}</Text>
+                  )}
+                </>
               ))}
 
             <TouchableOpacity
@@ -254,6 +274,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 5,
     color: 'black',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: -12,
   },
   input: {
     width: 60,
