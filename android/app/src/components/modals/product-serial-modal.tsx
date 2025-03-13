@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {
   Modal,
   View,
@@ -8,13 +8,10 @@ import {
   TouchableOpacity,
   Animated,
   StyleSheet,
-  ToastAndroid,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {createSlug} from '../../services/product/brand';
 import useAuthStore from '../../redux/feature/store';
 
 interface SlideInModalProps {
@@ -60,24 +57,16 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
 
   const {isLoading} = useAuthStore();
 
-  const [quantity, setQuantity] = useState(1);
+  const [serial, setSerial] = useState('');
   const [selectedAttributes, setSelectedAttributes] = useState<{
     [key: string]: string;
   }>({});
   const [errors, setErrors] = useState<{[key: string]: string}>({});
-  const [serial, setSerial] = useState('');
-
-  const handleSelection = (attrType: string, value: string) => {
-    setSelectedAttributes(prev => ({
-      ...prev,
-      [attrType]: value,
-    }));
-  };
 
   const handleConfirm = () => {
     let newErrors: {[key: string]: string} = {};
 
-    if (selectedProduct?.askSerialNo && !serial.trim()) {
+    if (!serial.trim()) {
       newErrors.serial = 'Serial Number is required';
     }
 
@@ -90,23 +79,20 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
     }
 
     setErrors(newErrors);
-
     if (Object.keys(newErrors).length > 0) {
       return;
     }
 
     const selectedData = {
       product: selectedProduct,
-      quantity,
+      serial,
+      quantity: 1,
       attributes: selectedAttributes,
-      serial: selectedProduct?.askSerialNo ? serial : undefined,
     };
 
     onConfirm(selectedData);
     console.log('Product Confirmed: ', selectedData);
-
     setSelectedAttributes({});
-    setQuantity(1);
     setSerial('');
     setErrors({});
     onClose();
@@ -115,7 +101,13 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
   return (
     <Modal visible={visible} transparent animationType="none">
       <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} />
+        <TouchableOpacity
+          style={styles.backdrop}
+          onPress={() => {
+            onClose;
+            setSerial('');
+          }}
+        />
         <Animated.View
           style={[styles.modal, {transform: [{translateX: slideAnim}]}]}>
           <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -131,111 +123,23 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
             </View>
 
             <View style={styles.row}>
-              <Text style={styles.label}>Quantity:</Text>
-              <View style={styles.quantityContainer}>
-                <TouchableOpacity
-                  style={styles.quantityButton}
-                  onPress={() => setQuantity(prev => Math.max(1, prev - 1))}>
-                  <Text style={styles.quantityButtonText}>-</Text>
-                </TouchableOpacity>
-
-                <TextInput
-                  style={styles.input}
-                  value={String(quantity)}
-                  keyboardType="numeric"
-                  onChangeText={text => setQuantity(Number(text) || 1)}
-                />
-
-                <TouchableOpacity
-                  style={styles.quantityButton}
-                  onPress={() => setQuantity(prev => prev + 1)}>
-                  <Text style={styles.quantityButtonText}>+</Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={styles.label}>Serial Number</Text>
             </View>
 
-            {Array.isArray(selectedProduct?.attributes) &&
-              selectedProduct.attributes.map((attr: any) => (
-                <>
-                  <View key={attr.type} style={styles.row}>
-                    <Text style={styles.label}>
-                      * {attr.type.charAt(0).toUpperCase() + attr.type.slice(1)}{' '}
-                      :
-                    </Text>
-
-                    <View style={styles.optionsRow}>
-                      {Array.isArray(attr.values) &&
-                        attr.values.map((value: any, index: number) => (
-                          <TouchableOpacity
-                            key={`${attr.type}-${value}`}
-                            style={[
-                              styles.option,
-                              selectedAttributes[attr.type] === value &&
-                                styles.selectedOption,
-                              index === 0
-                                ? {
-                                    borderTopLeftRadius: 18,
-                                    borderBottomLeftRadius: 18,
-                                  }
-                                : {},
-                              index === attr.values.length - 1
-                                ? {
-                                    borderTopRightRadius: 18,
-                                    borderBottomRightRadius: 18,
-                                  }
-                                : {},
-                            ]}
-                            onPress={() => {
-                              handleSelection(attr.type, value);
-                              setErrors(prev => ({...prev, [attr.type]: ''}));
-                            }}>
-                            <Text
-                              style={[
-                                styles.optionText,
-                                selectedAttributes[attr.type] === value &&
-                                  styles.selectedText,
-                              ]}>
-                              {value?.toUpperCase()}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                    </View>
-                  </View>
-
-                  {errors[attr.type] && (
-                    <Text style={styles.errorText}>{errors[attr.type]}</Text>
-                  )}
-                </>
-              ))}
-
-            {selectedProduct?.askSerialNo && (
-              <>
-                <View style={styles.row}>
-                  <Text style={styles.label}>* Serial:</Text>
-                  <View style={styles.quantityContainer}>
-                    <TextInput
-                      ref={nameInputRef}
-                      style={[
-                        styles.input1,
-                        errors.serial && {borderColor: 'red'},
-                      ]}
-                      placeholder="Enter Serial Number"
-                      onChangeText={text => {
-                        setSerial(text);
-                        if (errors.serial) {
-                          setErrors(prev => ({...prev, serial: ''}));
-                        }
-                      }}
-                      value={serial}
-                    />
-                  </View>
-                </View>
-                <View>
-                  {errors.serial && (
-                    <Text style={styles.errorText}>{errors.serial}</Text>
-                  )}
-                </View>
-              </>
+            <TextInput
+              ref={nameInputRef}
+              style={[styles.input, errors.serial && {borderColor: 'red'}]}
+              placeholder="Enter Serial Number"
+              onChangeText={text => {
+                setSerial(text);
+                if (errors.serial) {
+                  setErrors(prev => ({...prev, serial: ''}));
+                }
+              }}
+              value={serial}
+            />
+            {errors.serial && (
+              <Text style={styles.errorText}>{errors.serial}</Text>
             )}
 
             <TouchableOpacity
@@ -310,7 +214,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignContent: 'center',
-    marginBottom: 15,
   },
   label: {
     fontSize: 15,
@@ -321,27 +224,16 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     fontSize: 12,
-    marginTop: -12,
   },
   input: {
-    width: 60,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 20,
-    paddingVertical: 15,
-    textAlign: 'center',
-  },
-  input1: {
     height: 45,
     backgroundColor: 'none',
     borderRadius: 20,
     paddingHorizontal: 10,
     fontSize: 14,
     marginBottom: 5,
-    marginRight: 10,
-    borderColor: '#ccc',
+    borderColor: 'rgb(240,240,240)',
     borderWidth: 1,
-    width: '80%',
   },
   optionsRow: {
     flexDirection: 'row',

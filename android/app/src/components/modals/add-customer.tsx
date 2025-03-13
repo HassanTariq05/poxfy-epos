@@ -177,7 +177,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       dateOfBirth: selectedDate,
       email: data.email,
       firstName: data.firstName,
-      genderId: '67af88cbbdf76fc83c97ebf9',
+      genderId: data.gender,
       isActive: true,
       lastName: data.lastName,
       logo: 'http',

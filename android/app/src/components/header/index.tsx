@@ -47,6 +47,10 @@ export default function Header() {
           value: outlet._id,
         }));
 
+        console.log('Stringified Outlets: ', JSON.stringify(outletsData));
+
+        await AsyncStorage.setItem('outletsData', JSON.stringify(outletsData));
+
         setOutlets(outletsData);
 
         // Get the stored outlet from AsyncStorage

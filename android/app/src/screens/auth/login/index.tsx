@@ -6,18 +6,14 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
-  ToastAndroid,
-  ActivityIndicator,
   Platform,
   ScrollView,
-  Alert,
   Modal,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {BlurView} from '@react-native-community/blur';
 import {useForm, Controller} from 'react-hook-form';
 import {submitLogin} from './service';
-import {Dropdown} from 'react-native-element-dropdown';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAuthStore from '../../../redux/feature/store';
 import {SOCKET_URL, SUB_API_BASE_URL} from '../../../constants';

@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   StyleSheet,
   View,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  ToastAndroid,
 } from 'react-native';
 import BasicCard from '../../../components/basic-card';
 import {Card} from 'react-native-paper';
@@ -22,11 +23,19 @@ import ProcessCustomerModal from '../../../components/modals/process-customer';
 import AddCustomerModal from '../../../components/modals/add-customer';
 import AddExistingCustomerModal from '../../../components/modals/add-existing-customer-modal';
 import ProductVariantModal from '../../../components/modals/product-variant-modal';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {API_BASE_URL} from '../../../constants';
+import axios from 'axios';
+import {DrawerNavigationProp} from '@react-navigation/drawer';
+import ErrorModal from '../../../components/modals/error-modal';
+import ProductSerialModal from '../../../components/modals/product-serial-modal';
 
 function ProcessSales() {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const {headerUrl, setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+  const {headerUrl, setIsLoadingTrue, setIsLoadingFalse, outletChange} =
+    useAuthStore();
   const [categories, setCategories] = useState<any>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     'all',
@@ -34,79 +43,96 @@ function ProcessSales() {
 
   const [products, setProducts] = useState<any>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>('Add Customer');
+  const [registerName, setRegisterName] = useState('Cash Register');
+  const [outletName, setOutletName] = useState('Outlet');
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
   const [cartItems, setCartItems] = useState<any>([]);
 
   const [variantModalVisible, setVariantModalVisible] = useState<any>(false);
+  const [serialModalVisible, setSerialModalVisible] = useState<any>(false);
   const [selectedProduct, setSelectedProduct] = useState<any>();
 
+  const [subtotal, setSubtotal] = useState<any>(0);
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+
+  const updateSubtotal = (cart: any[]) => {
+    const newSubtotal = cart.reduce(
+      (total, item) => total + item.totalPrice,
+      0,
+    );
+
+    console.log('Cart: ', cart);
+    console.log('Subtotal: ', newSubtotal);
+    setSubtotal(newSubtotal);
+  };
+
   const handleSelectProduct = (selectedProduct: any) => {
+    if (!isRegisterOpen) {
+      setErrorModalVisible(true);
+      return;
+    }
     console.log('Selected product: ', selectedProduct);
     setSelectedProduct(selectedProduct);
 
     if (selectedProduct.type === 'PRODUCT_WITH_VARIANT') {
       setVariantModalVisible(true);
     } else if (selectedProduct.type === 'NO_VARIANT') {
-      setCartItems((prevCart: any) => {
-        const existingProductIndex = prevCart.findIndex(
-          (item: any) => item.product._id === selectedProduct._id,
-        );
-
-        if (existingProductIndex !== -1) {
-          const updatedCart = [...prevCart];
-          updatedCart[existingProductIndex].quantity += 1;
-          updatedCart[existingProductIndex].totalPrice =
-            updatedCart[existingProductIndex].quantity *
-            updatedCart[existingProductIndex].price; // ✅ Update total price
-          return updatedCart;
-        } else {
-          return [
-            ...prevCart,
-            {
-              product: selectedProduct,
-              name: selectedProduct.name,
-              price: selectedProduct.price,
-              image: selectedProduct.image,
-              quantity: 1,
-              totalPrice: selectedProduct.price, // ✅ Initialize total price
-            },
-          ];
+      if (isRegisterOpen) {
+        if (selectedProduct.askSerialNo) {
+          setSerialModalVisible(true);
+          return;
         }
-      });
+        setCartItems((prevCart: any) => {
+          const existingProductIndex = prevCart.findIndex(
+            (item: any) => item.product._id === selectedProduct._id,
+          );
+
+          let updatedCart;
+          if (existingProductIndex !== -1) {
+            updatedCart = [...prevCart];
+            updatedCart[existingProductIndex].quantity += 1;
+            updatedCart[existingProductIndex].totalPrice =
+              updatedCart[existingProductIndex].quantity *
+              updatedCart[existingProductIndex].product?.variants[0]
+                ?.retailPrice;
+          } else {
+            updatedCart = [
+              ...prevCart,
+              {
+                product: selectedProduct,
+                name: selectedProduct.name,
+                image: selectedProduct.image,
+                quantity: 1,
+                totalPrice: selectedProduct?.variants[0]?.retailPrice,
+              },
+            ];
+          }
+
+          updateSubtotal(updatedCart);
+          return updatedCart;
+        });
+      }
     }
   };
 
-  const handleUpdateQuantity = (productId: string, newQuantity: number) => {
-    setCartItems((prevCart: any) =>
-      prevCart.map((item: any) =>
-        item.product._id === productId
-          ? {
-              ...item,
-              quantity: newQuantity,
-              totalPrice: newQuantity * item.price, // ✅ Recalculate total price
-            }
-          : item,
-      ),
-    );
-  };
-
   const handleRemoveProduct = (productId: string, attributes?: any) => {
-    setCartItems((prevCart: any) =>
-      prevCart.filter((item: any) => {
-        if (item.product._id !== productId) {
-          return true;
-        }
-        if (!attributes) {
-          return false;
-        }
-        return !(
-          item.attributes?.Size === attributes?.Size &&
-          item.attributes?.Color === attributes?.Color &&
-          item.attributes?.Stuff === attributes?.Stuff
-        );
-      }),
-    );
+    if (isRegisterOpen) {
+      setCartItems((prevCart: any) => {
+        const updatedCart = prevCart.filter((item: any) => {
+          if (item.product._id !== productId) return true;
+          if (!attributes) return false;
+          return !(
+            item.attributes?.Size === attributes?.Size &&
+            item.attributes?.Color === attributes?.Color &&
+            item.attributes?.Stuff === attributes?.Stuff
+          );
+        });
+
+        updateSubtotal(updatedCart);
+        return updatedCart;
+      });
+    }
   };
 
   useEffect(() => {
@@ -117,35 +143,38 @@ function ProcessSales() {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoadingTrue();
-      let url = `product?isSale=true&active=true`;
+  useFocusEffect(
+    useCallback(() => {
+      const fetchProducts = async () => {
+        setIsLoadingTrue();
+        let url = `product?isSale=true&active=true`;
 
-      if (debouncedSearchQuery.trim() !== '') {
-        url += `&name=${debouncedSearchQuery}`;
-      }
-      if (selectedCategory !== 'all') {
-        url += `&productTypeIds=${selectedCategory}`;
-      }
+        if (debouncedSearchQuery.trim() !== '') {
+          url += `&name=${debouncedSearchQuery}`;
+        }
+        if (selectedCategory !== 'all') {
+          url += `&productTypeIds=${selectedCategory}`;
+        }
 
-      try {
-        const getProductsResponse = await getProducts(url, headerUrl);
-        console.log(
-          'Get Products response:',
-          getProductsResponse.data.data.data,
-        );
+        try {
+          const getProductsResponse = await getProducts(url, headerUrl);
+          console.log(
+            'Get Products response:',
+            getProductsResponse.data.data.data,
+          );
 
-        setProducts(getProductsResponse.data.data.data);
-        setIsLoadingFalse();
-      } catch (error) {
-        setIsLoadingFalse();
-        console.error('Error fetching products:', error);
-      }
-    };
+          setProducts(getProductsResponse.data.data.data);
+          setIsLoadingFalse();
+        } catch (error) {
+          setIsLoadingFalse();
+          console.error('Error fetching products:', error);
+        }
+      };
 
-    fetchProducts();
-  }, [selectedCategory, debouncedSearchQuery]);
+      fetchProducts();
+      return () => {};
+    }, [selectedCategory, debouncedSearchQuery, outletChange]),
+  );
 
   useEffect(() => {
     const getAllProductCategories = async () => {
@@ -170,7 +199,62 @@ function ProcessSales() {
       }
     };
     getAllProductCategories();
-  }, []);
+  }, [outletChange]);
+
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchCurrentRegister = async () => {
+        try {
+          setIsLoadingTrue();
+          const token = await AsyncStorage.getItem('userToken');
+          const outletsData = await AsyncStorage.getItem('outletsData');
+          const parsedOutletsData = outletsData ? JSON.parse(outletsData) : '';
+          const outletId = await AsyncStorage.getItem('selectedOutlet');
+          if (Array.isArray(parsedOutletsData)) {
+            parsedOutletsData.map(outlet => {
+              if (outlet.value == outletId) {
+                setOutletName(outlet.label);
+              }
+            });
+          }
+          let url = `${API_BASE_URL}cash-register/current?outletId=${outletId}`;
+          console.log('URL:', url);
+          const response = await axios.get(url, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              origin: headerUrl,
+              referer: headerUrl,
+            },
+          });
+
+          console.log('Response Current Register:', response.data.data);
+
+          if (
+            !('success' in response.data?.data) ||
+            response.data?.data?.success
+          ) {
+            setRegisterName(response.data?.data?.cashRegister?.name);
+            setIsRegisterOpen(true);
+          } else {
+            setRegisterName('Cash Register');
+            setIsRegisterOpen(false);
+          }
+
+          setIsLoadingFalse();
+        } catch (err) {
+          console.error('Error fetching data:', err);
+          setIsLoadingFalse();
+        }
+      };
+
+      fetchCurrentRegister();
+
+      return () => {};
+    }, [outletChange]),
+  );
 
   const [modalVisible, setModalVisible] = useState(false);
   const [existingCustomersModalVisible, setExistingCustomersModalVisible] =
@@ -202,46 +286,91 @@ function ProcessSales() {
       return;
     }
 
-    setCartItems((prevCart: any) => {
-      const existingProductIndex = prevCart.findIndex((item: any) => {
-        if (item.product._id !== selectedProductVariant.product._id)
-          return false;
+    if (isRegisterOpen) {
+      setCartItems((prevCart: any) => {
+        const existingProductIndex = prevCart.findIndex((item: any) => {
+          if (item.product._id !== selectedProductVariant.product._id)
+            return false;
 
-        return Object.keys(selectedProductVariant.attributes).every(
-          key =>
-            item.attributes?.[key] === selectedProductVariant.attributes[key],
-        );
+          return Object.keys(selectedProductVariant.attributes).every(
+            key =>
+              item.attributes?.[key] === selectedProductVariant.attributes[key],
+          );
+        });
+
+        let updatedCart;
+        if (existingProductIndex !== -1) {
+          updatedCart = [...prevCart];
+          updatedCart[existingProductIndex].quantity += 1;
+          updatedCart[existingProductIndex].totalPrice =
+            updatedCart[existingProductIndex].quantity *
+            updatedCart[existingProductIndex].product?.variants[0]?.retailPrice;
+        } else {
+          updatedCart = [
+            ...prevCart,
+            {
+              product: selectedProductVariant.product,
+              name: selectedProductVariant.product.name,
+              price: selectedProductVariant.product.price,
+              image: selectedProductVariant.product.image,
+              attributes: {...selectedProductVariant.attributes},
+              quantity: selectedProductVariant.quantity || 1,
+              totalPrice:
+                selectedProductVariant.product?.variants[0]?.retailPrice,
+              serialNo: selectedProductVariant?.serial,
+            },
+          ];
+        }
+
+        updateSubtotal(updatedCart);
+        return updatedCart;
       });
+    }
+  };
 
+  const handleSerialProductSelection = (selectedProductVariant: any) => {
+    setCartItems((prevCart: any) => {
+      const existingProductIndex = prevCart.findIndex(
+        (item: any) => item.product._id === selectedProduct._id,
+      );
+
+      let updatedCart;
       if (existingProductIndex !== -1) {
-        const updatedCart = [...prevCart];
+        updatedCart = [...prevCart];
         updatedCart[existingProductIndex].quantity += 1;
         updatedCart[existingProductIndex].totalPrice =
           updatedCart[existingProductIndex].quantity *
-          updatedCart[existingProductIndex].price; // ✅ Update total price
-        return updatedCart;
+          updatedCart[existingProductIndex].product?.variants[0]?.retailPrice;
       } else {
-        return [
+        updatedCart = [
           ...prevCart,
           {
-            product: selectedProductVariant.product,
-            name: selectedProductVariant.product.name,
-            price: selectedProductVariant.product.price,
-            image: selectedProductVariant.product.image,
-            attributes: {...selectedProductVariant.attributes},
-            quantity: selectedProductVariant.quantity || 1,
-            totalPrice: selectedProductVariant.price, // ✅ Initialize total price
+            product: selectedProduct,
+            name: selectedProduct.name,
+            image: selectedProduct.image,
+            quantity: 1,
+            totalPrice: selectedProduct?.variants[0]?.retailPrice,
+            serialNo: selectedProductVariant?.serial,
           },
         ];
       }
+
+      updateSubtotal(updatedCart);
+      return updatedCart;
     });
+  };
+
+  const navigation = useNavigation<DrawerNavigationProp<any>>();
+
+  const handleOpenRegister = () => {
+    navigation.navigate('POS-Cash-Registers');
   };
 
   return (
     <View style={styles.mainContainer}>
       <View style={styles.productView}>
         <View style={styles.outletView}>
-          <Text style={styles.outletLabel}>Main Store</Text>
+          <Text style={styles.outletLabel}>{outletName}</Text>
           <Icon
             name={'chevron-double-right'}
             size={30}
@@ -249,7 +378,7 @@ function ProcessSales() {
             style={{fontWeight: 'bold'}}
           />
 
-          <Text style={styles.cashRegisterLabel}>Cash Register</Text>
+          <Text style={styles.cashRegisterLabel}>{registerName}</Text>
         </View>
         <View style={styles.searchView}>
           <View style={[styles.searchContainer, styles.searchTextFocused]}>
@@ -366,11 +495,24 @@ function ProcessSales() {
                 onConfirm={handleVariantProductSelection}
               />
 
+              <ProductSerialModal
+                visible={serialModalVisible}
+                onClose={() => setSerialModalVisible(false)}
+                selectedProduct={selectedProduct}
+                onConfirm={handleSerialProductSelection}
+              />
+
               <AddCustomerModal
                 visible={addCustomerModalVisible}
                 gender={[]}
                 setRefetch={{}}
                 onClose={() => setAddCustomerModalVisible(false)}
+              />
+
+              <ErrorModal
+                error={'Error: Please Open Register'}
+                errorModalVisible={errorModalVisible}
+                setErrorModalVisible={setErrorModalVisible}
               />
 
               <View style={styles.divider} />
@@ -387,8 +529,8 @@ function ProcessSales() {
                         return (
                           Array.isArray(variant.combination) &&
                           variant.combination.length ===
-                            selectedAttributes.length &&
-                          selectedAttributes.every(attr =>
+                            Object.keys(selectedAttributes).length &&
+                          Object.values(selectedAttributes).every(attr =>
                             variant.combination.includes(attr),
                           )
                         );
@@ -453,8 +595,11 @@ function ProcessSales() {
                           <TouchableOpacity>
                             <Text style={styles.productPrice}>
                               {matchedVariant
-                                ? matchedVariant.retailPrice?.toFixed(2)
-                                : product.product.price?.toFixed(2)}
+                                ? (
+                                    matchedVariant.retailPrice *
+                                    product.quantity
+                                  ).toFixed(2)
+                                : product.totalPrice.toFixed(2)}
                             </Text>
                           </TouchableOpacity>
                           <TouchableOpacity
@@ -478,72 +623,95 @@ function ProcessSales() {
                 </ScrollView>
               </View>
 
-              <TouchableOpacity style={styles.openRegisterButton}>
-                <Text style={styles.openRegisterText}>Open Register</Text>
-              </TouchableOpacity>
-
-              <View style={styles.section}>
-                <Icon
-                  name={'calendar-text-outline'}
-                  size={26}
-                  color={'rgb(103, 223, 135)'}
-                  style={{fontWeight: 500}}
-                />
-                <Text style={styles.sectionTitle}>Notes</Text>
-              </View>
-
-              <TextInput
-                style={styles.input}
-                placeholder="Notes"
-                placeholderTextColor="#A3A3A3"
-              />
-
-              <View style={styles.section}>
-                <Icon
-                  name="wallet-outline"
-                  size={26}
-                  color={'rgb(103, 223, 135)'}
-                  style={{fontWeight: 500}}
-                />
-                <Text style={styles.sectionTitle}>Payment Summary</Text>
-              </View>
-
-              <View style={[styles.paymentSummaryView, {marginTop: 0}]}>
-                <View style={[styles.paymentSummary, {paddingTop: 5}]}>
-                  <Text style={styles.summaryLabel}>Sub Total</Text>
-                  <Text style={styles.summaryValue}>0</Text>
-                </View>
-
-                <View style={styles.paymentSummary}>
-                  <Text style={styles.summaryLabel}>Discount</Text>
-                  <Text style={[styles.summaryValue, styles.discount]}>
-                    0.00
-                  </Text>
-                </View>
-
-                <View style={styles.paymentSummary}>
-                  <Text style={styles.summaryLabel}>Tax</Text>
-                  <Text style={styles.summaryValue}>0.00</Text>
-                </View>
-
-                <View style={styles.paymentSummary}>
-                  <Text style={styles.summaryLabel}>Grand Total</Text>
-                  <Text style={styles.summaryValue}>0.00</Text>
-                </View>
-              </View>
-
-              <View style={styles.paymentButtonsView}>
-                <TouchableOpacity style={styles.paymentButton}>
-                  <Text style={styles.paymentText}>DISCARD</Text>
+              {!isRegisterOpen && (
+                <TouchableOpacity
+                  onPress={handleOpenRegister}
+                  style={styles.openRegisterButton}>
+                  <Text style={styles.openRegisterText}>Open Register</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.paymentButton}>
-                  <Text style={styles.paymentText}>PARK</Text>
-                </TouchableOpacity>
+              )}
+
+              <View
+                pointerEvents={!isRegisterOpen ? 'none' : 'auto'} // Disables all child elements
+                style={{opacity: isRegisterOpen ? 1 : 0.7}}>
+                {' '}
+                // Optional: Dim UI when disabled
+                {/* Notes Section */}
+                <View style={[styles.section, {paddingTop: 10}]}>
+                  <Icon
+                    name={'calendar-text-outline'}
+                    size={26}
+                    color={'rgb(103, 223, 135)'}
+                    style={{fontWeight: '500'}}
+                  />
+                  <Text style={styles.sectionTitle}>Notes</Text>
+                </View>
+                <TextInput
+                  editable={isRegisterOpen}
+                  style={[styles.input, !isRegisterOpen && {opacity: 0.7}]}
+                  placeholder="Notes"
+                  placeholderTextColor="#A3A3A3"
+                />
+                {/* Payment Summary Section */}
+                <View style={styles.section}>
+                  <Icon
+                    name="wallet-outline"
+                    size={26}
+                    color={'rgb(103, 223, 135)'}
+                    style={{fontWeight: 500}}
+                  />
+                  <Text style={styles.sectionTitle}>Payment Summary</Text>
+                </View>
+                <View style={[styles.paymentSummaryView, {marginTop: 0}]}>
+                  <View style={[styles.paymentSummary, {paddingTop: 5}]}>
+                    <Text style={styles.summaryLabel}>Sub Total</Text>
+                    <Text style={styles.summaryValue}>{subtotal}</Text>
+                  </View>
+
+                  <View style={styles.paymentSummary}>
+                    <Text style={styles.summaryLabel}>Discount</Text>
+                    <Text style={[styles.summaryValue, styles.discount]}>
+                      0.00
+                    </Text>
+                  </View>
+
+                  <View style={styles.paymentSummary}>
+                    <Text style={styles.summaryLabel}>Tax</Text>
+                    <Text style={styles.summaryValue}>0.00</Text>
+                  </View>
+
+                  <View style={styles.paymentSummary}>
+                    <Text style={styles.summaryLabel}>Grand Total</Text>
+                    <Text style={styles.summaryValue}>0.00</Text>
+                  </View>
+                </View>
+                {/* Payment Buttons */}
+                <View style={styles.paymentButtonsView}>
+                  <TouchableOpacity
+                    onPress={() => isRegisterOpen && setCartItems([])} // Prevents clicking when disabled
+                    style={[
+                      styles.paymentButton,
+                      !isRegisterOpen && {opacity: 0.7},
+                    ]}>
+                    <Text style={styles.paymentText}>DISCARD</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    disabled={!isRegisterOpen} // Disables button press
+                    style={[
+                      styles.paymentButton,
+                      !isRegisterOpen && {opacity: 0.7},
+                    ]}>
+                    <Text style={styles.paymentText}>PARK</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <TouchableOpacity style={styles.payButtonView}>
-                <Text style={styles.openRegisterText}>PAY</Text>
-                <Text style={styles.openRegisterText}>0.00</Text>
-              </TouchableOpacity>
+
+              {isRegisterOpen && (
+                <TouchableOpacity style={styles.payButtonView}>
+                  <Text style={styles.openRegisterText}>PAY</Text>
+                  <Text style={styles.openRegisterText}>0.00</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </ScrollView>
         </Card>
