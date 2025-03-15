@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {
   Modal,
   View,
@@ -8,27 +8,32 @@ import {
   TouchableOpacity,
   Animated,
   StyleSheet,
-  ToastAndroid,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {createSlug} from '../../services/product/brand';
 import useAuthStore from '../../redux/feature/store';
-import {Variant} from '../../screens/pos/process-sales';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {Dropdown} from 'react-native-element-dropdown';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import {LineItem, Tax} from '../../screens/pos/process-sales';
 
 interface SlideInModalProps {
   visible: boolean;
+  taxes: Tax[];
   onClose: () => void;
   selectedProduct: any;
+  selectedLineItem: LineItem;
   onConfirm: any;
 }
 
-const ProductVariantModal: React.FC<SlideInModalProps> = ({
+const ProductDetailModal: React.FC<SlideInModalProps> = ({
   visible,
+  taxes,
   onClose,
   selectedProduct,
+  selectedLineItem,
   onConfirm,
 }) => {
   const {control, handleSubmit, setValue, reset} = useForm({
@@ -39,6 +44,7 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
 
   const slideAnim = useRef(new Animated.Value(500)).current;
   const nameInputRef = useRef<TextInput>(null);
+  const [selectedTax, setSelectedTax] = useState<Tax>({} as Tax);
 
   useEffect(() => {
     if (visible) {
@@ -61,76 +67,83 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
 
   const {isLoading} = useAuthStore();
 
+  const [serial, setSerial] = useState('');
+  const [retailPrice, setRetailPrice] = useState('');
   const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    if (selectedLineItem.product) {
+      setSerial(
+        selectedLineItem.product.serialNo
+          ? selectedLineItem.product.serialNo.toString()
+          : '',
+      );
+      const totalPrice = selectedLineItem.selectedVariant.retailPrice;
+      const qty = selectedLineItem.quantity;
+      setRetailPrice(totalPrice.toString());
+      setQuantity(qty);
+      setSelectedTax(selectedLineItem.selectedTax);
+    }
+  }, [visible]); // Runs whenever selectedProduct changes
+
   const [selectedAttributes, setSelectedAttributes] = useState<{
     [key: string]: string;
   }>({});
   const [errors, setErrors] = useState<{[key: string]: string}>({});
-  const [serial, setSerial] = useState('');
-
-  const handleSelection = (attrType: string, value: string) => {
-    setSelectedAttributes(prev => ({
-      ...prev,
-      [attrType]: value,
-    }));
-  };
 
   const handleConfirm = () => {
     let newErrors: {[key: string]: string} = {};
 
-    if (selectedProduct.askSerialNo && (serial == undefined || serial == '')) {
+    if (
+      selectedLineItem.product.askSerialNo &&
+      (selectedLineItem.product.serial == undefined ||
+        selectedLineItem.product?.serial == '')
+    ) {
       newErrors.serial = 'Serial Number is required';
     }
 
-    if (Array.isArray(selectedProduct?.attributes)) {
-      selectedProduct.attributes.forEach((attr: any) => {
-        if (!selectedAttributes[attr.type]) {
-          newErrors[attr.type] = `${attr.type} is required`;
-        }
-      });
+    if (!retailPrice.trim()) {
+      newErrors.retailPrice = 'Retail Price Ex. Tax is required';
     }
 
     setErrors(newErrors);
-
     if (Object.keys(newErrors).length > 0) {
       return;
     }
 
-    var selectedVariant: Variant = {} as Variant;
-
-    const selectedAttrSet = new Set(Object.values(selectedAttributes));
-
-    selectedProduct.variants.forEach((variant: any) => {
-      const combSet = new Set(variant.combination as string[]);
-      const eqSet =
-        combSet.size === selectedAttrSet.size &&
-        [...combSet].every(x => selectedAttrSet.has(x));
-      if (eqSet) {
-        selectedVariant = variant;
-        return;
-      }
-    });
-
     const selectedData = {
       product: selectedProduct,
-      quantity,
-      selectedVariant,
-      serial: selectedProduct?.askSerialNo ? serial : '',
+      serial,
+      quantity: 1,
+      attributes: selectedAttributes,
     };
 
-    onConfirm(selectedData);
+    selectedLineItem.quantity = quantity;
+    selectedLineItem.selectedTax = selectedTax;
+    selectedLineItem.selectedVariant.retailPrice = Number(retailPrice);
+
+    onConfirm(selectedLineItem);
 
     setSelectedAttributes({});
-    setQuantity(1);
     setSerial('');
     setErrors({});
     onClose();
   };
 
+  const {headerUrl, setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
+
+  const handleOnClose = () => {
+    setErrors({});
+    onClose();
+    setSerial('');
+    setRetailPrice('');
+    setQuantity(1);
+  };
+
   return (
     <Modal visible={visible} transparent animationType="none">
       <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} />
+        <TouchableOpacity style={styles.backdrop} onPress={handleOnClose} />
         <Animated.View
           style={[styles.modal, {transform: [{translateX: slideAnim}]}]}>
           <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -142,7 +155,7 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
                   color="#ED6964"
                 />
               </TouchableOpacity>
-              <Text style={styles.title}>{selectedProduct?.name}</Text>
+              <Text style={styles.title}></Text>
             </View>
 
             <View style={styles.row}>
@@ -150,12 +163,14 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
               <View style={styles.quantityContainer}>
                 <TouchableOpacity
                   style={styles.quantityButton}
-                  onPress={() => setQuantity(prev => Math.max(1, prev - 1))}>
+                  onPress={() =>
+                    setQuantity((prev: any) => Math.max(1, prev - 1))
+                  }>
                   <Text style={styles.quantityButtonText}>-</Text>
                 </TouchableOpacity>
 
                 <TextInput
-                  style={styles.input}
+                  style={styles.input1}
                   value={String(quantity)}
                   keyboardType="numeric"
                   onChangeText={text => setQuantity(Number(text) || 1)}
@@ -163,95 +178,91 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
 
                 <TouchableOpacity
                   style={styles.quantityButton}
-                  onPress={() => setQuantity(prev => prev + 1)}>
+                  onPress={() => setQuantity((prev: any) => prev + 1)}>
                   <Text style={styles.quantityButtonText}>+</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            {Array.isArray(selectedProduct?.attributes) &&
-              selectedProduct.attributes.map((attr: any) => (
-                <>
-                  <View key={attr.type} style={styles.row}>
-                    <Text style={styles.label}>
-                      * {attr.type.charAt(0).toUpperCase() + attr.type.slice(1)}{' '}
-                      :
-                    </Text>
+            <View style={styles.row}>
+              <Text style={styles.label}>* Retail Price Ex.Tax</Text>
+            </View>
 
-                    <View style={styles.optionsRow}>
-                      {Array.isArray(attr.values) &&
-                        attr.values.map((value: any, index: number) => (
-                          <TouchableOpacity
-                            key={`${attr.type}-${value}`}
-                            style={[
-                              styles.option,
-                              selectedAttributes[attr.type] === value &&
-                                styles.selectedOption,
-                              index === 0
-                                ? {
-                                    borderTopLeftRadius: 18,
-                                    borderBottomLeftRadius: 18,
-                                  }
-                                : {},
-                              index === attr.values.length - 1
-                                ? {
-                                    borderTopRightRadius: 18,
-                                    borderBottomRightRadius: 18,
-                                  }
-                                : {},
-                            ]}
-                            onPress={() => {
-                              handleSelection(attr.type, value);
-                              setErrors(prev => ({...prev, [attr.type]: ''}));
-                            }}>
-                            <Text
-                              style={[
-                                styles.optionText,
-                                selectedAttributes[attr.type] === value &&
-                                  styles.selectedText,
-                              ]}>
-                              {value?.toUpperCase()}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                    </View>
-                  </View>
+            <TextInput
+              ref={nameInputRef}
+              style={[styles.input, errors.retailPrice && {borderColor: 'red'}]}
+              placeholder="Enter Retail Price Ex.Tax"
+              onChangeText={text => {
+                setRetailPrice(text);
+                if (errors.retailPrice) {
+                  setErrors(prev => ({...prev, retailPrice: ''}));
+                }
+              }}
+              value={retailPrice}
+            />
+            {errors.retailPrice && (
+              <Text style={styles.errorText}>{errors.retailPrice}</Text>
+            )}
 
-                  {errors[attr.type] && (
-                    <Text style={styles.errorText}>{errors[attr.type]}</Text>
-                  )}
-                </>
-              ))}
-
-            {selectedProduct?.askSerialNo && (
+            {selectedProduct?.serialNo && (
               <>
                 <View style={styles.row}>
-                  <Text style={styles.label}>* Serial:</Text>
-                  <View style={styles.quantityContainer}>
-                    <TextInput
-                      ref={nameInputRef}
-                      style={[
-                        styles.input1,
-                        errors.serial && {borderColor: 'red'},
-                      ]}
-                      placeholder="Enter Serial Number"
-                      onChangeText={text => {
-                        setSerial(text);
-                        if (errors.serial) {
-                          setErrors(prev => ({...prev, serial: ''}));
-                        }
-                      }}
-                      value={serial}
-                    />
-                  </View>
+                  <Text style={[styles.label, {marginTop: 10}]}>
+                    * Serial No
+                  </Text>
                 </View>
-                <View>
-                  {errors.serial && (
-                    <Text style={styles.errorText}>{errors.serial}</Text>
-                  )}
-                </View>
+
+                <TextInput
+                  style={[styles.input, errors.serial && {borderColor: 'red'}]}
+                  placeholder="Enter Serial Number"
+                  onChangeText={text => {
+                    setSerial(text);
+                    if (errors.serial) {
+                      setErrors(prev => ({...prev, serial: ''}));
+                    }
+                  }}
+                  value={serial}
+                />
+                {errors.serial && (
+                  <Text style={styles.errorText}>{errors.serial}</Text>
+                )}
               </>
             )}
+
+            <View style={styles.row}>
+              <View style={styles.row1}>
+                <Icon
+                  name="file-table-box-multiple-outline"
+                  size={26}
+                  color={'rgb(103, 223, 135)'}
+                  style={{fontWeight: 500}}
+                />
+                <Text style={styles.sectionTitle}>Tax Rate</Text>
+              </View>
+            </View>
+
+            <Dropdown
+              style={styles.dropdown}
+              containerStyle={styles.dropdownContainer}
+              data={taxes}
+              labelField="label"
+              valueField="value"
+              placeholder="Tax Rate"
+              value={selectedTax}
+              onChange={item => {
+                setSelectedTax(item);
+                if (errors.tax) {
+                  setErrors(prev => ({...prev, tax: ''}));
+                }
+              }}
+              selectedTextStyle={styles.selectedText1}
+              itemTextStyle={styles.itemText}
+              itemContainerStyle={styles.itemContainer}
+              flatListProps={{
+                nestedScrollEnabled: true,
+                keyboardShouldPersistTaps: 'handled',
+              }}
+            />
 
             <TouchableOpacity
               onPress={handleConfirm}
@@ -320,43 +331,91 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+  sectionTitle: {
+    marginLeft: 8,
+    fontSize: 15,
+    color: 'rgb(103, 223, 135)',
+    fontWeight: '500',
+  },
   row: {
     display: 'flex',
     flexDirection: 'row',
+    marginBottom: 10,
     alignItems: 'center',
     alignContent: 'center',
-    marginBottom: 15,
+  },
+
+  row1: {
+    display: 'flex',
+    flexDirection: 'row',
+    marginTop: 10,
+    alignItems: 'center',
+    alignContent: 'center',
+    width: '100%',
   },
   label: {
     fontSize: 15,
     fontWeight: '500',
-    marginBottom: 5,
     color: 'black',
   },
   errorText: {
     color: 'red',
     fontSize: 12,
-    marginTop: -12,
   },
   input: {
-    width: 60,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 20,
-    paddingVertical: 15,
-    textAlign: 'center',
-  },
-  input1: {
     height: 45,
     backgroundColor: 'none',
     borderRadius: 20,
     paddingHorizontal: 10,
     fontSize: 14,
     marginBottom: 5,
-    marginRight: 10,
-    borderColor: '#ccc',
+    borderColor: 'rgb(240,240,240)',
     borderWidth: 1,
-    width: '80%',
+  },
+
+  dropdown: {
+    height: 45,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    fontSize: 12,
+    marginBottom: 5,
+    borderColor: 'rgb(240,240,240)',
+    borderWidth: 1,
+    justifyContent: 'center',
+  },
+  dropdownContainer: {
+    borderRadius: 10,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: 'rgb(200,200,200)',
+    paddingVertical: 5,
+    maxHeight: 200, // Ensures dropdown is not too large
+    elevation: 5, // Adds shadow effect for visibility on Android
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  selectedText1: {
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  itemText: {
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  itemContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 5,
+  },
+  input1: {
+    width: 60,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 20,
+    paddingVertical: 15,
+    textAlign: 'center',
   },
   optionsRow: {
     flexDirection: 'row',
@@ -414,7 +473,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 30,
     paddingHorizontal: 5,
-    width: '100%',
+    width: '80%',
     justifyContent: 'center',
   },
   quantityButton: {
@@ -434,4 +493,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProductVariantModal;
+export default ProductDetailModal;

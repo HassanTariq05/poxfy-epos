@@ -32,8 +32,13 @@ function Listing() {
 
   const navigation = useNavigation<DrawerNavigationProp<any>>();
 
-  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl, outletChange} =
-    useAuthStore();
+  const {
+    setIsLoadingTrue,
+    setIsLoadingFalse,
+    headerUrl,
+    outletChange,
+    redirectToProcessSales,
+  } = useAuthStore();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -133,6 +138,10 @@ function Listing() {
       response = await openRegister(payload, selectedRow, headerUrl);
       console.log('Response Open resgister:', response.data.data);
       if (response?.data.meta.success) {
+        if (redirectToProcessSales) {
+          navigation.navigate('POS-Process-Sales');
+          return;
+        }
         navigation.navigate('Listing');
         setModalVisible(false);
         setIsLoadingFalse();

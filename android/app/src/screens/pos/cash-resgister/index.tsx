@@ -41,8 +41,13 @@ const CashRegister: React.FC<any> = () => {
   const navigation = useNavigation<DrawerNavigationProp<any>>();
 
   const [registerData, setRegisterData] = useState<any>();
-  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl, outletChange} =
-    useAuthStore();
+  const {
+    setIsLoadingTrue,
+    setIsLoadingFalse,
+    headerUrl,
+    outletChange,
+    setRedirectToProcessSalesFalse,
+  } = useAuthStore();
 
   const handleOpenRegister = useCallback(async () => {
     let response;
@@ -85,6 +90,7 @@ const CashRegister: React.FC<any> = () => {
   const handleCloseRegister = async () => {
     try {
       setIsLoadingTrue();
+
       const token = await AsyncStorage.getItem('userToken');
       let url = `${API_BASE_URL}cash-register/${registerData.cashRegister._id}/close/${registerData._id}`;
       console.log('URL:', url);
@@ -108,6 +114,7 @@ const CashRegister: React.FC<any> = () => {
 
       if (response.data.meta.success) {
         console.log('Navigating to Cash Registers');
+        setRedirectToProcessSalesFalse();
         navigation.navigate('POS-Cash-Registers');
         setCountedCard('');
         setCountedCash('');

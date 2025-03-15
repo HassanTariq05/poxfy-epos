@@ -91,7 +91,6 @@ const ProductVariantModal: React.FC<SlideInModalProps> = ({
     };
 
     onConfirm(selectedData);
-    console.log('Product Confirmed: ', selectedData);
     setSelectedAttributes({});
     setSerial('');
     setErrors({});

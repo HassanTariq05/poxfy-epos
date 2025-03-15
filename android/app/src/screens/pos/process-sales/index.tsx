@@ -30,12 +30,38 @@ import axios from 'axios';
 import {DrawerNavigationProp} from '@react-navigation/drawer';
 import ErrorModal from '../../../components/modals/error-modal';
 import ProductSerialModal from '../../../components/modals/product-serial-modal';
+import ProductDetailModal from '../../../components/modals/product-detail-modal';
+
+export interface Tax {
+  id: string;
+  rate: number;
+  name: string;
+}
+
+export interface LineItem {
+  product: any;
+  quantity: number;
+  selectedVariant: Variant;
+  selectedTax: Tax;
+}
+
+export interface Variant {
+  _id: string;
+  retailPrice: number;
+  combination: string[];
+}
 
 function ProcessSales() {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const {headerUrl, setIsLoadingTrue, setIsLoadingFalse, outletChange} =
-    useAuthStore();
+  const {
+    headerUrl,
+    setIsLoadingTrue,
+    setIsLoadingFalse,
+    outletChange,
+    setRedirectToProcessSalesTrue,
+    setRedirectToProcessSalesFalse,
+  } = useAuthStore();
   const [categories, setCategories] = useState<any>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     'all',
@@ -47,24 +73,106 @@ function ProcessSales() {
   const [outletName, setOutletName] = useState('Outlet');
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
-  const [cartItems, setCartItems] = useState<any>([]);
+  const [cartItems, setCartItems] = useState<LineItem[]>([]);
 
   const [variantModalVisible, setVariantModalVisible] = useState<any>(false);
   const [serialModalVisible, setSerialModalVisible] = useState<any>(false);
   const [selectedProduct, setSelectedProduct] = useState<any>();
 
-  const [subtotal, setSubtotal] = useState<any>(0);
+  const [subtotal, setSubtotal] = useState<number>(0);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
 
-  const updateSubtotal = (cart: any[]) => {
-    const newSubtotal = cart.reduce(
-      (total, item) => total + item.totalPrice,
+  const [taxes, setTaxes] = useState([]);
+  const [taxTotal, setTaxTotal] = useState(0);
+  const [cartTotal, setCartTotal] = useState(0);
+  const [discountTotal, setDiscountTotal] = useState(0);
+
+  interface Cart {
+    items: LineItem[];
+  }
+
+  var cart = {} as Cart;
+  cart.items = [];
+
+  const addItemToCart = (
+    product: any,
+    selectedVariant: Variant,
+    selectedTax: Tax,
+    quantity: number = 1,
+    serial: string = '',
+  ) => {
+    product.serial = serial;
+    cart.items = cartItems;
+    const existingProductIndex = cart.items.findIndex(
+      (item: LineItem) =>
+        item.product._id == product._id &&
+        item.selectedVariant._id == selectedVariant._id,
+    );
+    if (existingProductIndex > -1) {
+      cart.items[existingProductIndex].quantity += quantity;
+    } else {
+      cart.items.push({product, quantity, selectedVariant, selectedTax});
+    }
+    setCartItems(cart.items);
+  };
+
+  const removeItemFromCart = (productId: string) => {
+    cart.items = cartItems;
+    const existingProductIndex = cart.items.findIndex(
+      (item: LineItem) => item.product._id == productId,
+    );
+    if (existingProductIndex > -1 && existingProductIndex < cart.items.length) {
+      cart.items.splice(existingProductIndex, 1);
+    }
+    setCartItems(cart.items);
+  };
+
+  const getProductSubtotal = (
+    selectedVariant: Variant,
+    quantity: number,
+    selectedTax: Tax,
+  ) => {
+    return (
+      selectedVariant.retailPrice * quantity +
+      selectedVariant.retailPrice * quantity * (selectedTax.rate / 100)
+    );
+  };
+
+  const getTaxTotal = () => {
+    return cart.items.reduce(
+      (total, item) =>
+        total +
+        item.selectedVariant.retailPrice *
+          item.quantity *
+          (item.selectedTax.rate / 100),
       0,
     );
+  };
 
-    console.log('Cart: ', cart);
-    console.log('Subtotal: ', newSubtotal);
-    setSubtotal(newSubtotal);
+  const getCartSubTotal = () => {
+    return cart.items.reduce(
+      (total, item) => total + item.selectedVariant.retailPrice * item.quantity,
+      0,
+    );
+  };
+
+  const getCartTotal = () => {
+    return cart.items.reduce(
+      (total, item) =>
+        total +
+        getProductSubtotal(
+          item.selectedVariant,
+          item.quantity,
+          item.selectedTax,
+        ),
+      0,
+    );
+  };
+
+  const updateTotals = () => {
+    setTaxTotal(getTaxTotal);
+    setSubtotal(getCartSubTotal);
+    setCartTotal(getCartTotal);
   };
 
   const handleSelectProduct = (selectedProduct: any) => {
@@ -72,66 +180,29 @@ function ProcessSales() {
       setErrorModalVisible(true);
       return;
     }
-    console.log('Selected product: ', selectedProduct);
     setSelectedProduct(selectedProduct);
 
     if (selectedProduct.type === 'PRODUCT_WITH_VARIANT') {
       setVariantModalVisible(true);
     } else if (selectedProduct.type === 'NO_VARIANT') {
-      if (isRegisterOpen) {
-        if (selectedProduct.askSerialNo) {
-          setSerialModalVisible(true);
-          return;
-        }
-        setCartItems((prevCart: any) => {
-          const existingProductIndex = prevCart.findIndex(
-            (item: any) => item.product._id === selectedProduct._id,
-          );
-
-          let updatedCart;
-          if (existingProductIndex !== -1) {
-            updatedCart = [...prevCart];
-            updatedCart[existingProductIndex].quantity += 1;
-            updatedCart[existingProductIndex].totalPrice =
-              updatedCart[existingProductIndex].quantity *
-              updatedCart[existingProductIndex].product?.variants[0]
-                ?.retailPrice;
-          } else {
-            updatedCart = [
-              ...prevCart,
-              {
-                product: selectedProduct,
-                name: selectedProduct.name,
-                image: selectedProduct.image,
-                quantity: 1,
-                totalPrice: selectedProduct?.variants[0]?.retailPrice,
-              },
-            ];
-          }
-
-          updateSubtotal(updatedCart);
-          return updatedCart;
-        });
+      if (selectedProduct.askSerialNo) {
+        setSerialModalVisible(true);
+        return;
       }
+
+      addItemToCart(selectedProduct, selectedProduct.variants[0], taxes[0]);
+
+      updateTotals();
     }
   };
 
-  const handleRemoveProduct = (productId: string, attributes?: any) => {
+  const handleRemoveProduct = (
+    productId: string,
+    attributes?: Record<string, any>,
+  ) => {
     if (isRegisterOpen) {
-      setCartItems((prevCart: any) => {
-        const updatedCart = prevCart.filter((item: any) => {
-          if (item.product._id !== productId) return true;
-          if (!attributes) return false;
-          return !(
-            item.attributes?.Size === attributes?.Size &&
-            item.attributes?.Color === attributes?.Color &&
-            item.attributes?.Stuff === attributes?.Stuff
-          );
-        });
-
-        updateSubtotal(updatedCart);
-        return updatedCart;
-      });
+      removeItemFromCart(productId);
+      updateTotals();
     }
   };
 
@@ -158,16 +229,11 @@ function ProcessSales() {
 
         try {
           const getProductsResponse = await getProducts(url, headerUrl);
-          console.log(
-            'Get Products response:',
-            getProductsResponse.data.data.data,
-          );
 
           setProducts(getProductsResponse.data.data.data);
           setIsLoadingFalse();
         } catch (error) {
           setIsLoadingFalse();
-          console.error('Error fetching products:', error);
         }
       };
 
@@ -181,10 +247,6 @@ function ProcessSales() {
       setIsLoadingTrue();
       try {
         const getCategoriesResponse = await getProductCategories(headerUrl);
-        console.log(
-          'Get Categories response: ',
-          getCategoriesResponse.data.data.data,
-        );
 
         const updatedCategories = [
           {_id: 'all', name: 'All', image: null},
@@ -192,16 +254,54 @@ function ProcessSales() {
         ];
         setCategories(updatedCategories);
         setIsLoadingFalse();
-        console.log(updatedCategories);
       } catch (error) {
         setIsLoadingFalse();
-        console.error('Error fetching categories:', error);
       }
     };
     getAllProductCategories();
   }, [outletChange]);
 
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchListOfTax = async () => {
+      try {
+        setIsLoadingTrue();
+
+        const token = await AsyncStorage.getItem('userToken');
+        const API_URL = await AsyncStorage.getItem('API_BASE_URL');
+        const url = `${API_URL}tax`;
+
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            origin: headerUrl,
+            referer: headerUrl,
+            'access-key': 12345,
+          },
+        };
+
+        const {data: taxData} = await axios.get(url, config);
+
+        const taxDataFormatted = taxData.data.data.map((tax: any) => ({
+          label: tax.name + ' ' + tax.rate + '%',
+          value: tax._id,
+          rate: tax.rate,
+          name: tax.name,
+          id: tax._id,
+        }));
+
+        setTaxes(taxDataFormatted);
+        setIsLoadingFalse();
+      } catch {
+        setIsLoadingFalse();
+        return null;
+      }
+    };
+
+    fetchListOfTax();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -220,7 +320,6 @@ function ProcessSales() {
             });
           }
           let url = `${API_BASE_URL}cash-register/current?outletId=${outletId}`;
-          console.log('URL:', url);
           const response = await axios.get(url, {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -229,8 +328,6 @@ function ProcessSales() {
               referer: headerUrl,
             },
           });
-
-          console.log('Response Current Register:', response.data.data);
 
           if (
             !('success' in response.data?.data) ||
@@ -245,7 +342,6 @@ function ProcessSales() {
 
           setIsLoadingFalse();
         } catch (err) {
-          console.error('Error fetching data:', err);
           setIsLoadingFalse();
         }
       };
@@ -271,99 +367,65 @@ function ProcessSales() {
   };
 
   const handleOnSelectingAddCustomer = (customer: any) => {
-    console.log('Customer selected: ', customer);
     const customerLabel = customer.Name + ' (' + customer.Phone + ')';
     setSelectedCustomer(customerLabel);
   };
 
-  const handleVariantProductSelection = (selectedProductVariant: any) => {
-    if (
-      !selectedProductVariant ||
-      !selectedProductVariant.product ||
-      !selectedProductVariant.attributes
-    ) {
-      console.error('Invalid product data:', selectedProductVariant);
-      return;
-    }
-
+  const handleVariantProductSelection = (data: any) => {
     if (isRegisterOpen) {
-      setCartItems((prevCart: any) => {
-        const existingProductIndex = prevCart.findIndex((item: any) => {
-          if (item.product._id !== selectedProductVariant.product._id)
-            return false;
-
-          return Object.keys(selectedProductVariant.attributes).every(
-            key =>
-              item.attributes?.[key] === selectedProductVariant.attributes[key],
-          );
-        });
-
-        let updatedCart;
-        if (existingProductIndex !== -1) {
-          updatedCart = [...prevCart];
-          updatedCart[existingProductIndex].quantity += 1;
-          updatedCart[existingProductIndex].totalPrice =
-            updatedCart[existingProductIndex].quantity *
-            updatedCart[existingProductIndex].product?.variants[0]?.retailPrice;
-        } else {
-          updatedCart = [
-            ...prevCart,
-            {
-              product: selectedProductVariant.product,
-              name: selectedProductVariant.product.name,
-              price: selectedProductVariant.product.price,
-              image: selectedProductVariant.product.image,
-              attributes: {...selectedProductVariant.attributes},
-              quantity: selectedProductVariant.quantity || 1,
-              totalPrice:
-                selectedProductVariant.product?.variants[0]?.retailPrice,
-              serialNo: selectedProductVariant?.serial,
-            },
-          ];
-        }
-
-        updateSubtotal(updatedCart);
-        return updatedCart;
-      });
+      addItemToCart(
+        data.product,
+        data.selectedVariant,
+        taxes[0],
+        data.quantity,
+        data.serial,
+      );
+      updateTotals();
     }
   };
 
-  const handleSerialProductSelection = (selectedProductVariant: any) => {
-    setCartItems((prevCart: any) => {
-      const existingProductIndex = prevCart.findIndex(
-        (item: any) => item.product._id === selectedProduct._id,
-      );
-
-      let updatedCart;
-      if (existingProductIndex !== -1) {
-        updatedCart = [...prevCart];
-        updatedCart[existingProductIndex].quantity += 1;
-        updatedCart[existingProductIndex].totalPrice =
-          updatedCart[existingProductIndex].quantity *
-          updatedCart[existingProductIndex].product?.variants[0]?.retailPrice;
-      } else {
-        updatedCart = [
-          ...prevCart,
-          {
-            product: selectedProduct,
-            name: selectedProduct.name,
-            image: selectedProduct.image,
-            quantity: 1,
-            totalPrice: selectedProduct?.variants[0]?.retailPrice,
-            serialNo: selectedProductVariant?.serial,
-          },
-        ];
-      }
-
-      updateSubtotal(updatedCart);
-      return updatedCart;
-    });
+  const handleSerialProductSelection = (data: any) => {
+    addItemToCart(
+      data.product,
+      data.product.variants[0],
+      taxes[0],
+      1,
+      data.serial,
+    );
+    updateTotals();
   };
 
   const navigation = useNavigation<DrawerNavigationProp<any>>();
 
+  useEffect(() => {
+    setRedirectToProcessSalesFalse();
+  }, []);
+
   const handleOpenRegister = () => {
+    setRedirectToProcessSalesTrue();
     navigation.navigate('POS-Cash-Registers');
+  };
+
+  const [productDetailModalVisible, setProductDetailModalVisible] =
+    useState(false);
+  const [selectedCartProduct, setSelectedCartProduct] = useState<any>();
+  const [selectedLineItem, setSelectedLineItem] = useState<LineItem>(
+    {} as LineItem,
+  );
+
+  const handleOnConfirmProductDetails = (currentLineItem: LineItem) => {
+    cart.items = cartItems;
+
+    const index = cart.items.findIndex(item => {
+      item.product._id = currentLineItem.product._id;
+    });
+
+    if (index > -1) {
+      cart.items[index] = currentLineItem;
+    }
+
+    setCartItems(cart.items);
+    updateTotals();
   };
 
   return (
@@ -509,6 +571,15 @@ function ProcessSales() {
                 onClose={() => setAddCustomerModalVisible(false)}
               />
 
+              <ProductDetailModal
+                visible={productDetailModalVisible}
+                onClose={() => setProductDetailModalVisible(false)}
+                taxes={taxes}
+                selectedProduct={selectedCartProduct}
+                selectedLineItem={selectedLineItem}
+                onConfirm={handleOnConfirmProductDetails}
+              />
+
               <ErrorModal
                 error={'Error: Please Open Register'}
                 errorModalVisible={errorModalVisible}
@@ -519,12 +590,12 @@ function ProcessSales() {
 
               <View style={styles.productsView}>
                 <ScrollView contentContainerStyle={{flexGrow: 1}}>
-                  {cartItems.map((product: any, index: any) => {
+                  {cartItems.map((item: LineItem, index: any) => {
                     const selectedAttributes = Object.values(
-                      product.attributes || {},
+                      item.product.attributes || {},
                     ).map(String);
 
-                    const matchedVariant = product.product.variants?.find(
+                    const matchedVariant = item.product.variants?.find(
                       (variant: any) => {
                         return (
                           Array.isArray(variant.combination) &&
@@ -537,87 +608,71 @@ function ProcessSales() {
                       },
                     );
                     return (
-                      <View style={styles.product} key={index}>
-                        <View style={styles.productImageContainer}>
-                          <View style={styles.quantityBadge}>
-                            <Text style={styles.quantityText}>
-                              {product.quantity}
-                            </Text>
-                          </View>
-                          <Image
-                            source={
-                              product.images?.image
-                                ? {
-                                    uri: product.images?.image,
-                                  }
-                                : require('../../../assets/images/no-image.png')
-                            }
-                            style={styles.productImage}
-                          />
-                        </View>
-
-                        <View style={styles.productDetails}>
-                          <Text style={styles.productName}>
-                            {product.product.name}
-                          </Text>
-                          {product.attributes &&
-                            Object.keys(product.attributes).length > 0 && (
-                              <Text style={styles.productName}>
-                                {['Size', 'Color', 'Stuff']
-                                  .map(
-                                    attr =>
-                                      product.attributes[attr] ||
-                                      product.attributes[attr.toLowerCase()],
-                                  )
-                                  .filter(Boolean)
-                                  .map(
-                                    value =>
-                                      value.charAt(0).toUpperCase() +
-                                      value.slice(1).toLowerCase(),
-                                  )
-                                  .join(' / ') ||
-                                  Object.entries(product.attributes)
-                                    .map(([key, value]) => {
-                                      if (typeof value === 'string') {
-                                        return `${key}: ${
-                                          value.charAt(0).toUpperCase() +
-                                          value.slice(1).toLowerCase()
-                                        }`;
-                                      }
-                                      return `${key}: ${String(value)}`;
-                                    })
-                                    .join(' / ')}
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => {
+                          setSelectedCartProduct(item.product);
+                          setSelectedLineItem(item);
+                          setProductDetailModalVisible(true);
+                        }}>
+                        <View style={styles.product} key={index}>
+                          <View style={styles.productImageContainer}>
+                            <View style={styles.quantityBadge}>
+                              <Text style={styles.quantityText}>
+                                {item.quantity}
                               </Text>
-                            )}
-                        </View>
-
-                        <View style={styles.productActionView}>
-                          <TouchableOpacity>
-                            <Text style={styles.productPrice}>
-                              {matchedVariant
-                                ? (
-                                    matchedVariant.retailPrice *
-                                    product.quantity
-                                  ).toFixed(2)
-                                : product.totalPrice.toFixed(2)}
-                            </Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() =>
-                              handleRemoveProduct(
-                                product.product._id,
-                                product.attributes,
-                              )
-                            }
-                            style={styles.removeButton}>
-                            <FeatherIcon
-                              name="x-circle"
-                              size={26}
-                              color={'#A3A3A3'}
+                            </View>
+                            <Image
+                              source={
+                                item.product.images?.image
+                                  ? {
+                                      uri: item.product.images?.image,
+                                    }
+                                  : require('../../../assets/images/no-image.png')
+                              }
+                              style={styles.productImage}
                             />
-                          </TouchableOpacity>
+                          </View>
+
+                          <View style={styles.productDetails}>
+                            <Text style={styles.productName}>
+                              {item.product.name}
+                            </Text>
+                            {item.product.attributes &&
+                              Object.keys(item.product.attributes).length >
+                                0 && (
+                                <Text style={styles.productName}>
+                                  {item.selectedVariant.combination.join(' / ')}
+                                </Text>
+                              )}
+                          </View>
+
+                          <View style={styles.productActionView}>
+                            <TouchableOpacity>
+                              <Text style={styles.productPrice}>
+                                {(
+                                  item.selectedVariant.retailPrice *
+                                  item.quantity
+                                ).toFixed(2)}
+                              </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              onPress={() =>
+                                handleRemoveProduct(
+                                  item.product._id,
+                                  item.product.attributes,
+                                )
+                              }
+                              style={styles.removeButton}>
+                              <FeatherIcon
+                                name="x-circle"
+                                size={26}
+                                color={'#A3A3A3'}
+                              />
+                            </TouchableOpacity>
+                          </View>
                         </View>
-                      </View>
+                      </TouchableOpacity>
                     );
                   })}
                 </ScrollView>
@@ -665,30 +720,39 @@ function ProcessSales() {
                 <View style={[styles.paymentSummaryView, {marginTop: 0}]}>
                   <View style={[styles.paymentSummary, {paddingTop: 5}]}>
                     <Text style={styles.summaryLabel}>Sub Total</Text>
-                    <Text style={styles.summaryValue}>{subtotal}</Text>
+                    <Text style={styles.summaryValue}>
+                      {subtotal.toFixed(2)}
+                    </Text>
                   </View>
 
                   <View style={styles.paymentSummary}>
                     <Text style={styles.summaryLabel}>Discount</Text>
                     <Text style={[styles.summaryValue, styles.discount]}>
-                      0.00
+                      {discountTotal.toFixed(2)}
                     </Text>
                   </View>
 
                   <View style={styles.paymentSummary}>
                     <Text style={styles.summaryLabel}>Tax</Text>
-                    <Text style={styles.summaryValue}>0.00</Text>
+                    <Text style={styles.summaryValue}>
+                      {taxTotal.toFixed(2)}
+                    </Text>
                   </View>
 
                   <View style={styles.paymentSummary}>
                     <Text style={styles.summaryLabel}>Grand Total</Text>
-                    <Text style={styles.summaryValue}>0.00</Text>
+                    <Text style={styles.summaryValue}>
+                      {cartTotal.toFixed(2)}
+                    </Text>
                   </View>
                 </View>
                 {/* Payment Buttons */}
                 <View style={styles.paymentButtonsView}>
                   <TouchableOpacity
-                    onPress={() => isRegisterOpen && setCartItems([])} // Prevents clicking when disabled
+                    onPress={() => {
+                      isRegisterOpen && setCartItems([]);
+                      setSubtotal(0);
+                    }}
                     style={[
                       styles.paymentButton,
                       !isRegisterOpen && {opacity: 0.7},
@@ -696,7 +760,7 @@ function ProcessSales() {
                     <Text style={styles.paymentText}>DISCARD</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    disabled={!isRegisterOpen} // Disables button press
+                    disabled={!isRegisterOpen}
                     style={[
                       styles.paymentButton,
                       !isRegisterOpen && {opacity: 0.7},

@@ -5,12 +5,15 @@ interface AuthState {
   headerUrl: string;
   isLoading: boolean;
   outletChange: boolean;
+  redirectToProcessSales: boolean;
   login: () => void;
   logout: () => void;
   setIsLoadingTrue: () => void;
   setIsLoadingFalse: () => void;
   setHeaderUrl: (url: string) => void;
   toggleOutletChange: () => void;
+  setRedirectToProcessSalesTrue: () => void;
+  setRedirectToProcessSalesFalse: () => void;
 }
 
 const useAuthStore = create<AuthState>(set => ({
@@ -24,6 +27,9 @@ const useAuthStore = create<AuthState>(set => ({
   setIsLoadingFalse: () => set({isLoading: false}),
   outletChange: false,
   toggleOutletChange: () => set(state => ({outletChange: !state.outletChange})),
+  redirectToProcessSales: false,
+  setRedirectToProcessSalesTrue: () => set({redirectToProcessSales: true}),
+  setRedirectToProcessSalesFalse: () => set({redirectToProcessSales: false}),
 }));
 
 export default useAuthStore;
