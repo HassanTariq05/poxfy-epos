@@ -31,6 +31,8 @@ import {DrawerNavigationProp} from '@react-navigation/drawer';
 import ErrorModal from '../../../components/modals/error-modal';
 import ProductSerialModal from '../../../components/modals/product-serial-modal';
 import ProductDetailModal from '../../../components/modals/product-detail-modal';
+import DiscountModal from '../../../components/modals/discount-modal';
+import PaymentModal from '../../../components/modals/payment-modal';
 
 export interface Tax {
   id: string;
@@ -356,7 +358,9 @@ function ProcessSales() {
   const [existingCustomersModalVisible, setExistingCustomersModalVisible] =
     useState(false);
 
+  const [discountModalVisible, setDiscountModalVisible] = useState(false);
   const [addCustomerModalVisible, setAddCustomerModalVisible] = useState(false);
+  const [paymentModalVisibile, setPaymentModalVisible] = useState(false);
 
   const handleOnSelectExistingCustomer = () => {
     setExistingCustomersModalVisible(true);
@@ -586,6 +590,20 @@ function ProcessSales() {
                 setErrorModalVisible={setErrorModalVisible}
               />
 
+              <DiscountModal
+                visible={discountModalVisible}
+                onClose={() => setDiscountModalVisible(false)}
+              />
+
+              <PaymentModal
+                visible={paymentModalVisibile}
+                onClose={() => setPaymentModalVisible(false)}
+                subTotal={subtotal}
+                discount={discountTotal}
+                tax={taxTotal}
+                grandTotal={cartTotal}
+              />
+
               <View style={styles.divider} />
 
               <View style={styles.productsView}>
@@ -725,12 +743,15 @@ function ProcessSales() {
                     </Text>
                   </View>
 
-                  <View style={styles.paymentSummary}>
-                    <Text style={styles.summaryLabel}>Discount</Text>
-                    <Text style={[styles.summaryValue, styles.discount]}>
-                      {discountTotal.toFixed(2)}
-                    </Text>
-                  </View>
+                  <TouchableOpacity
+                    onPress={() => setDiscountModalVisible(true)}>
+                    <View style={styles.paymentSummary}>
+                      <Text style={styles.summaryLabel}>Discount</Text>
+                      <Text style={[styles.summaryValue, styles.discount]}>
+                        {discountTotal.toFixed(2)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
 
                   <View style={styles.paymentSummary}>
                     <Text style={styles.summaryLabel}>Tax</Text>
@@ -771,9 +792,13 @@ function ProcessSales() {
               </View>
 
               {isRegisterOpen && (
-                <TouchableOpacity style={styles.payButtonView}>
+                <TouchableOpacity
+                  onPress={() => setPaymentModalVisible(true)}
+                  style={styles.payButtonView}>
                   <Text style={styles.openRegisterText}>PAY</Text>
-                  <Text style={styles.openRegisterText}>0.00</Text>
+                  <Text style={styles.openRegisterText}>
+                    {cartTotal.toFixed(2)}
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
