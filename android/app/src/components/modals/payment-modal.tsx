@@ -13,29 +13,41 @@ import {
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useForm} from 'react-hook-form';
 import useAuthStore from '../../redux/feature/store';
+import {withDecay} from 'react-native-reanimated';
 
 interface PaymentModalProps {
   visible: boolean;
   onClose: () => void;
+  onSubmit: any;
+  onLoyalitySubmit: any;
   subTotal: number;
   discount: number;
   tax: number;
   grandTotal: number;
+  cashReceived: any;
+  setCashReceived: any;
+  loyality: boolean;
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
   visible,
   onClose,
+  onSubmit,
+  onLoyalitySubmit,
   subTotal,
   discount,
   tax,
   grandTotal,
+  cashReceived,
+  setCashReceived,
+  loyality,
 }) => {
   const {handleSubmit} = useForm();
   const slideAnim = useRef(new Animated.Value(500)).current;
   const {setIsLoadingTrue, isLoading} = useAuthStore();
-  const [amount, setAmount] = useState('');
-  const [cashReceived, setCashReceived] = useState(0);
+  const [amount, setAmount] = useState('0');
+  const [credit, setCredit] = useState(0);
+  const [cash, setCash] = useState(0);
 
   useEffect(() => {
     Animated.timing(slideAnim, {
@@ -47,11 +59,61 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
   useEffect(() => {
     setAmount(grandTotal.toString());
-  }, [visible]);
+    setCash(0);
+    setCredit(0);
+  }, [grandTotal]);
 
-  const onSubmit = async (data: any) => {
-    setIsLoadingTrue();
-    console.log('Submitted Data:', data);
+  const handleCashSubmit = () => {
+    const receivedAmount = parseFloat(amount) || 0;
+
+    var newCashReceived = cash + receivedAmount;
+
+    setCash(newCashReceived);
+
+    const remainingBalance = grandTotal - newCashReceived - credit;
+    setAmount(remainingBalance.toFixed(2));
+
+    console.log('remainingBalance');
+    console.log(remainingBalance);
+
+    if (remainingBalance <= 0) {
+      onSubmit(newCashReceived, credit);
+    }
+  };
+
+  const handleCreditSubmit = () => {
+    const receivedAmount = parseFloat(amount) || 0;
+
+    var newCreditReceived = credit + receivedAmount;
+
+    setCredit(newCreditReceived);
+
+    const remainingBalance = grandTotal - newCreditReceived - cash;
+    setAmount(remainingBalance.toFixed(2));
+
+    console.log('remainingBalance');
+    console.log(remainingBalance);
+
+    if (remainingBalance <= 0) {
+      onSubmit(cash, newCreditReceived);
+    }
+  };
+
+  const handleLoyalitySubmit = () => {
+    const receivedAmount = parseFloat(amount) || 0;
+
+    setCashReceived((prevCashReceived: number) => {
+      const newCashReceived = prevCashReceived + receivedAmount;
+
+      const remainingBalance = grandTotal - newCashReceived;
+      setAmount(remainingBalance.toString());
+
+      if (remainingBalance <= 0) {
+        onLoyalitySubmit(newCashReceived);
+      }
+
+      return newCashReceived;
+    });
   };
 
   return (
@@ -110,11 +172,20 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     </Text>
                   </View>
 
-                  {cashReceived !== 0 && (
+                  {cash > 0 && (
                     <View style={styles.paymentSummary}>
                       <Text style={styles.summaryLabel1}>Cash Received</Text>
                       <Text style={styles.summaryValue1}>
-                        {cashReceived.toFixed(2)}
+                        {cash.toFixed(2)}
+                      </Text>
+                    </View>
+                  )}
+
+                  {credit > 0 && (
+                    <View style={styles.paymentSummary}>
+                      <Text style={styles.summaryLabel1}>Credit Received</Text>
+                      <Text style={styles.summaryValue1}>
+                        {credit.toFixed(2)}
                       </Text>
                     </View>
                   )}
@@ -138,21 +209,55 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     onChangeText={text => setAmount(text)}
                   />
                   <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.button1}>
-                      <Text style={styles.buttonText}>Credit / Debit Card</Text>
+                    <TouchableOpacity
+                      onPress={handleCreditSubmit}
+                      style={[
+                        styles.button1,
+                        loyality ? {width: '32%'} : {width: '48%'},
+                        ,
+                        isLoading && {opacity: 0.7},
+                      ]}
+                      disabled={isLoading}>
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color="white" />
+                      ) : (
+                        <Text style={styles.buttonText}>
+                          Credit / Debit Card
+                        </Text>
+                      )}
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.button1}
-                      onPress={() => {
-                        const receivedAmount = parseFloat(amount) || 0;
-                        const newCashReceived = cashReceived + receivedAmount;
-                        setCashReceived(newCashReceived);
-
-                        const remainingBalance = grandTotal - newCashReceived;
-                        setAmount(remainingBalance.toString());
-                      }}>
-                      <Text style={styles.buttonText}>Cash</Text>
+                      onPress={handleCashSubmit}
+                      style={[
+                        styles.button1,
+                        loyality ? {width: '32%'} : {width: '48%'},
+                        ,
+                        isLoading && {opacity: 0.7},
+                      ]}
+                      disabled={isLoading}>
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color="white" />
+                      ) : (
+                        <Text style={styles.buttonText}>Cash</Text>
+                      )}
                     </TouchableOpacity>
+
+                    {loyality && (
+                      <TouchableOpacity
+                        onPress={handleLoyalitySubmit}
+                        style={[
+                          styles.button1,
+                          loyality ? {width: '32%'} : {width: '48%'},
+                          isLoading && {opacity: 0.7},
+                        ]}
+                        disabled={isLoading}>
+                        {isLoading ? (
+                          <ActivityIndicator size="small" color="white" />
+                        ) : (
+                          <Text style={styles.buttonText}>Loyality</Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
               </View>
@@ -181,7 +286,7 @@ const styles = StyleSheet.create({
   modal: {
     position: 'absolute',
     right: 0,
-    width: '60%',
+    width: '70%',
     maxHeight: '80%',
     backgroundColor: 'white',
     elevation: 10,
@@ -234,7 +339,6 @@ const styles = StyleSheet.create({
   button1: {
     backgroundColor: '#ED6964',
     height: 40,
-    width: '48%',
     borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
@@ -242,7 +346,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   paymentSummaryView: {

@@ -36,17 +36,32 @@ const PaymentTally: React.FC<PaymentProps> = ({
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.table}>
         <View style={styles.tableHeader}>
-          <Text style={styles.headerText}>Payment</Text>
-          <Text style={styles.headerText}>Expected</Text>
-          <Text style={styles.headerText}>Counted</Text>
-          <Text style={styles.headerText}>Difference</Text>
+          <Text style={[styles.headerText, {textAlign: 'left', width: '20%'}]}>
+            Payment
+          </Text>
+          <Text style={[styles.headerText, {textAlign: 'right', width: '15%'}]}>
+            Expected
+          </Text>
+          <Text style={[styles.headerText, {textAlign: 'right', width: '35%'}]}>
+            Counted
+          </Text>
+          <Text style={[styles.headerText, {textAlign: 'right', width: '20%'}]}>
+            Difference
+          </Text>
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={styles.rowText}>Cash</Text>
-          <Text style={styles.rowText}>{registerData?.transaction?.cash}</Text>
+          <Text style={[styles.rowText, {textAlign: 'left', width: '20%'}]}>
+            Cash
+          </Text>
+          <Text style={[styles.rowText, {textAlign: 'right', width: '15%'}]}>
+            {registerData?.transaction?.cash}
+          </Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {textAlign: 'right', width: '35%', paddingRight: 16},
+            ]}
             value={countedCash}
             onChangeText={text => {
               const numericText = text.replace(/[^0-9.]/g, '');
@@ -57,16 +72,23 @@ const PaymentTally: React.FC<PaymentProps> = ({
             placeholder="0.00"
             keyboardType="numeric"
           />
-          <Text style={styles.rowText}>
+          <Text style={[styles.rowText, {textAlign: 'right', width: '20%'}]}>
             {Number(countedCash) - Number(registerData?.transaction?.cash)}
           </Text>
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={styles.rowText}>Card</Text>
-          <Text style={styles.rowText}>{registerData?.transaction?.card}</Text>
+          <Text style={[styles.rowText, {textAlign: 'left', width: '20%'}]}>
+            Card
+          </Text>
+          <Text style={[styles.rowText, {textAlign: 'right', width: '15%'}]}>
+            {registerData?.transaction?.card}
+          </Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {textAlign: 'right', width: '35%', paddingRight: 16},
+            ]}
             value={countedCard}
             onChangeText={text => {
               const numericText = text.replace(/[^0-9.]/g, '');
@@ -77,18 +99,23 @@ const PaymentTally: React.FC<PaymentProps> = ({
             placeholder="0.00"
             keyboardType="numeric"
           />
-          <Text style={styles.rowText}>
+          <Text style={[styles.rowText, {textAlign: 'right', width: '20%'}]}>
             {Number(countedCard) - Number(registerData?.transaction?.card)}
           </Text>
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={styles.rowText}>Store Credit</Text>
-          <Text style={styles.rowText}>
+          <Text style={[styles.rowText, {textAlign: 'left', width: '20%'}]}>
+            Store Credit
+          </Text>
+          <Text style={[styles.rowText, {textAlign: 'right', width: '15%'}]}>
             {registerData?.transaction?.credit}
           </Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {textAlign: 'right', width: '35%', paddingRight: 16},
+            ]}
             value={countedCredit}
             onChangeText={text => {
               const numericText = text.replace(/[^0-9.]/g, '');
@@ -99,7 +126,7 @@ const PaymentTally: React.FC<PaymentProps> = ({
             placeholder="0.00"
             keyboardType="numeric"
           />
-          <Text style={styles.rowText}>
+          <Text style={[styles.rowText, {textAlign: 'right', width: '20%'}]}>
             {Number(countedCredit) - Number(registerData?.transaction?.credit)}
           </Text>
         </View>
@@ -177,6 +204,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgb(232, 231, 233)',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   headerText: {
     fontSize: 14,

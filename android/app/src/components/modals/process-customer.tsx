@@ -26,6 +26,7 @@ interface SlideInModalProps {
   onClose: () => void;
   onSelectExistingCustomer: () => void;
   onSelectAddCustomer: () => void;
+  setSelectedCustomerData: any;
 }
 
 const ProcessCustomerModal: React.FC<SlideInModalProps> = ({
@@ -33,6 +34,7 @@ const ProcessCustomerModal: React.FC<SlideInModalProps> = ({
   onClose,
   onSelectExistingCustomer,
   onSelectAddCustomer,
+  setSelectedCustomerData,
 }) => {
   const {
     control,
@@ -71,7 +73,16 @@ const ProcessCustomerModal: React.FC<SlideInModalProps> = ({
   const {setIsLoadingTrue, setIsLoadingFalse, headerUrl, isLoading} =
     useAuthStore();
 
-  const onSubmit = async (data: any) => {};
+  const onSubmit = async (data: any) => {
+    const customerData = {
+      id: null,
+      Name: data.name,
+      Phone: data.contact,
+    };
+    setSelectedCustomerData(customerData);
+    onClose();
+    reset();
+  };
 
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);

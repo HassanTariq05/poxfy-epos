@@ -73,3 +73,44 @@ export const inventoryType = [
     label: 'Greater Zero Items',
   },
 ];
+
+export const paymentType = [
+  {
+    id: 1,
+    value: 'CASH',
+    label: 'Cash',
+  },
+  {
+    id: 2,
+    value: 'CARD',
+    label: 'Card',
+  },
+  {
+    id: 3,
+    value: 'CREDIT',
+    label: 'Credit',
+  },
+  {
+    id: 4,
+    value: 'LOYALITY',
+    label: 'Loyality',
+  },
+];
+
+export const paymentStatuses = [
+  {
+    id: 1,
+    value: 'PARKED',
+    label: 'Parked',
+  },
+  {
+    id: 2,
+    value: 'PAID',
+    label: 'Paid',
+  },
+  {
+    id: 3,
+    value: 'UNPAID',
+    label: 'Unpaid',
+  },
+];

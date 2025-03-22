@@ -1,5 +1,11 @@
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, TextInput, ToastAndroid, View} from 'react-native';
+import {
+  StyleSheet,
+  TextInput,
+  ToastAndroid,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import CustomDataTable from '../../../components/data-table';
 import TableCard from '../../../components/table-card';
 import {dummyCustomerData} from '../../../data/dummyData';
@@ -16,6 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import CustomPopConfirm from '../../../components/pop-confirm';
 import {deleteCustmer, updateCustomer} from '../../../services/customer';
 import useAuthStore from '../../../redux/feature/store';
+import Feather from 'react-native-vector-icons/Feather';
 
 function Customer() {
   const headers = ['Code', 'Name', 'Phone', 'Email', 'Country'];
@@ -33,47 +40,48 @@ function Customer() {
   const [refetch, setRefetch] = useState(false);
   const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
 
+  const fetchData = async () => {
+    setData([]);
+    try {
+      setIsLoadingTrue();
+      const token = await AsyncStorage.getItem('userToken');
+      const url = `${API_BASE_URL}supplier/list?take=10&page=1`;
+      console.log('Customer get url: ', url);
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          origin: headerUrl,
+          referer: headerUrl,
+        },
+      });
+
+      console.log('Response Customer List:', response.data.data.data);
+
+      const formattedData = response.data.data.data.map((item: any) => ({
+        ...item,
+        id: item._id,
+        Code: item.code,
+        Name: item.fullName,
+        Phone: item.phone,
+        Email: item.email,
+        Country: item.country,
+      }));
+
+      console.log('Formatted data:', formattedData);
+
+      setData((prev: any) => {
+        console.log('Previous Data:', prev);
+        console.log('New Data:', formattedData);
+        return [...formattedData];
+      });
+      setIsLoadingFalse();
+    } catch (err) {
+      console.error('Error fetching data:', err);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoadingTrue();
-        const token = await AsyncStorage.getItem('userToken');
-        const url = `${API_BASE_URL}supplier/list?take=10&page=1`;
-        console.log('Customer get url: ', url);
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            origin: headerUrl,
-            referer: headerUrl,
-          },
-        });
-
-        console.log('Response Customer List:', response.data.data.data);
-
-        const formattedData = response.data.data.data.map((item: any) => ({
-          ...item,
-          id: item._id,
-          Code: item.code,
-          Name: item.fullName,
-          Phone: item.phone,
-          Email: item.email,
-          Country: item.country,
-        }));
-
-        console.log('Formatted data:', formattedData);
-
-        setData((prev: any) => {
-          console.log('Previous Data:', prev);
-          console.log('New Data:', formattedData);
-          return [...formattedData];
-        });
-        setIsLoadingFalse();
-      } catch (err) {
-        console.error('Error fetching data:', err);
-      }
-    };
-
     fetchData();
   }, [refetch]);
 
@@ -184,11 +192,20 @@ function Customer() {
 
   return (
     <>
-      <View>
+      <View style={{flex: 1}}>
         <TableCard
           heading="Customer"
           button={'Add Customer'}
-          onAction={handleHeadingAction}>
+          onAction={handleHeadingAction}
+          headerChildren={
+            <TouchableOpacity
+              style={{marginLeft: 16}}
+              onPress={() => {
+                fetchData();
+              }}>
+              <Feather name="refresh-cw" size={17} color="red" />
+            </TouchableOpacity>
+          }>
           <View style={[styles.searchContainer, styles.searchTextFocused]}>
             <MaterialCommunityIcons name="magnify" size={20} color="black" />
             <TextInput

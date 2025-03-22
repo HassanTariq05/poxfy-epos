@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, ToastAndroid, View} from 'react-native';
+import {StyleSheet, ToastAndroid, TouchableOpacity, View} from 'react-native';
 import CustomDataTable from '../../../components/data-table';
 import TableCard from '../../../components/table-card';
 import {Dropdown} from 'react-native-element-dropdown';
@@ -12,6 +12,7 @@ import {getAllOutletApi} from '../../../services/outlet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import useAuthStore from '../../../redux/feature/store';
+import Feather from 'react-native-vector-icons/Feather';
 
 function MyInventory() {
   const headers = [
@@ -55,63 +56,64 @@ function MyInventory() {
     getOutlet();
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = await AsyncStorage.getItem('userToken');
+  const fetchData = async () => {
+    setData([]);
+    try {
+      const token = await AsyncStorage.getItem('userToken');
 
-        // Initialize base URL
-        let url = `${API_BASE_URL}inventory-ledger?`;
+      // Initialize base URL
+      let url = `${API_BASE_URL}inventory-ledger?`;
 
-        // Define query parameters dynamically
-        const queryParams: string[] = [];
+      // Define query parameters dynamically
+      const queryParams: string[] = [];
 
-        if (selectedProduct) {
-          queryParams.push(`productType=${selectedProduct}`);
-        }
-        if (selectedOutlet) {
-          queryParams.push(`outletId=${selectedOutlet}`);
-        }
-        if (selectedItem) {
-          queryParams.push(`inventoryType=${selectedItem}`);
-        }
-
-        // Append query parameters to the URL
-        url += queryParams.join('&');
-
-        console.log('Request URL:', url);
-
-        setIsLoadingTrue();
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            origin: headerUrl,
-            referer: headerUrl,
-          },
-        });
-
-        console.log('Response Inventory List:', response.data.data);
-
-        const formattedData = response.data.data.map((item: any) => ({
-          ...item,
-          ['Inventory Item']: item.name,
-          ['On Hand']: item.onHand,
-          ['Committed']: item.commited,
-          ['Available']: item.available,
-          ['Outlets']: item.outletName,
-        }));
-
-        console.log('Formatted data:', formattedData);
-
-        setData(formattedData);
-        setIsLoadingFalse();
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setIsLoadingFalse();
+      if (selectedProduct) {
+        queryParams.push(`productType=${selectedProduct}`);
       }
-    };
+      if (selectedOutlet) {
+        queryParams.push(`outletId=${selectedOutlet}`);
+      }
+      if (selectedItem) {
+        queryParams.push(`inventoryType=${selectedItem}`);
+      }
 
+      // Append query parameters to the URL
+      url += queryParams.join('&');
+
+      console.log('Request URL:', url);
+
+      setIsLoadingTrue();
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          origin: headerUrl,
+          referer: headerUrl,
+        },
+      });
+
+      console.log('Response Inventory List:', response.data.data);
+
+      const formattedData = response.data.data.map((item: any) => ({
+        ...item,
+        ['Inventory Item']: item.name,
+        ['On Hand']: item.onHand,
+        ['Committed']: item.commited,
+        ['Available']: item.available,
+        ['Outlets']: item.outletName,
+      }));
+
+      console.log('Formatted data:', formattedData);
+
+      setData(formattedData);
+      setIsLoadingFalse();
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setIsLoadingFalse();
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [selectedItem, selectedProduct, selectedOutlet, refetch]);
 
@@ -217,7 +219,7 @@ function MyInventory() {
 
   return (
     <>
-      <View>
+      <View style={{flex: 1}}>
         <TableCard
           heading="My Inventory"
           headerChildren={
@@ -264,33 +266,48 @@ function MyInventory() {
                 itemTextStyle={{fontSize: 13}}
                 selectedTextProps={{numberOfLines: 1}}
               />
+              <TouchableOpacity
+                style={{marginTop: 4}}
+                onPress={() => {
+                  fetchData();
+                }}>
+                <View
+                  style={{
+                    backgroundColor: '#e4e4e4',
+                    padding: 8,
+                    borderRadius: 24,
+                  }}>
+                  <Feather name="refresh-cw" size={17} color="red" />
+                </View>
+              </TouchableOpacity>
             </View>
-          }>
-          <CustomDataTable
-            flexes={[2, 1, 1, 1, 2, 1]}
-            alignments={[
-              'flex-start',
-              'center',
-              'center',
-              'center',
-              'center',
-              'center',
-            ]}
-            headers={headers}
-            data={data}
-            showInputButton={true}
-            addDisabled={!selectedOutlet}
-            editableFields={['Edit Available Quantity']}
-            highlightColumns={true}
-            onInputChange={(row, key, value) =>
-              handleOnAddClick(row, key, value)
-            }
-            onInputChangeForSet={(row, key, value) =>
-              handleOnSetClick(row, key, value)
-            }
-            toolTip={true}
-          />
-        </TableCard>
+          }
+          children={
+            <CustomDataTable
+              flexes={[2, 1, 1, 1, 2, 1]}
+              alignments={[
+                'flex-start',
+                'center',
+                'center',
+                'center',
+                'center',
+                'center',
+              ]}
+              headers={headers}
+              data={data}
+              showInputButton={true}
+              addDisabled={!selectedOutlet}
+              editableFields={['Edit Available Quantity']}
+              highlightColumns={true}
+              onInputChange={(row, key, value) =>
+                handleOnAddClick(row, key, value)
+              }
+              onInputChangeForSet={(row, key, value) =>
+                handleOnSetClick(row, key, value)
+              }
+              toolTip={true}
+            />
+          }></TableCard>
       </View>
     </>
   );
@@ -333,7 +350,6 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     gap: 10,
-    width: '60%',
     justifyContent: 'flex-end',
   },
   dropdown: {
@@ -344,7 +360,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     borderColor: 'rgb(202,202,202)',
     borderWidth: 1,
-    width: '33.33%',
+    width: 160,
   },
 });
 

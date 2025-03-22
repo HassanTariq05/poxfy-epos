@@ -1,5 +1,11 @@
 import React, {useEffect, useState} from 'react';
-import {ActivityIndicator, StyleSheet, TextInput, View} from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import CustomDataTable from '../../../components/data-table';
 import TableCard from '../../../components/table-card';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -14,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAuthStore from '../../../redux/feature/store';
 import {useFocusEffect} from '@react-navigation/native';
 import {useCallback} from 'react';
+import Feather from 'react-native-vector-icons/Feather';
 
 function Listing() {
   const headers = [
@@ -40,45 +47,46 @@ function Listing() {
     redirectToProcessSales,
   } = useAuthStore();
 
+  const fetchData = async () => {
+    setData([]);
+    try {
+      setIsLoadingTrue();
+      const token = await AsyncStorage.getItem('userToken');
+      const outletId = await AsyncStorage.getItem('selectedOutlet');
+      let url = `${API_BASE_URL}cash-register/list?take=10&page=1&outletId=${outletId}`;
+      console.log('URL:', url);
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          origin: headerUrl,
+          referer: headerUrl,
+        },
+      });
+
+      console.log('Response:', response.data.data.data);
+
+      const formattedData = response.data.data.data.map((item: any) => ({
+        id: item._id,
+        Name: item.name,
+        'Receipt No': item.receiptNo,
+        'Receipt Prefix': item.receiptPrefix,
+        'Receipt Suffix': item.receiptSuffix,
+        Outlet: item.outlet?.name,
+        'Created By': item.createdBy?.fullName || 'N/A',
+      }));
+
+      console.log('Formatted data:', formattedData);
+
+      setData(formattedData);
+      setIsLoadingFalse();
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setIsLoadingFalse();
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoadingTrue();
-        const token = await AsyncStorage.getItem('userToken');
-        const outletId = await AsyncStorage.getItem('selectedOutlet');
-        let url = `${API_BASE_URL}cash-register/list?take=10&page=1&outletId=${outletId}`;
-        console.log('URL:', url);
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            origin: headerUrl,
-            referer: headerUrl,
-          },
-        });
-
-        console.log('Response:', response.data.data.data);
-
-        const formattedData = response.data.data.data.map((item: any) => ({
-          id: item._id,
-          Name: item.name,
-          'Receipt No': item.receiptNo,
-          'Receipt Prefix': item.receiptPrefix,
-          'Receipt Suffix': item.receiptSuffix,
-          Outlet: item.outlet?.name,
-          'Created By': item.createdBy?.fullName || 'N/A',
-        }));
-
-        console.log('Formatted data:', formattedData);
-
-        setData(formattedData);
-        setIsLoadingFalse();
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setIsLoadingFalse();
-      }
-    };
-
     fetchData();
   }, []);
 
@@ -158,36 +166,55 @@ function Listing() {
   };
 
   return (
-    <View>
-      <TableCard heading="Register">
-        <View style={[styles.searchContainer, styles.searchTextFocused]}>
-          <MaterialCommunityIcons name="magnify" size={20} color="black" />
-          <TextInput
-            style={styles.searchText}
-            value={register}
-            placeholder="Find..."
-            onChangeText={setRegister}
-            keyboardType="email-address"
-          />
-        </View>
+    <View style={{flex: 1}}>
+      <TableCard
+        heading="Register"
+        headerChildren={
+          <TouchableOpacity
+            onPress={() => {
+              fetchData();
+            }}>
+            <View
+              style={{
+                backgroundColor: '#e4e4e4',
+                padding: 8,
+                borderRadius: 24,
+              }}>
+              <Feather name="refresh-cw" size={17} color="red" />
+            </View>
+          </TouchableOpacity>
+        }
+        children={
+          <View style={{flex: 1}}>
+            <View style={[styles.searchContainer, styles.searchTextFocused]}>
+              <MaterialCommunityIcons name="magnify" size={20} color="black" />
+              <TextInput
+                style={styles.searchText}
+                value={register}
+                placeholder="Find..."
+                onChangeText={setRegister}
+                keyboardType="email-address"
+              />
+            </View>
 
-        <CustomDataTable
-          flexes={[1, 1, 1, 1, 2, 1]}
-          alignments={[
-            'flex-start',
-            'center',
-            'flex-start',
-            'flex-start',
-            'flex-start',
-            'flex-start',
-          ]}
-          headers={headers}
-          data={data}
-          searchQuery={register}
-          showOpenRegister={true}
-          onOpenRegister={handleOpenRegisterClick}
-        />
-      </TableCard>
+            <CustomDataTable
+              flexes={[1, 1, 1, 1, 2, 1]}
+              alignments={[
+                'flex-start',
+                'center',
+                'flex-start',
+                'flex-start',
+                'flex-start',
+                'flex-start',
+              ]}
+              headers={headers}
+              data={data}
+              searchQuery={register}
+              showOpenRegister={true}
+              onOpenRegister={handleOpenRegisterClick}
+            />
+          </View>
+        }></TableCard>
 
       {/* Slide-in Modal */}
       <SlideInModal

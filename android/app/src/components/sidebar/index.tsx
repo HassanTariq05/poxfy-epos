@@ -113,7 +113,7 @@ export default function LeftMenuCard({
                   styles.iconContainer,
                   {backgroundColor: item.backgroundTint},
                 ]}>
-                <Icon name={item.icon} size={22} color={item.color} />
+                <Icon name={item.icon} size={17} color={item.color} />
               </View>
               <Animated.View style={{opacity: opacityAnim}}>
                 {!collapsed && (
@@ -177,7 +177,7 @@ export default function LeftMenuCard({
                       size={18}
                       color="black"
                       style={[
-                        {marginLeft: 'auto'},
+                        {marginLeft: 'auto', marginRight: 16},
                         isChildSelected && {color: 'white'},
                       ]}
                     />
@@ -257,19 +257,19 @@ const styles = StyleSheet.create({
     maxWidth: 240,
     backgroundColor: 'white',
     paddingVertical: 15,
-    paddingHorizontal: 15,
     borderRadius: 30,
     flexShrink: 1,
   },
   collapsedMenuCard: {
     minWidth: 60,
-    paddingHorizontal: 10,
+    paddingHorizontal: 6,
   },
   logoContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
+    paddingHorizontal: 16,
   },
   logoContainerCollapsed: {
     justifyContent: 'center',
@@ -287,7 +287,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 2,
-    borderRadius: 10,
   },
   subMenuItem: {
     flexDirection: 'row',
@@ -326,12 +325,13 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   iconContainer: {
-    width: 36,
-    height: 36,
+    width: 28,
+    height: 28,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 3,
+    marginLeft: 8,
   },
   sidebarToggleButton: {
     backgroundColor: 'rgb(103, 223, 135)',

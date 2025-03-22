@@ -3,6 +3,8 @@ import {create} from 'zustand';
 interface AuthState {
   isAuthenticated: boolean;
   headerUrl: string;
+  salesId: string;
+  salesFlag: boolean;
   isLoading: boolean;
   outletChange: boolean;
   redirectToProcessSales: boolean;
@@ -11,6 +13,8 @@ interface AuthState {
   setIsLoadingTrue: () => void;
   setIsLoadingFalse: () => void;
   setHeaderUrl: (url: string) => void;
+  setSalesId: (id: string) => void;
+  setSalesFlag: (flag: boolean) => void;
   toggleOutletChange: () => void;
   setRedirectToProcessSalesTrue: () => void;
   setRedirectToProcessSalesFalse: () => void;
@@ -18,6 +22,10 @@ interface AuthState {
 
 const useAuthStore = create<AuthState>(set => ({
   headerUrl: '',
+  salesId: '',
+  salesFlag: false,
+  setSalesFlag: (flag: boolean) => set({salesFlag: flag}),
+  setSalesId: (id: string) => set({salesId: id}),
   setHeaderUrl: (url: string) => set({headerUrl: url}),
   isAuthenticated: false,
   login: () => set({isAuthenticated: true}),

@@ -14,13 +14,21 @@ import {Dropdown} from 'react-native-element-dropdown';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAuthStore from '../../redux/feature/store';
 import axios from 'axios';
+import {Discount} from '../../screens/pos/process-sales';
 
 interface SlideInModalProps {
   visible: boolean;
   onClose: () => void;
+  onConfirm: (discount: Discount) => void;
+  discountTypes: any[];
 }
 
-const DiscountModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
+const DiscountModal: React.FC<SlideInModalProps> = ({
+  visible,
+  onClose,
+  onConfirm,
+  discountTypes,
+}) => {
   const {
     control,
     handleSubmit,
@@ -57,48 +65,9 @@ const DiscountModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
   }, [visible]);
 
   const {headerUrl, setIsLoadingTrue, setIsLoadingFalse} = useAuthStore();
-  const [discountTypes, setDiscountTypes] = useState([]);
-
-  useEffect(() => {
-    const getDiscountTypes = async () => {
-      try {
-        setIsLoadingTrue();
-        const token = await AsyncStorage.getItem('userToken');
-        const API_URL = await AsyncStorage.getItem('API_BASE_URL');
-        const url = `${API_URL}list-of-values?type=discount_type`;
-        const payload = {type: 'discount_type'};
-
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            origin: headerUrl,
-            referer: headerUrl,
-            'access-key': 12345,
-          },
-          params: payload,
-        };
-
-        const {data: discountTypesData} = await axios.get(url, config);
-
-        const discountTypesDataFormatted = discountTypesData.data.data.map(
-          (discount: any) => ({
-            label: discount.value,
-            value: discount._id,
-          }),
-        );
-        setDiscountTypes(discountTypesDataFormatted);
-        setIsLoadingFalse();
-      } catch (error) {
-        setIsLoadingFalse();
-      }
-    };
-    getDiscountTypes();
-  }, []);
-
-  const onSubmit = async (data: any) => {
-    console.log('Submitted Data: ', data);
-  };
+  const [discountId, setDiscountId] = useState('');
+  const [discountValue, setDiscountValue] = useState('');
+  const [discountType, setDiscountType] = useState('');
 
   return (
     <Modal
@@ -128,10 +97,13 @@ const DiscountModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
                   ]}
                   data={discountTypes}
                   labelField="label"
-                  valueField="value"
+                  valueField="type"
                   placeholder="Select Discount Type"
-                  value={value}
-                  onChange={item => onChange(item.value)}
+                  value={discountType}
+                  onChange={item => {
+                    setDiscountId(item.id);
+                    setDiscountType(item.type);
+                  }}
                 />
               )}
             />
@@ -162,8 +134,10 @@ const DiscountModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
                   ]}
                   placeholder="Enter Discount Value"
                   keyboardType="numeric"
-                  onChangeText={onChange}
-                  value={value}
+                  onChangeText={text => {
+                    setDiscountValue(text);
+                  }}
+                  value={discountValue}
                 />
               )}
             />
@@ -175,7 +149,14 @@ const DiscountModal: React.FC<SlideInModalProps> = ({visible, onClose}) => {
 
             {/* Confirm Button */}
             <TouchableOpacity
-              onPress={handleSubmit(onSubmit)}
+              onPress={() => {
+                var param = {
+                  id: discountId,
+                  value: Number(discountValue),
+                  type: discountType,
+                };
+                onConfirm(param);
+              }}
               style={styles.confirmButton}>
               <Text style={{color: 'white'}}>Confirm</Text>
             </TouchableOpacity>

@@ -1,5 +1,11 @@
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, TextInput, ToastAndroid, View} from 'react-native';
+import {
+  StyleSheet,
+  TextInput,
+  ToastAndroid,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import CustomDataTable from '../../../components/data-table';
 import TableCard from '../../../components/table-card';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -12,6 +18,7 @@ import {
 import CustomPopConfirm from '../../../components/pop-confirm';
 import {deleteslug, updateSlug} from '../../../services/product/brand';
 import useAuthStore from '../../../redux/feature/store';
+import Feather from 'react-native-vector-icons/Feather';
 
 function Tier() {
   const headers = ['Name'];
@@ -25,35 +32,36 @@ function Tier() {
   const [refetch, setRefetch] = useState(false);
   const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
 
+  const fetchData = async () => {
+    setData([]);
+    try {
+      setIsLoadingTrue();
+      const {data: tierData} = await getSlugListOfValuesByKey(
+        'customer-tier',
+        headerUrl,
+      );
+      console.log('Tier Fetch: ', tierData.data.data);
+
+      const formattedData = tierData.data.data.map((item: any) => ({
+        ...item,
+        Name: item.name,
+      }));
+
+      console.log('Formatted data:', formattedData);
+
+      setData((prev: any) => {
+        console.log('Previous Data:', prev);
+        console.log('New Data:', formattedData);
+        return [...formattedData];
+      });
+      setIsLoadingFalse();
+    } catch {
+      setIsLoadingFalse();
+      return null;
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoadingTrue();
-        const {data: tierData} = await getSlugListOfValuesByKey(
-          'customer-tier',
-          headerUrl,
-        );
-        console.log('Tier Fetch: ', tierData.data.data);
-
-        const formattedData = tierData.data.data.map((item: any) => ({
-          ...item,
-          Name: item.name,
-        }));
-
-        console.log('Formatted data:', formattedData);
-
-        setData((prev: any) => {
-          console.log('Previous Data:', prev);
-          console.log('New Data:', formattedData);
-          return [...formattedData];
-        });
-        setIsLoadingFalse();
-      } catch {
-        setIsLoadingFalse();
-        return null;
-      }
-    };
-
     fetchData();
   }, [refetch]);
 
@@ -151,11 +159,20 @@ function Tier() {
 
   return (
     <>
-      <View>
+      <View style={{flex: 1}}>
         <TableCard
           heading="Tier"
           button={'Add Tier'}
-          onAction={handleHeadingAction}>
+          onAction={handleHeadingAction}
+          headerChildren={
+            <TouchableOpacity
+              style={{marginLeft: 16}}
+              onPress={() => {
+                fetchData();
+              }}>
+              <Feather name="refresh-cw" size={17} color="red" />
+            </TouchableOpacity>
+          }>
           <View style={[styles.searchContainer, styles.searchTextFocused]}>
             <MaterialCommunityIcons name="magnify" size={20} color="black" />
             <TextInput

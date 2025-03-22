@@ -17,6 +17,7 @@ import ProductCard from '../../../components/pos/process-sales/product-card';
 import {
   getProductCategories,
   getProducts,
+  getSales,
 } from '../../../services/process-sales';
 import useAuthStore from '../../../redux/feature/store';
 import ProcessCustomerModal from '../../../components/modals/process-customer';
@@ -38,10 +39,12 @@ export interface Tax {
   id: string;
   rate: number;
   name: string;
+  value: string;
 }
 
 export interface LineItem {
   product: any;
+  productId: string;
   quantity: number;
   selectedVariant: Variant;
   selectedTax: Tax;
@@ -51,6 +54,20 @@ export interface Variant {
   _id: string;
   retailPrice: number;
   combination: string[];
+  costPrice: number;
+  retailPriceInclTax: number;
+  discount: number;
+  discountTypeId: string;
+}
+
+export interface Discount {
+  value: number;
+  type: string;
+  id: string;
+}
+
+interface ProcessSalesProps {
+  salesId?: string;
 }
 
 function ProcessSales() {
@@ -63,6 +80,10 @@ function ProcessSales() {
     outletChange,
     setRedirectToProcessSalesTrue,
     setRedirectToProcessSalesFalse,
+    salesFlag,
+    salesId,
+    setSalesFlag,
+    setSalesId,
   } = useAuthStore();
   const [categories, setCategories] = useState<any>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
@@ -71,11 +92,14 @@ function ProcessSales() {
 
   const [products, setProducts] = useState<any>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>('Add Customer');
+  const [selectedCustomerData, setSelectedCustomerData] = useState<any>({
+    Name: 'Walk-In Customer',
+    Phone: '0',
+  });
   const [registerName, setRegisterName] = useState('Cash Register');
   const [outletName, setOutletName] = useState('Outlet');
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
-  const [cartItems, setCartItems] = useState<LineItem[]>([]);
 
   const [variantModalVisible, setVariantModalVisible] = useState<any>(false);
   const [serialModalVisible, setSerialModalVisible] = useState<any>(false);
@@ -88,13 +112,12 @@ function ProcessSales() {
   const [taxTotal, setTaxTotal] = useState(0);
   const [cartTotal, setCartTotal] = useState(0);
   const [discountTotal, setDiscountTotal] = useState(0);
+  const [cart, setCart] = useState<Cart>({items: []} as Cart);
 
   interface Cart {
     items: LineItem[];
+    selectedDiscount?: Discount;
   }
-
-  var cart = {} as Cart;
-  cart.items = [];
 
   const addItemToCart = (
     product: any,
@@ -104,7 +127,6 @@ function ProcessSales() {
     serial: string = '',
   ) => {
     product.serial = serial;
-    cart.items = cartItems;
     const existingProductIndex = cart.items.findIndex(
       (item: LineItem) =>
         item.product._id == product._id &&
@@ -113,20 +135,28 @@ function ProcessSales() {
     if (existingProductIndex > -1) {
       cart.items[existingProductIndex].quantity += quantity;
     } else {
-      cart.items.push({product, quantity, selectedVariant, selectedTax});
+      cart.items.push({
+        product,
+        productId: product._id,
+        quantity,
+        selectedVariant,
+        selectedTax,
+      });
     }
-    setCartItems(cart.items);
+    setCart(cart);
+
+    console.log('cart');
+    console.log(cart);
   };
 
   const removeItemFromCart = (productId: string) => {
-    cart.items = cartItems;
     const existingProductIndex = cart.items.findIndex(
       (item: LineItem) => item.product._id == productId,
     );
     if (existingProductIndex > -1 && existingProductIndex < cart.items.length) {
       cart.items.splice(existingProductIndex, 1);
     }
-    setCartItems(cart.items);
+    setCart(cart);
   };
 
   const getProductSubtotal = (
@@ -159,25 +189,39 @@ function ProcessSales() {
   };
 
   const getCartTotal = () => {
-    return cart.items.reduce(
-      (total, item) =>
-        total +
-        getProductSubtotal(
-          item.selectedVariant,
-          item.quantity,
-          item.selectedTax,
-        ),
-      0,
+    return (
+      cart.items.reduce(
+        (total, item) =>
+          total +
+          getProductSubtotal(
+            item.selectedVariant,
+            item.quantity,
+            item.selectedTax,
+          ),
+        0,
+      ) - (getDiscountTotal() ?? 0)
     );
   };
 
+  const getDiscountTotal = () => {
+    if (cart.selectedDiscount?.type == 'percentage') {
+      return (getCartSubTotal() * cart.selectedDiscount?.value) / 100;
+    } else {
+      return cart.selectedDiscount?.value;
+    }
+  };
+
   const updateTotals = () => {
+    setDiscountTotal(getDiscountTotal() ?? 0);
     setTaxTotal(getTaxTotal);
     setSubtotal(getCartSubTotal);
     setCartTotal(getCartTotal);
   };
 
   const handleSelectProduct = (selectedProduct: any) => {
+    console.log('handleSelectProduct: selectedProduct');
+    console.log(selectedProduct);
+
     if (!isRegisterOpen) {
       setErrorModalVisible(true);
       return;
@@ -233,6 +277,10 @@ function ProcessSales() {
           const getProductsResponse = await getProducts(url, headerUrl);
 
           setProducts(getProductsResponse.data.data.data);
+
+          console.log('getProductsResponse.data.data.data[1]');
+          console.log(getProductsResponse.data.data.data[1]);
+
           setIsLoadingFalse();
         } catch (error) {
           setIsLoadingFalse();
@@ -266,10 +314,77 @@ function ProcessSales() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
   useEffect(() => {
-    const fetchListOfTax = async () => {
+    const getSale = async (discountTypesDataFormatted: any, taxes1: any) => {
       try {
+        reset1();
         setIsLoadingTrue();
+        console.log('Sales ID: ', salesId);
+        const getSalesResponse = await getSales(salesId ?? '', headerUrl);
 
+        setIsLoadingFalse();
+
+        console.log('getSalesResponse');
+        console.log(getSalesResponse);
+
+        var sale = getSalesResponse.data.data;
+        var details = sale.saleDetails;
+
+        cart.items = [];
+
+        details.forEach((data: any) => {
+          var selectedVariant;
+          if (data.product.variants.length == 1) {
+            selectedVariant = data.product.variants[0];
+          } else {
+            var selectedAttrSet = new Set(data.combination);
+            data.product.variants.forEach((variant: any) => {
+              const combSet = new Set(variant.combination as string[]);
+              const eqSet =
+                combSet.size === selectedAttrSet.size &&
+                [...combSet].every(x => selectedAttrSet.has(x));
+              if (eqSet) {
+                selectedVariant = variant;
+                return;
+              }
+            });
+          }
+          if (selectedVariant) {
+            selectedVariant.retailPrice = data.price;
+          } else {
+            selectedVariant = data.product.variants[0];
+          }
+
+          var selectedTax = taxes1.find((tax: any) => tax.id === data.taxId);
+
+          addItemToCart(
+            data.product,
+            selectedVariant,
+            selectedTax,
+            data.quantity,
+            data.serialNo,
+          );
+        });
+
+        var selectedDiscount = discountTypesDataFormatted.find(
+          (discount: any) => discount.id === sale.discountTypeId,
+        );
+        cart.selectedDiscount = {
+          id: selectedDiscount.id,
+          value: Number(sale.discount),
+          type: selectedDiscount.type,
+        };
+        console.log('cart');
+        console.log(cart);
+        setCart(cart);
+        updateTotals();
+      } catch (error) {
+        setIsLoadingFalse();
+        console.log('error');
+        console.log(error);
+      }
+    };
+    const fetchListOfTax = async (discountTypesDataFormatted: any) => {
+      try {
         const token = await AsyncStorage.getItem('userToken');
         const API_URL = await AsyncStorage.getItem('API_BASE_URL');
         const url = `${API_URL}tax`;
@@ -284,7 +399,9 @@ function ProcessSales() {
           },
         };
 
+        setIsLoadingTrue();
         const {data: taxData} = await axios.get(url, config);
+        setIsLoadingFalse();
 
         const taxDataFormatted = taxData.data.data.map((tax: any) => ({
           label: tax.name + ' ' + tax.rate + '%',
@@ -295,15 +412,57 @@ function ProcessSales() {
         }));
 
         setTaxes(taxDataFormatted);
-        setIsLoadingFalse();
+
+        getSale(discountTypesDataFormatted, taxDataFormatted);
       } catch {
         setIsLoadingFalse();
         return null;
       }
     };
 
-    fetchListOfTax();
-  }, []);
+    const getDiscountTypes = async () => {
+      try {
+        setIsLoadingTrue();
+        const token = await AsyncStorage.getItem('userToken');
+        const API_URL = await AsyncStorage.getItem('API_BASE_URL');
+        const url = `${API_URL}list-of-values?type=discount_type`;
+        const payload = {type: 'discount_type'};
+
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            origin: headerUrl,
+            referer: headerUrl,
+            'access-key': 12345,
+          },
+          params: payload,
+        };
+
+        const {data: discountTypesData} = await axios.get(url, config);
+
+        setIsLoadingFalse();
+
+        const discountTypesDataFormatted = discountTypesData.data.data.map(
+          (discount: any) => ({
+            label: discount.value,
+            id: discount._id,
+            type: discount.key,
+          }),
+        );
+        setDiscountTypes(discountTypesDataFormatted);
+
+        fetchListOfTax(discountTypesDataFormatted);
+      } catch (error) {
+        setIsLoadingFalse();
+      }
+    };
+    getDiscountTypes();
+  }, [outletChange, salesId]);
+
+  const [discountTypes, setDiscountTypes] = useState([]);
+
+  useEffect(() => {}, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -361,6 +520,7 @@ function ProcessSales() {
   const [discountModalVisible, setDiscountModalVisible] = useState(false);
   const [addCustomerModalVisible, setAddCustomerModalVisible] = useState(false);
   const [paymentModalVisibile, setPaymentModalVisible] = useState(false);
+  const [loyality, setLoyality] = useState(false);
 
   const handleOnSelectExistingCustomer = () => {
     setExistingCustomersModalVisible(true);
@@ -373,6 +533,8 @@ function ProcessSales() {
   const handleOnSelectingAddCustomer = (customer: any) => {
     const customerLabel = customer.Name + ' (' + customer.Phone + ')';
     setSelectedCustomer(customerLabel);
+    setLoyality(true);
+    setSelectedCustomerData(customer);
   };
 
   const handleVariantProductSelection = (data: any) => {
@@ -416,10 +578,9 @@ function ProcessSales() {
   const [selectedLineItem, setSelectedLineItem] = useState<LineItem>(
     {} as LineItem,
   );
+  const [cashReceived, setCashReceived] = useState(0);
 
   const handleOnConfirmProductDetails = (currentLineItem: LineItem) => {
-    cart.items = cartItems;
-
     const index = cart.items.findIndex(item => {
       item.product._id = currentLineItem.product._id;
     });
@@ -428,8 +589,276 @@ function ProcessSales() {
       cart.items[index] = currentLineItem;
     }
 
-    setCartItems(cart.items);
+    setCart(cart);
     updateTotals();
+  };
+
+  const handleOnConfirmDiscount = (discount: Discount) => {
+    setDiscountModalVisible(false);
+    cart.selectedDiscount = discount;
+    updateTotals();
+  };
+
+  const saleDetails = cart.items.map(item => ({
+    combination: item.selectedVariant.combination || [],
+    skuId: item.product.skuId || null,
+    skuNo: item.product.skuNo || '',
+    barcode: item.product.barcode || '',
+    costPrice: item.selectedVariant.costPrice || 0,
+    retailPrice: item.selectedVariant.retailPrice || 0,
+    discount: 0,
+    discountType: item.selectedVariant.discountTypeId,
+    discountTypeId: item.selectedVariant.discountTypeId,
+    price: item.selectedVariant.retailPrice || 0,
+    productId: item.productId,
+    productName: item.product.name,
+    quantity: item.quantity,
+    tax: item.selectedTax.rate || 0,
+    taxId: item.selectedTax.value || '',
+    total: 100,
+    _id: item.selectedVariant._id,
+  }));
+
+  const handlePaymentSubmit = async (
+    updatedReceivedCash: any,
+    updatedReceivedCredit: any,
+  ) => {
+    try {
+      setIsLoadingTrue();
+      const token = await AsyncStorage.getItem('userToken');
+      const outletId = await AsyncStorage.getItem('selectedOutlet');
+
+      let url = `${API_BASE_URL}sales`;
+
+      console.log('cart:', cart);
+
+      const payload = {
+        customerContactNo: selectedCustomerData.Phone,
+        customerId: selectedCustomerData.id || null,
+        customerName: selectedCustomerData.Name,
+        discountTypeId: cart.selectedDiscount?.id ?? '674de458efeb4ac32361bf1e',
+        discount: cart.selectedDiscount?.value || 0,
+        orderDate: new Date().toISOString(),
+        outletId: outletId,
+        paymentStatus: 'PAID',
+        paymentType: 'CARD',
+        receivedCash: updatedReceivedCash,
+        receivedCredit: updatedReceivedCredit,
+        receivedLoyality: 0,
+        saleDetails,
+        salesType: 'sales',
+        surcharge: 0,
+      };
+
+      var headers = {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        origin: headerUrl,
+        referer: headerUrl,
+      };
+
+      console.log('url:', url);
+      console.log('headers:', headers);
+      console.log('Payload:', payload);
+
+      const response = await axios.post(url, payload, {
+        headers: headers,
+      });
+
+      console.log('Response post sale order:', response);
+      reset();
+      setIsLoadingFalse();
+      ToastAndroid.show('Order Successful', ToastAndroid.LONG);
+    } catch (err) {
+      console.error('Error posting sale order:', err);
+      setIsLoadingFalse();
+    }
+  };
+
+  const handleLoyalityPaymentSubmit = async (updatedReceivedCash: any) => {
+    try {
+      setIsLoadingTrue();
+      const token = await AsyncStorage.getItem('userToken');
+      const outletId = await AsyncStorage.getItem('selectedOutlet');
+
+      let url = `${API_BASE_URL}sales`;
+
+      console.log('cart:', cart);
+
+      const payload = {
+        customerContactNo: selectedCustomerData.Phone,
+        customerId: selectedCustomerData.id || null,
+        customerName: selectedCustomerData.Name,
+        discountTypeId: cart.selectedDiscount?.id ?? '674de458efeb4ac32361bf1e',
+        discount: cart.selectedDiscount?.value || 0,
+        orderDate: new Date().toISOString(),
+        outletId: outletId,
+        paymentStatus: 'PAID',
+        paymentType: 'CARD',
+        receivedCash: 0,
+        receivedCredit: 0,
+        receivedLoyality: updatedReceivedCash,
+        saleDetails,
+        salesType: 'sales',
+        surcharge: 0,
+      };
+
+      console.log('Payload:', payload);
+
+      const response = await axios.post(url, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          origin: headerUrl,
+          referer: headerUrl,
+        },
+      });
+
+      console.log('Response post sale order:', response);
+      reset();
+      setIsLoadingFalse();
+      ToastAndroid.show('Order Successful', ToastAndroid.LONG);
+    } catch (err) {
+      console.error('Error posting sale order:', err);
+      setIsLoadingFalse();
+    }
+  };
+
+  const handleParkSale = async () => {
+    try {
+      setIsLoadingTrue();
+      const token = await AsyncStorage.getItem('userToken');
+      const outletId = await AsyncStorage.getItem('selectedOutlet');
+
+      let url = `${API_BASE_URL}sales`;
+
+      console.log('cart:', cart);
+
+      const payload = {
+        customerContactNo: selectedCustomerData.Phone,
+        customerId: selectedCustomerData.id || null,
+        customerName: selectedCustomerData.Name,
+        discountTypeId: cart.selectedDiscount?.id ?? '674de458efeb4ac32361bf1e',
+        discount: cart.selectedDiscount?.value || 0,
+        orderDate: new Date().toISOString(),
+        outletId: outletId,
+        paymentStatus: 'PARKED',
+        paymentType: 'CREDIT',
+        receivedCash: 0,
+        receivedCredit: 0,
+        receivedLoyality: 0,
+        saleDetails,
+        salesType: 'sales',
+        surcharge: 0,
+      };
+
+      console.log('handleParkSale:Payload:', payload);
+
+      const response = await axios.post(url, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          origin: headerUrl,
+          referer: headerUrl,
+        },
+      });
+
+      console.log('Response post sale order:', response);
+      reset();
+      setIsLoadingFalse();
+      ToastAndroid.show('Order Parked', ToastAndroid.LONG);
+      navigation.navigate('POS-Sales-History');
+    } catch (err: any) {
+      console.error('Error posting sale order:', err.response);
+      setIsLoadingFalse();
+    }
+  };
+
+  const handleRefundSale = async (
+    updatedReceivedCash: any,
+    updatedReceivedCredit: any,
+  ) => {
+    try {
+      setIsLoadingTrue();
+      const token = await AsyncStorage.getItem('userToken');
+      const outletId = await AsyncStorage.getItem('selectedOutlet');
+
+      let url = `${API_BASE_URL}sales`;
+
+      console.log('cart:', cart);
+
+      const payload = {
+        customerContactNo: selectedCustomerData.Phone,
+        customerId: selectedCustomerData.id || null,
+        customerName: selectedCustomerData.Name,
+        discountTypeId: cart.selectedDiscount?.id ?? '674de458efeb4ac32361bf1e',
+        discount: cart.selectedDiscount?.value || 0,
+        orderDate: new Date().toISOString(),
+        outletId: outletId,
+        paymentStatus: 'PAID',
+        paymentType: 'CARD',
+        receivedCash: updatedReceivedCash,
+        receivedCredit: updatedReceivedCredit,
+        receivedLoyality: 0,
+        saleDetails,
+        salesType: 'refund',
+        surcharge: 0,
+      };
+
+      console.log('Payload:', payload);
+
+      const response = await axios.post(url, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          origin: headerUrl,
+          referer: headerUrl,
+        },
+      });
+
+      console.log('Response post sale order:', response);
+      reset();
+      setIsLoadingFalse();
+      ToastAndroid.show('Order Parked', ToastAndroid.LONG);
+      navigation.navigate('POS-Sales-History');
+    } catch (err) {
+      console.error('Error posting sale order:', err);
+      setIsLoadingFalse();
+    }
+  };
+
+  const reset = () => {
+    setCart({items: [], selectedDiscount: undefined} as Cart);
+    setSubtotal(0);
+    setCashReceived(0);
+    setDiscountTotal(0);
+    setTaxTotal(0);
+    setCartTotal(0);
+    setSelectedCustomer('Add Customer');
+    setSelectedCustomerData({
+      Name: 'Walk-In Customer',
+      Phone: '0',
+    });
+    setPaymentModalVisible(false);
+    setLoyality(false);
+    setSalesFlag(false);
+    setSalesId('');
+  };
+
+  const reset1 = () => {
+    setCart({items: [], selectedDiscount: undefined} as Cart);
+    setSubtotal(0);
+    setCashReceived(0);
+    setDiscountTotal(0);
+    setTaxTotal(0);
+    setCartTotal(0);
+    setSelectedCustomer('Add Customer');
+    setSelectedCustomerData({
+      Name: 'Walk-In Customer',
+      Phone: '0',
+    });
+    setPaymentModalVisible(false);
+    setLoyality(false);
   };
 
   return (
@@ -546,6 +975,7 @@ function ProcessSales() {
                 onClose={() => setModalVisible(false)}
                 onSelectExistingCustomer={handleOnSelectExistingCustomer}
                 onSelectAddCustomer={handleOnSelectAddCustomer}
+                setSelectedCustomerData={setSelectedCustomerData}
               />
 
               <AddExistingCustomerModal
@@ -593,22 +1023,44 @@ function ProcessSales() {
               <DiscountModal
                 visible={discountModalVisible}
                 onClose={() => setDiscountModalVisible(false)}
+                onConfirm={handleOnConfirmDiscount}
+                discountTypes={discountTypes}
               />
 
               <PaymentModal
                 visible={paymentModalVisibile}
                 onClose={() => setPaymentModalVisible(false)}
+                onSubmit={(
+                  updatedReceivedCash: any,
+                  updatedReceivedCredit: any,
+                ) => {
+                  if (salesFlag) {
+                    handleRefundSale(
+                      updatedReceivedCash,
+                      updatedReceivedCredit,
+                    );
+                  } else {
+                    handlePaymentSubmit(
+                      updatedReceivedCash,
+                      updatedReceivedCredit,
+                    );
+                  }
+                }}
+                onLoyalitySubmit={handleLoyalityPaymentSubmit}
                 subTotal={subtotal}
                 discount={discountTotal}
                 tax={taxTotal}
                 grandTotal={cartTotal}
+                cashReceived={cashReceived}
+                setCashReceived={setCashReceived}
+                loyality={loyality}
               />
 
               <View style={styles.divider} />
 
               <View style={styles.productsView}>
                 <ScrollView contentContainerStyle={{flexGrow: 1}}>
-                  {cartItems.map((item: LineItem, index: any) => {
+                  {cart.items.map((item: LineItem, index: any) => {
                     const selectedAttributes = Object.values(
                       item.product.attributes || {},
                     ).map(String);
@@ -656,13 +1108,11 @@ function ProcessSales() {
                             <Text style={styles.productName}>
                               {item.product.name}
                             </Text>
-                            {item.product.attributes &&
-                              Object.keys(item.product.attributes).length >
-                                0 && (
-                                <Text style={styles.productName}>
-                                  {item.selectedVariant.combination.join(' / ')}
-                                </Text>
-                              )}
+                            {item.selectedVariant.combination.length > 0 && (
+                              <Text style={styles.productName}>
+                                {item.selectedVariant.combination.join(' / ')}
+                              </Text>
+                            )}
                           </View>
 
                           <View style={styles.productActionView}>
@@ -708,7 +1158,6 @@ function ProcessSales() {
                 pointerEvents={!isRegisterOpen ? 'none' : 'auto'} // Disables all child elements
                 style={{opacity: isRegisterOpen ? 1 : 0.7}}>
                 {' '}
-                // Optional: Dim UI when disabled
                 {/* Notes Section */}
                 <View style={[styles.section, {paddingTop: 10}]}>
                   <Icon
@@ -746,8 +1195,10 @@ function ProcessSales() {
                   <TouchableOpacity
                     onPress={() => setDiscountModalVisible(true)}>
                     <View style={styles.paymentSummary}>
-                      <Text style={styles.summaryLabel}>Discount</Text>
-                      <Text style={[styles.summaryValue, styles.discount]}>
+                      <Text style={[styles.sectionTitle, {marginLeft: 0}]}>
+                        Discount
+                      </Text>
+                      <Text style={[styles.summaryValue]}>
                         {discountTotal.toFixed(2)}
                       </Text>
                     </View>
@@ -770,10 +1221,7 @@ function ProcessSales() {
                 {/* Payment Buttons */}
                 <View style={styles.paymentButtonsView}>
                   <TouchableOpacity
-                    onPress={() => {
-                      isRegisterOpen && setCartItems([]);
-                      setSubtotal(0);
-                    }}
+                    onPress={reset}
                     style={[
                       styles.paymentButton,
                       !isRegisterOpen && {opacity: 0.7},
@@ -781,7 +1229,8 @@ function ProcessSales() {
                     <Text style={styles.paymentText}>DISCARD</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    disabled={!isRegisterOpen}
+                    onPress={handleParkSale}
+                    disabled={!isRegisterOpen || cart.items.length === 0}
                     style={[
                       styles.paymentButton,
                       !isRegisterOpen && {opacity: 0.7},
@@ -793,8 +1242,12 @@ function ProcessSales() {
 
               {isRegisterOpen && (
                 <TouchableOpacity
+                  disabled={cart.items.length === 0}
                   onPress={() => setPaymentModalVisible(true)}
-                  style={styles.payButtonView}>
+                  style={[
+                    styles.payButtonView,
+                    {opacity: cart.items.length === 0 ? 0.7 : 1},
+                  ]}>
                   <Text style={styles.openRegisterText}>PAY</Text>
                   <Text style={styles.openRegisterText}>
                     {cartTotal.toFixed(2)}

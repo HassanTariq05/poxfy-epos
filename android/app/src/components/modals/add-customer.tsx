@@ -189,19 +189,33 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       taxExempted: data.taxExempted,
     };
 
-    const response = await createCustomer(payload, headerUrl);
-    console.log('Response Create Customer: ', response);
-    setRefetch((prev: any) => !prev);
-    onClose();
-    setIsLoadingFalse();
-    ToastAndroid.showWithGravityAndOffset(
-      'Record created successfully',
-      ToastAndroid.LONG,
-      ToastAndroid.BOTTOM,
-      25,
-      50,
-    );
-    reset();
+    console.log('Submitted payload: ', payload);
+
+    try {
+      const response = await createCustomer(payload, headerUrl);
+      console.log('Response Create Customer: ', response);
+      ToastAndroid.showWithGravityAndOffset(
+        'Record created successfully',
+        ToastAndroid.LONG,
+        ToastAndroid.BOTTOM,
+        25,
+        50,
+      );
+      reset();
+      setIsLoadingFalse();
+      onClose();
+      setRefetch((prev: any) => !prev);
+    } catch (error: any) {
+      console.log('Error Create Customer: ', error.response.data.error);
+      ToastAndroid.showWithGravityAndOffset(
+        error.response.data.error,
+        ToastAndroid.LONG,
+        ToastAndroid.BOTTOM,
+        25,
+        50,
+      );
+      setIsLoadingFalse();
+    }
   };
   return (
     <Modal visible={visible} transparent animationType="none">

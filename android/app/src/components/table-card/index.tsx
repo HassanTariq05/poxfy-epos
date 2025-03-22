@@ -20,20 +20,29 @@ const TableCard: React.FC<TableCardProps> = ({
   headerChildren,
 }) => {
   return (
-    <Card style={[styles.card, style]}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        overflow: 'hidden',
+        padding: 16,
+      }}>
       <View style={styles.header}>
         {heading && <Text style={styles.heading}>{heading}</Text>}
-        {button && (
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onAction()}>
-            <Text style={styles.buttonText}>{button}</Text>
-          </TouchableOpacity>
-        )}
-        {headerChildren}
+        <View style={styles.header}>
+          {button && (
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => onAction()}>
+              <Text style={styles.buttonText}>{button}</Text>
+            </TouchableOpacity>
+          )}
+          {headerChildren}
+        </View>
       </View>
-      <View>{children}</View>
-    </Card>
+      <View style={{flex: 1}}>{children}</View>
+    </View>
   );
 };
 

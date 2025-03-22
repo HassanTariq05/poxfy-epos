@@ -22,3 +22,25 @@ export const getProducts = async (url: string, headerUrl: any) => {
     },
   });
 };
+
+export const postSaleOrder = async (url: string, headerUrl: any) => {
+  const token = await AsyncStorage.getItem('userToken');
+  return Api.post(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      origin: headerUrl,
+      referer: headerUrl,
+    },
+  });
+};
+
+export const getSales = async (salesId: string, headerUrl: any) => {
+  const token = await AsyncStorage.getItem('userToken');
+  return Api.get('sales/' + salesId, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      origin: headerUrl,
+      referer: headerUrl,
+    },
+  });
+};
