@@ -1,8 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {useEffect, useState} from 'react';
-import {View, Text, Image, StyleSheet} from 'react-native';
+import {View, Text, Image, StyleSheet, TouchableOpacity} from 'react-native';
+import Feather from 'react-native-vector-icons/Feather';
 
-export default function WelcomeBanner() {
+interface WelcomeBannerProps {
+  onRefresh?: any;
+}
+
+const WelcomeBanner: React.FC<WelcomeBannerProps> = ({onRefresh}) => {
   const [user, setUser] = useState<string | null>();
   useEffect(() => {
     AsyncStorage.getItem('user')
@@ -25,22 +30,32 @@ export default function WelcomeBanner() {
             />
           </View>
         </Text>
-        <View style={styles.dateContainer}>
-          <Text style={styles.dateText}>{new Date().toDateString()}</Text>
+        <View style={{flexDirection: 'row'}}>
+          <View style={styles.dateContainer}>
+            <Text style={styles.dateText}>{new Date().toDateString()}</Text>
+          </View>
+          <View style={[styles.dateContainer, {marginLeft: 8}]}>
+            <TouchableOpacity
+              onPress={() => {
+                onRefresh();
+              }}>
+              <Feather name="refresh-cw" size={17} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
     backgroundColor: 'white',
     overflow: 'hidden',
-    width: '100%',
     height: 60,
     position: 'relative',
+    marginHorizontal: 8,
   },
   bannerImage: {
     position: 'absolute',
@@ -91,3 +106,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+
+export default WelcomeBanner;

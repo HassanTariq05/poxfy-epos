@@ -15,9 +15,12 @@ import FeatherIcon from 'react-native-vector-icons/Feather';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ProductCard from '../../../components/pos/process-sales/product-card';
 import {
+  getDiscountsList,
   getProductCategories,
   getProducts,
   getSales,
+  getTaxesList,
+  postSaleOrder,
 } from '../../../services/process-sales';
 import useAuthStore from '../../../redux/feature/store';
 import ProcessCustomerModal from '../../../components/modals/process-customer';
@@ -34,6 +37,9 @@ import ProductSerialModal from '../../../components/modals/product-serial-modal'
 import ProductDetailModal from '../../../components/modals/product-detail-modal';
 import DiscountModal from '../../../components/modals/discount-modal';
 import PaymentModal from '../../../components/modals/payment-modal';
+import {getLoyaltyBalance} from '../../../services/customer';
+import moment from 'moment';
+import NativePrintSdk from '../../../../../../specs/NativePrintSdk';
 
 export interface Tax {
   id: string;
@@ -113,10 +119,17 @@ function ProcessSales() {
   const [cartTotal, setCartTotal] = useState(0);
   const [discountTotal, setDiscountTotal] = useState(0);
   const [cart, setCart] = useState<Cart>({items: []} as Cart);
+  const [notes, setNotes] = useState<string>('');
+  const [loyalityBalance, setLoyalityBalance] = useState({
+    totalPointsAccrued: 0,
+    balance: 0,
+    totalPointsUsed: 0,
+  });
 
   interface Cart {
     items: LineItem[];
     selectedDiscount?: Discount;
+    notes?: string;
   }
 
   const addItemToCart = (
@@ -166,7 +179,7 @@ function ProcessSales() {
   ) => {
     return (
       selectedVariant.retailPrice * quantity +
-      selectedVariant.retailPrice * quantity * (selectedTax.rate / 100)
+      selectedVariant.retailPrice * quantity * ((selectedTax?.rate ?? 0) / 100)
     );
   };
 
@@ -176,7 +189,7 @@ function ProcessSales() {
         total +
         item.selectedVariant.retailPrice *
           item.quantity *
-          (item.selectedTax.rate / 100),
+          ((item.selectedTax?.rate ?? 0) / 100),
       0,
     );
   };
@@ -215,7 +228,7 @@ function ProcessSales() {
     setDiscountTotal(getDiscountTotal() ?? 0);
     setTaxTotal(getTaxTotal);
     setSubtotal(getCartSubTotal);
-    setCartTotal(getCartTotal);
+    setCartTotal(parseFloat(getCartTotal().toFixed(2)));
   };
 
   const handleSelectProduct = (selectedProduct: any) => {
@@ -317,8 +330,14 @@ function ProcessSales() {
     const getSale = async (discountTypesDataFormatted: any, taxes1: any) => {
       try {
         reset1();
-        setIsLoadingTrue();
         console.log('Sales ID: ', salesId);
+
+        if (salesId == '') {
+          return;
+        }
+
+        setIsLoadingTrue();
+
         const getSalesResponse = await getSales(salesId ?? '', headerUrl);
 
         setIsLoadingFalse();
@@ -385,31 +404,24 @@ function ProcessSales() {
     };
     const fetchListOfTax = async (discountTypesDataFormatted: any) => {
       try {
-        const token = await AsyncStorage.getItem('userToken');
-        const API_URL = await AsyncStorage.getItem('API_BASE_URL');
-        const url = `${API_URL}tax`;
-
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            origin: headerUrl,
-            referer: headerUrl,
-            'access-key': 12345,
-          },
-        };
-
         setIsLoadingTrue();
-        const {data: taxData} = await axios.get(url, config);
+
+        const getTaxResponse = await getTaxesList(headerUrl);
+
+        console.log('getTaxResponse:');
+        console.log(getTaxResponse);
+
         setIsLoadingFalse();
 
-        const taxDataFormatted = taxData.data.data.map((tax: any) => ({
-          label: tax.name + ' ' + tax.rate + '%',
-          value: tax._id,
-          rate: tax.rate,
-          name: tax.name,
-          id: tax._id,
-        }));
+        const taxDataFormatted = getTaxResponse.data.data.data.map(
+          (tax: any) => ({
+            label: tax.name + ' ' + tax.rate + '%',
+            value: tax._id,
+            rate: tax.rate,
+            name: tax.name,
+            id: tax._id,
+          }),
+        );
 
         setTaxes(taxDataFormatted);
 
@@ -423,46 +435,39 @@ function ProcessSales() {
     const getDiscountTypes = async () => {
       try {
         setIsLoadingTrue();
-        const token = await AsyncStorage.getItem('userToken');
-        const API_URL = await AsyncStorage.getItem('API_BASE_URL');
-        const url = `${API_URL}list-of-values?type=discount_type`;
-        const payload = {type: 'discount_type'};
 
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            origin: headerUrl,
-            referer: headerUrl,
-            'access-key': 12345,
-          },
-          params: payload,
-        };
+        const getDiscountTypeResponse = await getDiscountsList(headerUrl);
 
-        const {data: discountTypesData} = await axios.get(url, config);
+        console.log('getDiscountTypes');
+        console.log(getDiscountTypeResponse);
 
         setIsLoadingFalse();
 
-        const discountTypesDataFormatted = discountTypesData.data.data.map(
-          (discount: any) => ({
+        const discountTypesDataFormatted =
+          getDiscountTypeResponse.data.data.data.map((discount: any) => ({
             label: discount.value,
             id: discount._id,
             type: discount.key,
-          }),
-        );
+          }));
         setDiscountTypes(discountTypesDataFormatted);
 
         fetchListOfTax(discountTypesDataFormatted);
       } catch (error) {
         setIsLoadingFalse();
+        console.log('error' + error);
       }
     };
     getDiscountTypes();
   }, [outletChange, salesId]);
 
   const [discountTypes, setDiscountTypes] = useState([]);
+  const [userFullName, setUserFullName] = useState('');
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    AsyncStorage.getItem('user').then(userFullName => {
+      setUserFullName(userFullName ?? '(No Name)');
+    });
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -535,6 +540,20 @@ function ProcessSales() {
     setSelectedCustomer(customerLabel);
     setLoyality(true);
     setSelectedCustomerData(customer);
+    fetchLoyalty(customer.id);
+  };
+
+  const fetchLoyalty = async (id: any) => {
+    try {
+      setIsLoadingTrue();
+      const response = await getLoyaltyBalance(id, headerUrl);
+      console.log('getLoyaltyBalance:', response);
+      setIsLoadingFalse();
+      setLoyalityBalance(response.data.data);
+    } catch (error) {
+      setIsLoadingFalse();
+      console.error('Error getLoyaltyBalance:', error);
+    }
   };
 
   const handleVariantProductSelection = (data: any) => {
@@ -613,62 +632,68 @@ function ProcessSales() {
     productId: item.productId,
     productName: item.product.name,
     quantity: item.quantity,
-    tax: item.selectedTax.rate || 0,
-    taxId: item.selectedTax.value || '',
-    total: 100,
+    tax: item.selectedTax?.rate || 0,
+    taxId: item.selectedTax?.value || '',
+    total: getProductSubtotal(
+      item.selectedVariant,
+      item.quantity,
+      item.selectedTax,
+    ),
     _id: item.selectedVariant._id,
   }));
+
+  const getPayload = async (
+    status: any,
+    receivedCash: any,
+    receivedCredit: any,
+    receivedLoyality: any,
+    salesType: any,
+  ) => {
+    const outletId = await AsyncStorage.getItem('selectedOutlet');
+
+    return {
+      customerContactNo: selectedCustomerData.Phone,
+      customerId: selectedCustomerData.id || null,
+      customerName: selectedCustomerData.Name,
+      discountTypeId: cart.selectedDiscount?.id ?? (discountTypes[0] as any).id,
+      discount: cart.selectedDiscount?.value || 0,
+      orderDate: new Date().toISOString(),
+      outletId: outletId,
+      paymentStatus: status,
+      paymentType: 'CARD',
+      receivedCash: receivedCash,
+      receivedCredit: receivedCredit,
+      receivedLoyality: receivedLoyality,
+      saleDetails,
+      salesType: salesType,
+      surcharge: 0,
+    };
+  };
 
   const handlePaymentSubmit = async (
     updatedReceivedCash: any,
     updatedReceivedCredit: any,
+    updatedReceivedLoyalty: any,
   ) => {
     try {
       setIsLoadingTrue();
-      const token = await AsyncStorage.getItem('userToken');
-      const outletId = await AsyncStorage.getItem('selectedOutlet');
 
-      let url = `${API_BASE_URL}sales`;
+      const payload = await getPayload(
+        'PAID',
+        updatedReceivedCash,
+        updatedReceivedCredit,
+        updatedReceivedLoyalty,
+        'sales',
+      );
 
-      console.log('cart:', cart);
-
-      const payload = {
-        customerContactNo: selectedCustomerData.Phone,
-        customerId: selectedCustomerData.id || null,
-        customerName: selectedCustomerData.Name,
-        discountTypeId: cart.selectedDiscount?.id ?? '674de458efeb4ac32361bf1e',
-        discount: cart.selectedDiscount?.value || 0,
-        orderDate: new Date().toISOString(),
-        outletId: outletId,
-        paymentStatus: 'PAID',
-        paymentType: 'CARD',
-        receivedCash: updatedReceivedCash,
-        receivedCredit: updatedReceivedCredit,
-        receivedLoyality: 0,
-        saleDetails,
-        salesType: 'sales',
-        surcharge: 0,
-      };
-
-      var headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        origin: headerUrl,
-        referer: headerUrl,
-      };
-
-      console.log('url:', url);
-      console.log('headers:', headers);
-      console.log('Payload:', payload);
-
-      const response = await axios.post(url, payload, {
-        headers: headers,
-      });
+      const response = await postSaleOrder(payload, headerUrl);
 
       console.log('Response post sale order:', response);
       reset();
       setIsLoadingFalse();
       ToastAndroid.show('Order Successful', ToastAndroid.LONG);
+
+      sendForPrint(payload);
     } catch (err) {
       console.error('Error posting sale order:', err);
       setIsLoadingFalse();
@@ -678,46 +703,23 @@ function ProcessSales() {
   const handleLoyalityPaymentSubmit = async (updatedReceivedCash: any) => {
     try {
       setIsLoadingTrue();
-      const token = await AsyncStorage.getItem('userToken');
-      const outletId = await AsyncStorage.getItem('selectedOutlet');
 
-      let url = `${API_BASE_URL}sales`;
+      const payload = await getPayload(
+        'PAID',
+        0,
+        0,
+        updatedReceivedCash,
+        'sales',
+      );
 
-      console.log('cart:', cart);
-
-      const payload = {
-        customerContactNo: selectedCustomerData.Phone,
-        customerId: selectedCustomerData.id || null,
-        customerName: selectedCustomerData.Name,
-        discountTypeId: cart.selectedDiscount?.id ?? '674de458efeb4ac32361bf1e',
-        discount: cart.selectedDiscount?.value || 0,
-        orderDate: new Date().toISOString(),
-        outletId: outletId,
-        paymentStatus: 'PAID',
-        paymentType: 'CARD',
-        receivedCash: 0,
-        receivedCredit: 0,
-        receivedLoyality: updatedReceivedCash,
-        saleDetails,
-        salesType: 'sales',
-        surcharge: 0,
-      };
-
-      console.log('Payload:', payload);
-
-      const response = await axios.post(url, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          origin: headerUrl,
-          referer: headerUrl,
-        },
-      });
+      const response = await postSaleOrder(payload, headerUrl);
 
       console.log('Response post sale order:', response);
       reset();
       setIsLoadingFalse();
       ToastAndroid.show('Order Successful', ToastAndroid.LONG);
+
+      sendForPrint(payload);
     } catch (err) {
       console.error('Error posting sale order:', err);
       setIsLoadingFalse();
@@ -727,41 +729,10 @@ function ProcessSales() {
   const handleParkSale = async () => {
     try {
       setIsLoadingTrue();
-      const token = await AsyncStorage.getItem('userToken');
-      const outletId = await AsyncStorage.getItem('selectedOutlet');
 
-      let url = `${API_BASE_URL}sales`;
+      const payload = await getPayload('PARKED', 0, 0, 0, 'sales');
 
-      console.log('cart:', cart);
-
-      const payload = {
-        customerContactNo: selectedCustomerData.Phone,
-        customerId: selectedCustomerData.id || null,
-        customerName: selectedCustomerData.Name,
-        discountTypeId: cart.selectedDiscount?.id ?? '674de458efeb4ac32361bf1e',
-        discount: cart.selectedDiscount?.value || 0,
-        orderDate: new Date().toISOString(),
-        outletId: outletId,
-        paymentStatus: 'PARKED',
-        paymentType: 'CREDIT',
-        receivedCash: 0,
-        receivedCredit: 0,
-        receivedLoyality: 0,
-        saleDetails,
-        salesType: 'sales',
-        surcharge: 0,
-      };
-
-      console.log('handleParkSale:Payload:', payload);
-
-      const response = await axios.post(url, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          origin: headerUrl,
-          referer: headerUrl,
-        },
-      });
+      const response = await postSaleOrder(payload, headerUrl);
 
       console.log('Response post sale order:', response);
       reset();
@@ -777,44 +748,20 @@ function ProcessSales() {
   const handleRefundSale = async (
     updatedReceivedCash: any,
     updatedReceivedCredit: any,
+    updatedReceivedLoyalty: any,
   ) => {
     try {
       setIsLoadingTrue();
-      const token = await AsyncStorage.getItem('userToken');
-      const outletId = await AsyncStorage.getItem('selectedOutlet');
 
-      let url = `${API_BASE_URL}sales`;
+      const payload = await getPayload(
+        'PAID',
+        updatedReceivedCash,
+        updatedReceivedCredit,
+        0,
+        'refund',
+      );
 
-      console.log('cart:', cart);
-
-      const payload = {
-        customerContactNo: selectedCustomerData.Phone,
-        customerId: selectedCustomerData.id || null,
-        customerName: selectedCustomerData.Name,
-        discountTypeId: cart.selectedDiscount?.id ?? '674de458efeb4ac32361bf1e',
-        discount: cart.selectedDiscount?.value || 0,
-        orderDate: new Date().toISOString(),
-        outletId: outletId,
-        paymentStatus: 'PAID',
-        paymentType: 'CARD',
-        receivedCash: updatedReceivedCash,
-        receivedCredit: updatedReceivedCredit,
-        receivedLoyality: 0,
-        saleDetails,
-        salesType: 'refund',
-        surcharge: 0,
-      };
-
-      console.log('Payload:', payload);
-
-      const response = await axios.post(url, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          origin: headerUrl,
-          referer: headerUrl,
-        },
-      });
+      const response = await postSaleOrder(payload, headerUrl);
 
       console.log('Response post sale order:', response);
       reset();
@@ -828,7 +775,7 @@ function ProcessSales() {
   };
 
   const reset = () => {
-    setCart({items: [], selectedDiscount: undefined} as Cart);
+    setCart({items: [], selectedDiscount: undefined, notes: undefined} as Cart);
     setSubtotal(0);
     setCashReceived(0);
     setDiscountTotal(0);
@@ -843,10 +790,11 @@ function ProcessSales() {
     setLoyality(false);
     setSalesFlag(false);
     setSalesId('');
+    setNotes('');
   };
 
   const reset1 = () => {
-    setCart({items: [], selectedDiscount: undefined} as Cart);
+    setCart({items: [], selectedDiscount: undefined, notes: undefined} as Cart);
     setSubtotal(0);
     setCashReceived(0);
     setDiscountTotal(0);
@@ -859,7 +807,162 @@ function ProcessSales() {
     });
     setPaymentModalVisible(false);
     setLoyality(false);
+    setNotes('');
   };
+
+  function sendForPrint(payload: any) {
+    var printObjs = [];
+    printObjs.push({
+      text: outletName,
+      dir: 'center',
+      size: '32',
+    });
+    printObjs.push({
+      text: 'Simplified Tax Invoice',
+      dir: 'center',
+      size: '28',
+    });
+    printObjs.push({
+      text: 'Printed At: ' + moment().format('YYYY/MM/DD hh:mm:ss A'),
+      dir: 'center',
+      size: '28',
+    });
+    printObjs.push({
+      text: '-------------------------',
+      dir: 'center',
+      size: '28',
+    });
+    printObjs.push({
+      text: 'Creator: ' + userFullName,
+      dir: 'left',
+      size: '28',
+    });
+    printObjs.push({
+      text: 'Colser: ' + userFullName,
+      dir: 'right',
+      size: '28',
+    });
+    printObjs.push({
+      text: '-------------------------',
+      dir: 'center',
+      size: '28',
+    });
+    printObjs.push({
+      text: 'Qty',
+      dir: 'left',
+      size: '28',
+    });
+    printObjs.push({
+      text: 'Item',
+      dir: 'left',
+      size: '28',
+    });
+    printObjs.push({
+      text: 'Price',
+      dir: 'right',
+      size: '28',
+    });
+
+    printObjs.push({
+      text: '-------------------------',
+      dir: 'center',
+      size: '28',
+    });
+
+    saleDetails.forEach((item: any) => {
+      printObjs.push({
+        text: item.quantity,
+        dir: 'left',
+        size: '28',
+      });
+      printObjs.push({
+        text: item.productName,
+        dir: 'center',
+        size: '28',
+      });
+      printObjs.push({
+        text: item.total,
+        dir: 'right',
+        size: '28',
+      });
+    });
+
+    printObjs.push({
+      text: '-------------------------',
+      dir: 'center',
+      size: '28',
+    });
+
+    printObjs.push({
+      text: 'Subtotal',
+      dir: 'left',
+      size: '28',
+    });
+    printObjs.push({
+      text: getCartSubTotal().toFixed(2),
+      dir: 'right',
+      size: '28',
+    });
+
+    printObjs.push({
+      text: 'Discount',
+      dir: 'left',
+      size: '28',
+    });
+    printObjs.push({
+      text: getDiscountTotal()?.toFixed(2) ?? 0.0,
+      dir: 'right',
+      size: '28',
+    });
+
+    printObjs.push({
+      text: 'Tax',
+      dir: 'left',
+      size: '28',
+    });
+    printObjs.push({
+      text: getTaxTotal().toFixed(2),
+      dir: 'right',
+      size: '28',
+    });
+
+    printObjs.push({
+      text: 'Total',
+      dir: 'left',
+      size: '28',
+    });
+    printObjs.push({
+      text: getCartTotal().toFixed(2),
+      dir: 'right',
+      size: '28',
+    });
+
+    printObjs.push({
+      text: '-------------------------',
+      dir: 'center',
+      size: '28',
+    });
+
+    printObjs.push({
+      text: 'Products Count: ' + saleDetails.length,
+      dir: 'center',
+      size: '28',
+    });
+    printObjs.push({
+      text: '-------------------------',
+      dir: 'center',
+      size: '28',
+    });
+
+    try {
+      const str = JSON.stringify([printObjs]);
+      console.log('PrintSdk JSON:', str);
+      NativePrintSdk?.printJson(str);
+      console.log('PrintSdk called successfully');
+    } catch (error) {
+      console.error('Error calling PrintSdk:', error);
+    }
+  }
 
   return (
     <View style={styles.mainContainer}>
@@ -894,7 +997,12 @@ function ProcessSales() {
         </View>
 
         <View>
-          <ScrollView horizontal showsVerticalScrollIndicator={true}>
+          <ScrollView
+            horizontal
+            showsVerticalScrollIndicator={true}
+            style={{
+              overflow: 'visible',
+            }}>
             <View style={styles.categoryView}>
               {categories.map((category: any) => (
                 <TouchableOpacity
@@ -934,7 +1042,7 @@ function ProcessSales() {
           </ScrollView>
         </View>
         <View style={{flex: 1}}>
-          <ScrollView showsVerticalScrollIndicator={true}>
+          <ScrollView style={{flex: 1}} showsVerticalScrollIndicator={true}>
             <View style={styles.productCardsView}>
               {products.map((product: any, index: number) => (
                 <ProductCard
@@ -1033,16 +1141,19 @@ function ProcessSales() {
                 onSubmit={(
                   updatedReceivedCash: any,
                   updatedReceivedCredit: any,
+                  updatedReceivedLoyalty: any,
                 ) => {
                   if (salesFlag) {
                     handleRefundSale(
                       updatedReceivedCash,
                       updatedReceivedCredit,
+                      updatedReceivedLoyalty,
                     );
                   } else {
                     handlePaymentSubmit(
                       updatedReceivedCash,
                       updatedReceivedCredit,
+                      updatedReceivedLoyalty,
                     );
                   }
                 }}
@@ -1054,6 +1165,8 @@ function ProcessSales() {
                 cashReceived={cashReceived}
                 setCashReceived={setCashReceived}
                 loyality={loyality}
+                loyalityBalance={loyalityBalance}
+                customer={selectedCustomerData}
               />
 
               <View style={styles.divider} />
@@ -1094,9 +1207,9 @@ function ProcessSales() {
                             </View>
                             <Image
                               source={
-                                item.product.images?.image
+                                item.product?.images?.length ?? 0 > 0
                                   ? {
-                                      uri: item.product.images?.image,
+                                      uri: '' + item.product?.images[0],
                                     }
                                   : require('../../../assets/images/no-image.png')
                               }
@@ -1173,6 +1286,10 @@ function ProcessSales() {
                   style={[styles.input, !isRegisterOpen && {opacity: 0.7}]}
                   placeholder="Notes"
                   placeholderTextColor="#A3A3A3"
+                  value={notes}
+                  onChangeText={text => {
+                    setNotes(text);
+                  }}
                 />
                 {/* Payment Summary Section */}
                 <View style={styles.section}>
@@ -1266,15 +1383,15 @@ const styles = StyleSheet.create({
   mainContainer: {
     display: 'flex',
     flexDirection: 'row',
-    gap: 20,
-    width: '100%',
-    paddingRight: 20,
+    gap: 8,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
   },
   productView: {
     width: '65%',
   },
   cartView: {
-    width: '35%',
+    flex: 1,
   },
   outletView: {
     display: 'flex',
@@ -1342,6 +1459,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 10,
     marginBottom: 10,
+    overflow: 'visible',
   },
   categoryButton: {
     alignItems: 'center',
@@ -1393,7 +1511,6 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    // marginBottom: 16,
     elevation: 0,
     shadowColor: 'transparent',
   },
@@ -1532,16 +1649,19 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
   },
   quantityText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+    zIndex: 10,
   },
   productImage: {
-    width: 50,
-    height: 50,
+    width: '100%',
+    height: '100%',
     resizeMode: 'contain',
+    borderRadius: 30,
   },
   productDetails: {
     flex: 1,
@@ -1569,9 +1689,11 @@ const styles = StyleSheet.create({
     color: '#A3A3A3',
   },
   productCardsView: {
+    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
+    gap: 8,
   },
 });
 

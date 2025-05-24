@@ -8,6 +8,7 @@ interface AuthState {
   isLoading: boolean;
   outletChange: boolean;
   redirectToProcessSales: boolean;
+  customerId: string;
   login: () => void;
   logout: () => void;
   setIsLoadingTrue: () => void;
@@ -18,12 +19,14 @@ interface AuthState {
   toggleOutletChange: () => void;
   setRedirectToProcessSalesTrue: () => void;
   setRedirectToProcessSalesFalse: () => void;
+  setCustomerId: (id: string) => void;
 }
 
 const useAuthStore = create<AuthState>(set => ({
   headerUrl: '',
   salesId: '',
   salesFlag: false,
+  customerId: '',
   setSalesFlag: (flag: boolean) => set({salesFlag: flag}),
   setSalesId: (id: string) => set({salesId: id}),
   setHeaderUrl: (url: string) => set({headerUrl: url}),
@@ -38,6 +41,7 @@ const useAuthStore = create<AuthState>(set => ({
   redirectToProcessSales: false,
   setRedirectToProcessSalesTrue: () => set({redirectToProcessSales: true}),
   setRedirectToProcessSalesFalse: () => set({redirectToProcessSales: false}),
+  setCustomerId: (id: string) => set({customerId: id}),
 }));
 
 export default useAuthStore;

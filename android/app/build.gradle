@@ -49,9 +49,20 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    sourceSets {
+        main {
+            java.srcDirs += 'src/main/java'
+            jniLibs.srcDirs = ['libs']
+        }
+    }
 }
 
 dependencies {
+
+    implementation files('libs/GLPage_V1.03.00_20181030.jar')
+    implementation files('libs\\NeptuneLiteApi_V3.25.00_20210706.jar')
+
     implementation("com.facebook.react:react-android")
 
     if (hermesEnabled.toBoolean()) {

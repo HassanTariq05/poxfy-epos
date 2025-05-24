@@ -36,13 +36,17 @@ const PaymentTally: React.FC<PaymentProps> = ({
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.table}>
         <View style={styles.tableHeader}>
-          <Text style={[styles.headerText, {textAlign: 'left', width: '20%'}]}>
+          <Text style={[styles.headerText, {textAlign: 'left', width: '25%'}]}>
             Payment
           </Text>
-          <Text style={[styles.headerText, {textAlign: 'right', width: '15%'}]}>
+          <Text style={[styles.headerText, {textAlign: 'right', width: '20%'}]}>
             Expected
           </Text>
-          <Text style={[styles.headerText, {textAlign: 'right', width: '35%'}]}>
+          <Text
+            style={[
+              styles.headerText,
+              {textAlign: 'right', width: '35%', paddingEnd: 16},
+            ]}>
             Counted
           </Text>
           <Text style={[styles.headerText, {textAlign: 'right', width: '20%'}]}>
@@ -51,10 +55,14 @@ const PaymentTally: React.FC<PaymentProps> = ({
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={[styles.rowText, {textAlign: 'left', width: '20%'}]}>
+          <Text style={[styles.rowText, {textAlign: 'left', width: '25%'}]}>
             Cash
           </Text>
-          <Text style={[styles.rowText, {textAlign: 'right', width: '15%'}]}>
+          <Text
+            style={[
+              styles.rowText,
+              {textAlign: 'right', width: '20%', paddingEnd: 16},
+            ]}>
             {registerData?.transaction?.cash}
           </Text>
           <TextInput
@@ -78,10 +86,14 @@ const PaymentTally: React.FC<PaymentProps> = ({
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={[styles.rowText, {textAlign: 'left', width: '20%'}]}>
+          <Text style={[styles.rowText, {textAlign: 'left', width: '25%'}]}>
             Card
           </Text>
-          <Text style={[styles.rowText, {textAlign: 'right', width: '15%'}]}>
+          <Text
+            style={[
+              styles.rowText,
+              {textAlign: 'right', width: '20%', paddingEnd: 16},
+            ]}>
             {registerData?.transaction?.card}
           </Text>
           <TextInput
@@ -105,10 +117,14 @@ const PaymentTally: React.FC<PaymentProps> = ({
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={[styles.rowText, {textAlign: 'left', width: '20%'}]}>
+          <Text style={[styles.rowText, {textAlign: 'left', width: '25%'}]}>
             Store Credit
           </Text>
-          <Text style={[styles.rowText, {textAlign: 'right', width: '15%'}]}>
+          <Text
+            style={[
+              styles.rowText,
+              {textAlign: 'right', width: '20%', paddingEnd: 16},
+            ]}>
             {registerData?.transaction?.credit}
           </Text>
           <TextInput
@@ -185,8 +201,11 @@ const PaymentTally: React.FC<PaymentProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {},
+  container: {
+    overflow: 'visible',
+  },
   table: {
+    overflow: 'visible',
     width: '100%',
     borderBottomWidth: 1,
     borderBottomColor: 'rgb(232, 231, 233)',

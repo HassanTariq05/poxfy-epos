@@ -59,10 +59,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   lastRowCard: {
+    flex: 1,
     borderRadius: 20,
     padding: 20,
     marginTop: 10,
-    width: '32.50%',
+    width: '100%',
     height: 210,
     justifyContent: 'space-between',
   },
@@ -74,20 +75,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   column: {
+    flex: 1,
     flexDirection: 'column',
     justifyContent: 'space-between',
   },
   thirdItemContainer: {
+    flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
   },
   item: {
+    width: '100%',
     marginBottom: 10,
   },
   title: {
+    color: '#00e37d',
     fontSize: 18,
     marginBottom: 8,
-    borderBottomColor: 'gray',
+    borderBottomColor: '#00e37d5f',
     borderBottomWidth: 1,
   },
   value: {

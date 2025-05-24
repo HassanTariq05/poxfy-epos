@@ -34,3 +34,13 @@ export const deleteCustmer = async (id: any, headerUrl: any) => {
     },
   });
 };
+export const getLoyaltyBalance = async (id: any, headerUrl: any) => {
+  const token = await AsyncStorage.getItem('userToken');
+  return Api.get(`supplier/${id}/loyality-balance`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      origin: headerUrl,
+      referer: headerUrl,
+    },
+  });
+};

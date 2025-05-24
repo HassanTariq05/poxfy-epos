@@ -62,7 +62,7 @@ function SalesHistory() {
   }>(null);
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchValue);
-  const [skip, setSkip] = useState(1);
+  const [skip, setSkip] = useState(0);
   const [limit, setLimit] = useState(15);
   const [count, setCount] = useState();
 
@@ -101,10 +101,18 @@ function SalesHistory() {
 
   const getPaymentType = (item: any) => {
     var result = 'Cash';
-    if (item.receivedCredit > 0 && item.receivedCash > 0) {
+    if (
+      item.receivedCredit > 0 &&
+      item.receivedCash > 0 &&
+      item.receivedLoyality > 0
+    ) {
+      result = 'Cash, Credit, Loyalty';
+    } else if (item.receivedCredit > 0 && item.receivedCash > 0) {
       result = 'Cash, Credit';
     } else if (item.receivedCredit > 0) {
       result = 'Credit';
+    } else {
+      result = item.paymentType;
     }
     return result;
   };
@@ -118,7 +126,9 @@ function SalesHistory() {
     try {
       setIsLoadingTrue();
       const token = await AsyncStorage.getItem('userToken');
-      let url = `${API_BASE_URL}sales/list?page=${skip}&take=${limit}&`;
+      let url = `${API_BASE_URL}sales/list?skip=${
+        skip * limit
+      }&limit=${limit}&`;
 
       // Define query parameters dynamically
       const queryParams: string[] = [];
@@ -174,12 +184,16 @@ function SalesHistory() {
       );
       setTotalTax(taxSum);
 
+      console.log('Total Sales:', response.data.data.data[1]);
+
       const formattedData = response.data.data.data.map((item: any) => ({
         id: item._id,
         'Order Id': item.orderId,
         'Order Date': item.orderDate ? formatOrderDate(item.orderDate) : '',
         'Sale Type': item.salesType?.toUpperCase(),
-        Customer: item.customerName,
+        Customer: item.customer?.fullName
+          ? item.customer.fullName
+          : item.customerName,
         'Payment Type': getPaymentType(item),
         'Payment Status': item.paymentStatus,
         'Sale Total': item.totalSale?.toFixed(2),
@@ -269,7 +283,7 @@ function SalesHistory() {
   const [dateRange, setDateRange] = useState<string>('Select Date Range');
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{flex: 1, marginHorizontal: 8, marginBottom: 8}}>
       <TableCard
         heading="Sales History"
         headerChildren={
@@ -288,6 +302,7 @@ function SalesHistory() {
                 onChange={item => setSelectedPaymentType(item.value)}
                 itemTextStyle={{fontSize: 13}}
                 selectedTextProps={{numberOfLines: 1}}
+                mode="auto"
               />
               <Dropdown
                 style={styles.dropdown}
@@ -302,6 +317,7 @@ function SalesHistory() {
                 itemTextStyle={{fontSize: 13}}
                 onChange={item => setSelectedPaymentStatus(item.value)}
                 selectedTextProps={{numberOfLines: 1}}
+                mode="auto"
               />
               <View style={{width: 280}}>
                 <DualDatePicker
@@ -356,7 +372,7 @@ function SalesHistory() {
             />
 
             <CustomDataTable
-              flexes={[2, 4, 2, 3, 2, 2, 2, 2, 2, 3, 3, 3]}
+              flexes={[2, 4, 2, 3, 3, 2, 2, 2, 2, 3, 3, 3]}
               alignments={[
                 'flex-start',
                 'flex-start',

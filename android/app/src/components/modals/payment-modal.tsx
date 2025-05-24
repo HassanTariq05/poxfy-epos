@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
   TextInput,
+  Alert,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useForm} from 'react-hook-form';
@@ -27,6 +28,8 @@ interface PaymentModalProps {
   cashReceived: any;
   setCashReceived: any;
   loyality: boolean;
+  loyalityBalance: any;
+  customer: any;
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -41,6 +44,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   cashReceived,
   setCashReceived,
   loyality,
+  loyalityBalance,
+  customer,
 }) => {
   const {handleSubmit} = useForm();
   const slideAnim = useRef(new Animated.Value(500)).current;
@@ -48,6 +53,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const [amount, setAmount] = useState('0');
   const [credit, setCredit] = useState(0);
   const [cash, setCash] = useState(0);
+  const [loyaltyUsed, setLoyaltyUsed] = useState(0);
 
   useEffect(() => {
     Animated.timing(slideAnim, {
@@ -61,6 +67,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     setAmount(grandTotal.toString());
     setCash(0);
     setCredit(0);
+    setLoyaltyUsed(0);
   }, [grandTotal]);
 
   const handleCashSubmit = () => {
@@ -70,14 +77,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
     setCash(newCashReceived);
 
-    const remainingBalance = grandTotal - newCashReceived - credit;
+    const remainingBalance =
+      grandTotal - newCashReceived - credit - loyaltyUsed;
     setAmount(remainingBalance.toFixed(2));
 
     console.log('remainingBalance');
     console.log(remainingBalance);
 
     if (remainingBalance <= 0) {
-      onSubmit(newCashReceived, credit);
+      onSubmit(newCashReceived, credit, loyaltyUsed);
     }
   };
 
@@ -88,32 +96,39 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
     setCredit(newCreditReceived);
 
-    const remainingBalance = grandTotal - newCreditReceived - cash;
+    const remainingBalance =
+      grandTotal - newCreditReceived - cash - loyaltyUsed;
     setAmount(remainingBalance.toFixed(2));
 
     console.log('remainingBalance');
     console.log(remainingBalance);
 
     if (remainingBalance <= 0) {
-      onSubmit(cash, newCreditReceived);
+      onSubmit(cash, newCreditReceived, loyaltyUsed);
     }
   };
 
   const handleLoyalitySubmit = () => {
+    if (amount > loyalityBalance.balance) {
+      Alert.alert('Error!', 'Customer does not have enough loyalty balance');
+      return;
+    }
+
     const receivedAmount = parseFloat(amount) || 0;
 
-    setCashReceived((prevCashReceived: number) => {
-      const newCashReceived = prevCashReceived + receivedAmount;
+    var newLoyaltyReceived = loyaltyUsed + receivedAmount;
 
-      const remainingBalance = grandTotal - newCashReceived;
-      setAmount(remainingBalance.toString());
+    setLoyaltyUsed(newLoyaltyReceived);
 
-      if (remainingBalance <= 0) {
-        onLoyalitySubmit(newCashReceived);
-      }
+    const remainingBalance = grandTotal - newLoyaltyReceived - cash - credit;
+    setAmount(remainingBalance.toFixed(2));
 
-      return newCashReceived;
-    });
+    console.log('remainingBalance');
+    console.log(remainingBalance);
+
+    if (remainingBalance <= 0) {
+      onSubmit(cash, credit, newLoyaltyReceived);
+    }
   };
 
   return (
@@ -190,10 +205,19 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     </View>
                   )}
 
+                  {loyaltyUsed > 0 && (
+                    <View style={styles.paymentSummary}>
+                      <Text style={styles.summaryLabel1}>Loyalty Received</Text>
+                      <Text style={styles.summaryValue1}>
+                        {loyaltyUsed.toFixed(2)}
+                      </Text>
+                    </View>
+                  )}
+
                   <View style={styles.paymentSummary}>
                     <Text style={styles.summaryLabel2}>To Pay</Text>
                     <Text style={styles.summaryValue2}>
-                      {(grandTotal - cashReceived).toFixed(2)}
+                      {(grandTotal - cash - credit - loyaltyUsed).toFixed(2)}
                     </Text>
                   </View>
                 </View>
@@ -259,6 +283,42 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                       </TouchableOpacity>
                     )}
                   </View>
+                  {customer.Name != 'Walk-In Customer' && (
+                    <View>
+                      <Text style={styles.customer}>{customer.Name}</Text>
+                      <View style={styles.leftContainer}>
+                        <Text style={styles.label}>Loyalty Summary</Text>
+                        <View
+                          style={[styles.paymentSummaryView, {marginTop: 0}]}>
+                          <View
+                            style={[styles.paymentSummary, {paddingTop: 5}]}>
+                            <Text style={styles.summaryLabel}>
+                              Total Accured Points
+                            </Text>
+                            <Text style={styles.summaryValue}>
+                              {loyalityBalance.totalPointsAccrued.toFixed(2)}
+                            </Text>
+                          </View>
+
+                          <View style={styles.paymentSummary}>
+                            <Text style={styles.summaryLabel}>
+                              Total Points Used
+                            </Text>
+                            <Text style={[styles.summaryValue]}>
+                              {loyalityBalance.totalPointsUsed.toFixed(2)}
+                            </Text>
+                          </View>
+
+                          <View style={styles.paymentSummary}>
+                            <Text style={styles.summaryLabel}>Balance</Text>
+                            <Text style={styles.summaryValue}>
+                              {loyalityBalance.balance.toFixed(2)}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
@@ -319,7 +379,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: 'rgb(103, 223, 135)',
     borderBottomWidth: 1,
+    borderTopWidth: 1,
     borderBottomColor: 'rgb(240,240,240)',
+    paddingVertical: 8,
   },
   label1: {
     fontSize: 16,
@@ -346,8 +408,9 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   paymentSummaryView: {
     marginTop: 5,
@@ -413,6 +476,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginBottom: 20,
+    backgroundColor: '#f9f9f9',
+  },
+  customer: {
+    fontSize: 21,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 16,
+    marginBottom: 16,
     backgroundColor: '#f9f9f9',
   },
   buttonContainer: {

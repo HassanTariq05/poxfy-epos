@@ -162,7 +162,7 @@ function Tag() {
 
   return (
     <>
-      <View style={{flex: 1}}>
+      <View style={{flex: 1, marginBottom: 8, marginHorizontal: 8}}>
         <TableCard
           heading="Tag"
           button={'Add Tag'}
@@ -187,7 +187,7 @@ function Tag() {
             />
           </View>
           <CustomDataTable
-            flexes={[1]}
+            flexes={[5]}
             alignments={['flex-start']}
             headers={headers}
             data={data}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import WelcomeBanner from '../../components/welcome-banner';
 import InfoCardDashboard from '../../components/info-card-dashboard';
 import {Svg, Path} from 'react-native-svg';
@@ -15,19 +15,99 @@ import {
   weeklySalesItems,
   yearlySalesItems,
 } from './items';
+import useAuthStore from '../../redux/feature/store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  getCustomerInsights,
+  getInventoryInsights,
+  getOutlets,
+  getProducts,
+  getSales,
+} from '../../services/dashboard';
+import {NativeModules} from 'react-native';
+const {PrintSdk} = NativeModules;
 
 export default function Dashboard() {
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
+
+  const [salesData, setSalesData] = useState<any>({
+    today: 0,
+    yesterday: 0,
+    currentWeek: 0,
+    lastWeek: 0,
+  });
+  const [productData, setProductData] = useState<any>();
+  const [outletData, setOutletData] = useState<any>([
+    {
+      outletName: '',
+      totalRevenue: 0,
+    },
+  ]);
+  const [customerData, setCustomerData] = useState<any>({
+    customerRatio: {
+      repeatCustomerRatio: 0,
+    },
+    new: 0,
+    repeat: 0,
+    growth: 0,
+    total: 0,
+    return: 0,
+  });
+  const [inventoryData, setInventoryData] = useState<any>({
+    lowItems: 0,
+  });
+
+  const fetchData = async () => {
+    try {
+      setIsLoadingTrue();
+
+      const outletId = '6804e727bae8a248492f2db8';
+
+      const salesResponse = await getSales(outletId, headerUrl);
+      setSalesData(salesResponse.data.data);
+
+      const productResponse = await getProducts(outletId, headerUrl);
+      setProductData(productResponse.data.data);
+
+      const outletResponse = await getOutlets(outletId, headerUrl);
+      setOutletData(outletResponse.data.data);
+
+      const customerResponse = await getCustomerInsights(outletId, headerUrl);
+      setCustomerData(customerResponse.data.data);
+
+      const inventoryResponse = await getInventoryInsights(outletId, headerUrl);
+      setInventoryData(inventoryResponse.data.data);
+
+      setIsLoadingFalse();
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setIsLoadingFalse();
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   return (
     <>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <WelcomeBanner />
+        <WelcomeBanner
+          onRefresh={() => {
+            // fetchData();
+
+            PrintSdk.someSdkMethod('Hello from print world!')
+              .then((result: any) => console.log(result))
+              .catch((error: any) => console.error(error));
+          }}
+        />
         <View style={styles.cardContainer}>
           <InfoCardDashboard
             mainheading={'Today vs Yesterday'}
             todayLabel="Today"
-            todayValue={0}
+            todayValue={salesData.today}
             yesterdayLabel="Yesterday"
-            yesterdayValue={0}
+            yesterdayValue={salesData.yesterday}
             imgSrc={require('../../assets/images/bg-lines.png')}
             svgIcon={
               <Svg width={32} height={32} viewBox="0 0 37 39" fill="none">
@@ -41,7 +121,11 @@ export default function Dashboard() {
               <Svg width={32} height={32} viewBox="0 0 33 40" fill="none">
                 <Path
                   d={'M16.5 38V2M16.5 38L2 23.6M16.5 38L31 23.6'}
-                  stroke={'rgb(237, 105, 100)'}
+                  stroke={
+                    salesData.today > salesData.yesterday
+                      ? '#00e37d'
+                      : '#fe5e5e'
+                  }
                   strokeWidth={3}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -58,8 +142,16 @@ export default function Dashboard() {
                 preserveAspectRatio="none">
                 <Path
                   d="M94 55C80 35 20 45 -5 60V104H392V55C365 60 345 63 320 65C290 67 275 60 255 50C240 42 225 40 215 45C200 50 185 70 165 85C145 100 130 90 120 80C110 70 105 65 94 55Z"
-                  fill="#FFF1ED"
-                  stroke="rgb(237, 105, 100)"
+                  fill={
+                    salesData.today > salesData.yesterday
+                      ? '#00e37d0f'
+                      : '#fe5e5e0f'
+                  }
+                  stroke={
+                    salesData.today > salesData.yesterday
+                      ? '#00e37d'
+                      : '#fe5e5e'
+                  }
                   strokeWidth={2}
                 />
               </Svg>
@@ -68,9 +160,9 @@ export default function Dashboard() {
           <InfoCardDashboard
             mainheading={'This vs Last Week'}
             todayLabel="This Week"
-            todayValue={0}
+            todayValue={salesData.currentWeek}
             yesterdayLabel="Last Week"
-            yesterdayValue={0}
+            yesterdayValue={salesData.lastWeek}
             imgSrc={require('../../assets/images/bg-lines.png')}
             svgIcon={
               <Svg width={32} height={32} viewBox="0 0 37 39" fill="none">
@@ -88,7 +180,11 @@ export default function Dashboard() {
               <Svg width={32} height={32} viewBox="0 0 33 40" fill="none">
                 <Path
                   d={'M16.5 38V2M16.5 38L2 23.6M16.5 38L31 23.6'}
-                  stroke={'rgb(237, 105, 100)'}
+                  stroke={
+                    salesData.currentWeek > salesData.lastWeek
+                      ? '#00e37d'
+                      : '#fe5e5e'
+                  }
                   strokeWidth={3}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -105,8 +201,16 @@ export default function Dashboard() {
                 preserveAspectRatio="none">
                 <Path
                   d="M94 55C80 35 20 45 -5 60V104H392V55C365 60 345 63 320 65C290 67 275 60 255 50C240 42 225 40 215 45C200 50 185 70 165 85C145 100 130 90 120 80C110 70 105 65 94 55Z"
-                  fill="#FFF1ED"
-                  stroke="rgb(237, 105, 100)"
+                  fill={
+                    salesData.currentWeek > salesData.lastWeek
+                      ? '#00e37d0f'
+                      : '#fe5e5e0f'
+                  }
+                  stroke={
+                    salesData.currentWeek > salesData.lastWeek
+                      ? '#00e37d'
+                      : '#fe5e5e'
+                  }
                   strokeWidth={2}
                 />
               </Svg>
@@ -115,9 +219,9 @@ export default function Dashboard() {
           <InfoCardDashboard
             mainheading={'Current Month vs Last Month'}
             todayLabel="Current Month"
-            todayValue={0}
+            todayValue={salesData.currentMonth}
             yesterdayLabel="Last Month"
-            yesterdayValue={0}
+            yesterdayValue={salesData.lastMonth}
             imgSrc={require('../../assets/images/bg-lines.png')}
             svgIcon={
               <Svg width={32} height={32} viewBox="0 0 37 39" fill="none">
@@ -135,7 +239,11 @@ export default function Dashboard() {
               <Svg width={32} height={32} viewBox="0 0 33 40" fill="none">
                 <Path
                   d={'M16.5 38V2M16.5 38L2 23.6M16.5 38L31 23.6'}
-                  stroke={'rgb(237, 105, 100)'}
+                  stroke={
+                    salesData.currentMonth > salesData.lastMonth
+                      ? '#00e37d'
+                      : '#fe5e5e'
+                  }
                   strokeWidth={3}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -152,8 +260,16 @@ export default function Dashboard() {
                 preserveAspectRatio="none">
                 <Path
                   d="M94 55C80 35 20 45 -5 60V104H392V55C365 60 345 63 320 65C290 67 275 60 255 50C240 42 225 40 215 45C200 50 185 70 165 85C145 100 130 90 120 80C110 70 105 65 94 55Z"
-                  fill="#FFF1ED"
-                  stroke="rgb(237, 105, 100)"
+                  fill={
+                    salesData.currentMonth > salesData.lastMonth
+                      ? '#00e37d0f'
+                      : '#fe5e5e0f'
+                  }
+                  stroke={
+                    salesData.currentMonth > salesData.lastMonth
+                      ? '#00e37d'
+                      : '#fe5e5e'
+                  }
                   strokeWidth={2}
                 />
               </Svg>
@@ -164,9 +280,9 @@ export default function Dashboard() {
           <InfoCardDashboard
             mainheading={'Current Year vs Last Year'}
             todayLabel="Current Year"
-            todayValue={0}
+            todayValue={salesData.currentYear}
             yesterdayLabel="Last Year"
-            yesterdayValue={0}
+            yesterdayValue={salesData.lastYear}
             imgSrc={require('../../assets/images/bg-lines.png')}
             svgIcon={
               <Svg width={32} height={32} viewBox="0 0 37 39" fill="none">
@@ -180,7 +296,11 @@ export default function Dashboard() {
               <Svg width={32} height={32} viewBox="0 0 33 40" fill="none">
                 <Path
                   d={'M16.5 38V2M16.5 38L2 23.6M16.5 38L31 23.6'}
-                  stroke={'rgb(237, 105, 100)'}
+                  stroke={
+                    salesData.currentYear > salesData.lastYear
+                      ? '#00e37d'
+                      : '#fe5e5e'
+                  }
                   strokeWidth={3}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -197,53 +317,83 @@ export default function Dashboard() {
                 preserveAspectRatio="none">
                 <Path
                   d="M94 55C80 35 20 45 -5 60V104H392V55C365 60 345 63 320 65C290 67 275 60 255 50C240 42 225 40 215 45C200 50 185 70 165 85C145 100 130 90 120 80C110 70 105 65 94 55Z"
-                  fill="#FFF1ED"
-                  stroke="rgb(237, 105, 100)"
+                  fill={
+                    salesData.currentYear > salesData.lastYear
+                      ? '#00e37d0f'
+                      : '#fe5e5e0f'
+                  }
+                  stroke={
+                    salesData.currentYear > salesData.lastYear
+                      ? '#00e37d'
+                      : '#fe5e5e'
+                  }
                   strokeWidth={2}
                 />
               </Svg>
             }
           />
-          <SalesCard
-            title="Total Sales Amount"
-            value={0}
-            period="Period: This Month"
-          />
 
-          <SalesCard
-            title="Sales Growth Rate"
-            value={'0%'}
-            period="Period: Last 3 Months"
-          />
+          <View style={{width: '66%'}}>
+            <View style={{flex: 1, flexDirection: 'row', gap: 8}}>
+              <SalesCard
+                title="Total Sales Amount"
+                value={salesData.currentMonth}
+                period="Period: This Month"
+              />
+
+              <SalesCard
+                title="Sales Growth Rate"
+                value={salesData.salesGrowth + '%'}
+                period="Period: Last 3 Months"
+              />
+            </View>
+            <View style={{flex: 1, flexDirection: 'row', gap: 8}}>
+              <SalesCard
+                title="Average Transaction Value"
+                value={salesData.currentAvgSales}
+                period="Previous Month: 0"
+              />
+
+              <SalesCard
+                title="Sales Overview"
+                value={salesData.currentWeek}
+                period="Period: Last 7 Days"
+              />
+            </View>
+          </View>
         </View>
+
         <View style={styles.cardContainer}>
-          <SalesCard
-            title="Average Transaction Value"
-            value={0}
-            period="Previous Month: 0"
-          />
-
-          <SalesCard
-            title="Sales Overview"
-            value={0}
-            period="Period: Last 7 Days"
-          />
-
           <SalesCard title="Top-Selling Products" value={0} period="" />
+          <SalesCard title="Sales by Category" value={0} period="" />
         </View>
 
         <View style={styles.cardContainer}>
           <StatusCard
             title="Customer Insights"
             color="rgb(237, 105, 100)"
-            items={customerInsightsItems}
+            items={[
+              {period: 'Total Customers', value: customerData.totalCustomer},
+              {period: 'New Customers', value: customerData.newCustomer},
+              {
+                period: 'Repeat Customers',
+                value: customerData.customerRatio.repeatedCustomerRatio + '%',
+              },
+            ]}
             backgroundColor="rgb(253, 243, 242)"
           />
 
           <StatusCard
             title="Inventory Status"
-            color="rgb(103,223,135)"
-            items={inventoryStatusItems}
+            color="#00e37d"
+            items={[
+              {period: 'Low Stock Items', value: inventoryData.lowItems},
+              {period: 'Out of Stock', value: inventoryData.outOfStockItems},
+              {
+                period: 'Available Stock',
+                value: inventoryData.availableStockItems,
+              },
+            ]}
             backgroundColor="rgb(245, 255, 250)"
           />
         </View>
@@ -251,14 +401,22 @@ export default function Dashboard() {
         <View style={styles.cardContainer}>
           <SummaryCard
             title="Weekly Sales Summary"
-            color="rgb(103,223,135)"
-            items={weeklySalesItems}
+            color="#00e37d"
+            items={[
+              {period: 'This Week', value: salesData.currentWeek},
+              {period: 'Growth', value: salesData.salesGrowth + '%'},
+              {period: 'Last Week', value: salesData.lastWeek},
+            ]}
             backgroundColor="white"
           />
           <SummaryCard
             title="Monthly Sales Overview"
-            color="rgb(103,223,135)"
-            items={monthlySalesItems}
+            color="#00e37d"
+            items={[
+              {period: 'This Month', value: salesData.currentMonth},
+              {period: 'YoY Growth', value: salesData.salesGrowth + '%'},
+              {period: 'Last Month', value: salesData.lastMonth},
+            ]}
             backgroundColor="white"
           />
         </View>
@@ -266,28 +424,81 @@ export default function Dashboard() {
         <View style={styles.cardContainer}>
           <SummaryCard
             title="Yearly Sales Overview"
-            color="rgb(103,223,135)"
-            items={yearlySalesItems}
+            color="#00e37d"
+            items={[
+              {period: 'This Year', value: salesData.currentYear},
+              {period: 'YoY Growth', value: salesData.salesGrowth + '%'},
+              {period: 'Last Year', value: salesData.lastYear},
+            ]}
             backgroundColor="white"
           />
           <SummaryCard
             title="Total Sales Invoices "
-            color="rgb(103,223,135)"
-            items={totalSalesItems}
+            color="#00e37d"
+            items={[
+              {period: 'Total Invoices', value: salesData.totalInvoices},
+              {period: 'Pending', value: salesData.totalPendingInvoices},
+              {period: 'Paid', value: salesData.totalPaidInvoices},
+            ]}
             backgroundColor="white"
           />
         </View>
 
-        <View style={styles.cardContainer}>
+        <View style={styles.cardContainer1}>
           <SummaryCard
             title="Refunds and Returns"
-            color="rgb(103,223,135)"
-            items={refundsItems}
+            color="#00e37d"
+            items={[
+              {period: 'Total Refunds', value: salesData.refundAmount},
+              {
+                period: 'Return Rate',
+                value:
+                  (
+                    (salesData.refundCount / salesData.totalPaidInvoices) *
+                    100
+                  ).toFixed(2) + '%',
+              },
+              {period: 'Number of Returns', value: salesData.refundCount},
+            ]}
             backgroundColor="white"
             inLastRow={true}
           />
-          <SalesCard title="Sales By Category" value={0} period="" />
-          <SalesCard title="Sales by Store Location" value={0} period="" />
+          <View
+            style={{
+              flex: 1,
+              height: 160,
+            }}>
+            <SummaryCard
+              title="Sales by Store Location"
+              color="#00e37d"
+              items={[
+                {
+                  period: outletData[0].outletName,
+                  value: outletData[0].totalRevenue,
+                },
+              ]}
+              backgroundColor="white"
+              inLastRow={true}
+            />
+          </View>
+          <View
+            style={{
+              flex: 1,
+              height: 160,
+            }}>
+            <SummaryCard
+              title="Sales By Product Category"
+              color="#00e37d"
+              items={[
+                {
+                  period: productData?.categories[0]?.categoryName,
+                  value: productData?.categories[0]?.totalRevenue,
+                },
+              ]}
+              backgroundColor="white"
+              inLastRow={true}
+            />
+          </View>
         </View>
       </ScrollView>
     </>
@@ -303,6 +514,15 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 8,
+    marginHorizontal: 8,
+  },
+  cardContainer1: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginHorizontal: 8,
+    marginBottom: 8,
   },
 });

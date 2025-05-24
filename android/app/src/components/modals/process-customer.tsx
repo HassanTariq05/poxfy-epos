@@ -195,6 +195,7 @@ const ProcessCustomerModal: React.FC<SlideInModalProps> = ({
                 searchPlaceholder="Search customer..."
                 maxHeight={120}
                 onChange={item => setSelectedCustomer(item.value)}
+                mode="auto"
               /> */}
               <TouchableOpacity
                 onPress={handleSelectExistingCustomer}

@@ -262,6 +262,7 @@ const ProductDetailModal: React.FC<SlideInModalProps> = ({
                 nestedScrollEnabled: true,
                 keyboardShouldPersistTaps: 'handled',
               }}
+              mode="auto"
             />
 
             <TouchableOpacity

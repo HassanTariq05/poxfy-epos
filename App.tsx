@@ -23,10 +23,8 @@ import useAuthStore from './android/app/src/redux/feature/store';
 import {updateBaseUrl, updateSocketUrl} from './android/app/src/network/client';
 import SalesHistory from './android/app/src/screens/pos/sales-history';
 import ProcessSales from './android/app/src/screens/pos/process-sales';
+import Loyalty from './android/app/src/screens/customer/loyalty';
 // import {updateBaseUrl} from './android/app/src/network/client';
-
-const Drawer = createDrawerNavigator();
-const Stack = createStackNavigator();
 
 function ScreenWrapper({children}: any) {
   return (
@@ -40,6 +38,7 @@ function ScreenWrapper({children}: any) {
 }
 
 function DrawerNavigator() {
+  const Drawer = createDrawerNavigator();
   const [collapsed, setCollapsed] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState(null);
   return (
@@ -48,10 +47,10 @@ function DrawerNavigator() {
         headerShown: false,
         drawerType: 'permanent',
         drawerStyle: {
-          width: collapsed ? 60 : 220,
-          borderTopWidth: 20,
-          borderBottomWidth: 20,
-          borderLeftWidth: 20,
+          width: collapsed ? 60 : 208,
+          borderTopWidth: 8,
+          borderBottomWidth: 8,
+          borderLeftWidth: 8,
           borderRightWidth: collapsed ? 60 : 0,
           borderColor: 'rgb(232, 231, 232)',
           backgroundColor: 'rgb(232, 231, 232)',
@@ -113,6 +112,13 @@ function DrawerNavigator() {
           </ScreenWrapper>
         )}
       </Drawer.Screen>
+      {/* <Drawer.Screen name="Customer-Loyalty">
+        {() => (
+          <ScreenWrapper>
+            <Loyalty />
+          </ScreenWrapper>
+        )}
+      </Drawer.Screen> */}
       <Drawer.Screen name="Customer-Tag">
         {() => (
           <ScreenWrapper>
@@ -160,6 +166,8 @@ function DrawerNavigator() {
 }
 
 export default function App() {
+  const Stack = createStackNavigator();
+
   const [showSplash, setShowSplash] = useState(true);
 
   const {
@@ -223,17 +231,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'rgb(232, 231, 232)',
-    padding: 20,
   },
   navContainer: {flex: 1, backgroundColor: 'rgb(232, 231, 232)'},
   headerContainer: {
     backgroundColor: '#fff',
     borderRadius: 20,
+    margin: 8,
   },
   content: {
     flex: 1,
-    paddingTop: 20,
     backgroundColor: 'rgb(232, 231, 232)',
+    overflow: 'visible',
   },
   loaderContainer: {
     position: 'absolute',

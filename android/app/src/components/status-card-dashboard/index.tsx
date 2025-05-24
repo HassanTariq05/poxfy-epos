@@ -42,7 +42,6 @@ const styles = StyleSheet.create({
     padding: 20,
     marginTop: 10,
     width: '49.50%',
-    height: 210,
     justifyContent: 'space-between',
   },
   content: {
@@ -54,18 +53,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     marginBottom: 8,
     borderBottomColor: 'gray',
     borderBottomWidth: 1,
   },
   value: {
-    fontSize: 30,
+    fontSize: 23,
     fontWeight: 'bold',
     textAlign: 'left',
   },
   period: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
     textAlign: 'left',
   },

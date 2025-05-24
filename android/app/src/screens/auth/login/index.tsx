@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAuthStore from '../../../redux/feature/store';
 import {SOCKET_URL, SUB_API_BASE_URL} from '../../../constants';
 import {updateBaseUrlExplicitly} from '../../../network/client';
+import NativePrintSdk from '../../../../../../specs/NativePrintSdk';
 
 const LoginScreen = ({onLogin}: any) => {
   const [errorModalVisible, setErrorModalVisible] = useState(false);
@@ -28,15 +29,24 @@ const LoginScreen = ({onLogin}: any) => {
     formState: {errors},
   } = useForm({
     defaultValues: {
-      email: '',
-      password: '',
-      accountId: '',
+      email: 'ameer@yopmail.com',
+      password: '!@QWerty321',
+      accountId: 'newserver',
     },
   });
 
   const {setIsLoadingTrue, setIsLoadingFalse, setHeaderUrl} = useAuthStore();
 
   const onSubmit = async (data: any) => {
+    // // try {
+    // //   NativePrintSdk?.printJson('Hello from printing world!');
+    // //   console.log('PrintSdk called successfully');
+    // // } catch (error) {
+    // //   console.error('Error calling PrintSdk:', error);
+    // // }
+
+    // return;
+
     try {
       let url;
       if (data.accountId !== '') {

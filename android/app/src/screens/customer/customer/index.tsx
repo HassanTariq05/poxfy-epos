@@ -23,8 +23,17 @@ import CustomPopConfirm from '../../../components/pop-confirm';
 import {deleteCustmer, updateCustomer} from '../../../services/customer';
 import useAuthStore from '../../../redux/feature/store';
 import Feather from 'react-native-vector-icons/Feather';
+import {useNavigation} from '@react-navigation/native';
+import {DrawerNavigationProp} from '@react-navigation/drawer';
+import {Modal} from 'react-native-paper';
+import Loyalty from '../loyalty';
+import LoyaltyModal from '../loyalty';
 
 function Customer() {
+  const navigation = useNavigation<DrawerNavigationProp<any>>();
+
+  const {setCustomerId} = useAuthStore();
+
   const headers = ['Code', 'Name', 'Phone', 'Email', 'Country'];
 
   const [customer, setCustomer] = useState('');
@@ -39,9 +48,13 @@ function Customer() {
   const [data, setData] = useState<any>([]);
   const [refetch, setRefetch] = useState(false);
   const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
+  const [loyaltyModalVisible, setLoyaltyModalVisible] =
+    useState<boolean>(false);
+  const [customerDetails, setCustomerDetails] = useState('');
 
   const fetchData = async () => {
     setData([]);
+    setLoyaltyModalVisible(false);
     try {
       setIsLoadingTrue();
       const token = await AsyncStorage.getItem('userToken');
@@ -192,7 +205,7 @@ function Customer() {
 
   return (
     <>
-      <View style={{flex: 1}}>
+      <View style={{flex: 1, marginBottom: 8, marginHorizontal: 8}}>
         <TableCard
           heading="Customer"
           button={'Add Customer'}
@@ -236,6 +249,16 @@ function Customer() {
             onDelete={confirmDelete}
             showSwitch={true}
             onToggleSwitch={confirmSwitch}
+            showLoyalty={true}
+            onLoyalty={row => {
+              setCustomerId(row._id);
+              console.log('Customer ID:', row._id);
+              // navigation.navigate('Customer-Loyalty');
+              setLoyaltyModalVisible(true);
+              setCustomerDetails(
+                '' + row.Name + ' - ' + row.Phone + ' - ' + row.Email,
+              );
+            }}
           />
           <CustomPopConfirm
             title="Confirm Deletion"
@@ -271,6 +294,11 @@ function Customer() {
           visible={modalEditVisible}
           onClose={() => setEditModalVisible(false)}
           customer={selectedCustomer}
+        />
+        <LoyaltyModal
+          visible={loyaltyModalVisible}
+          onClose={() => setLoyaltyModalVisible(false)}
+          customerDetails={customerDetails}
         />
       </View>
     </>

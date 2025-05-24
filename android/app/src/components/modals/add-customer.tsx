@@ -546,6 +546,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                         placeholder="Gender"
                         value={value}
                         onChange={item => onChange(item.value)}
+                        mode="auto"
                       />
                       {errors.gender && (
                         <Text style={styles.errorText}>
@@ -571,6 +572,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                         placeholder="Tag"
                         value={value}
                         onChange={item => onChange(item.value)}
+                        mode="auto"
                       />
                       {errors.tag && (
                         <Text style={styles.errorText}>
@@ -596,6 +598,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                         placeholder="Group Tier"
                         value={value}
                         onChange={item => onChange(item.value)}
+                        mode="auto"
                       />
                       {errors.tier && (
                         <Text style={styles.errorText}>

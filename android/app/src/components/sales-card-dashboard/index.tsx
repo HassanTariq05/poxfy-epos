@@ -21,30 +21,32 @@ const SalesCard: React.FC<SalesCardProps> = ({title, value, period}) => {
 
 const styles = StyleSheet.create({
   card: {
+    flex: 1,
     backgroundColor: 'white',
     borderRadius: 20,
-    padding: 20,
-    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginTop: 8,
     width: '32.50%',
-    height: 210,
+    height: 100,
     justifyContent: 'space-between',
   },
   content: {
     flex: 1,
   },
   title: {
-    fontSize: 18,
+    fontSize: 15,
     marginBottom: 8,
-    borderBottomColor: 'rgb(103,223,135)',
+    borderBottomColor: '#00e37d5f',
     borderBottomWidth: 1,
-    color: 'rgb(103,223,135)',
+    color: '#00e37d',
   },
   value: {
-    fontSize: 30,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   period: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
     textAlign: 'left',
   },

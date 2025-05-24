@@ -36,6 +36,7 @@ function OpeningBalance() {
                 containerStyle={{borderRadius: 10}}
                 selectedTextStyle={{fontSize: 14}}
                 onChange={function (item: any): void {}}
+                mode="auto"
               />
               <TouchableOpacity onPress={() => {}} style={styles.actionButton}>
                 <Text style={styles.buttonText}>Update</Text>

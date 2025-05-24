@@ -40,9 +40,10 @@ export const updateBaseUrlExplicitly = (baseURL: any) => {
 };
 
 Api.interceptors.request.use(config => {
-  console.log(`API Request to: ${config.baseURL}${config.url}`);
   console.log(
-    `API Request to: ${config.baseURL}${config.url}${config.headers}`,
+    `${config.method?.toUpperCase()}: ${config.baseURL}${config.url}`,
   );
+  console.log(`${config.headers}`);
+  console.log(`Body: ${JSON.stringify(config.data)}`);
   return config;
 });

@@ -104,6 +104,7 @@ const DiscountModal: React.FC<SlideInModalProps> = ({
                     setDiscountId(item.id);
                     setDiscountType(item.type);
                   }}
+                  mode="auto"
                 />
               )}
             />

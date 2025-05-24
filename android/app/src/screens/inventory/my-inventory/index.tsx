@@ -219,7 +219,7 @@ function MyInventory() {
 
   return (
     <>
-      <View style={{flex: 1}}>
+      <View style={{flex: 1, marginBottom: 8, marginHorizontal: 8}}>
         <TableCard
           heading="My Inventory"
           headerChildren={
@@ -237,6 +237,7 @@ function MyInventory() {
                 onChange={item => setSelectedItem(item.value)}
                 itemTextStyle={{fontSize: 13}}
                 selectedTextProps={{numberOfLines: 1}}
+                mode="auto"
               />
               <Dropdown
                 style={styles.dropdown}
@@ -251,6 +252,7 @@ function MyInventory() {
                 onChange={item => setSelectedProduct(item.value)}
                 itemTextStyle={{fontSize: 13}}
                 selectedTextProps={{numberOfLines: 1}}
+                mode="auto"
               />
               <Dropdown
                 style={styles.dropdown}
@@ -265,6 +267,7 @@ function MyInventory() {
                 onChange={item => setSelectedOutlet(item.value)}
                 itemTextStyle={{fontSize: 13}}
                 selectedTextProps={{numberOfLines: 1}}
+                mode="auto"
               />
               <TouchableOpacity
                 style={{marginTop: 4}}

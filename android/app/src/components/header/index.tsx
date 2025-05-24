@@ -137,7 +137,7 @@ export default function Header() {
     <View style={styles.header}>
       <View style={styles.viewStyle}>
         <Dropdown
-          style={styles.storeButton}
+          style={[styles.storeButton, {marginStart: 8}]}
           data={outlets}
           labelField="label"
           valueField="value"
@@ -149,6 +149,8 @@ export default function Header() {
           onChange={handleOutletChange}
           itemTextStyle={{fontSize: 13}}
           selectedTextProps={{numberOfLines: 1}}
+          dropdownPosition="bottom"
+          mode="auto"
         />
         <View
           style={[
@@ -169,7 +171,7 @@ export default function Header() {
       </View>
 
       <TouchableOpacity
-        style={styles.adminButton}
+        style={[styles.adminButton, {marginEnd: 8}]}
         onPress={() => setAdminDropdownOpen(!adminDropdownOpen)}>
         <Text style={styles.adminText}>{user}</Text>
         <Feather name="chevron-down" size={16} color="black" />
@@ -229,9 +231,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#fff',
-    paddingRight: 10,
     borderRadius: 20,
-    marginHorizontal: 10,
     width: '100%',
     height: 60,
   },

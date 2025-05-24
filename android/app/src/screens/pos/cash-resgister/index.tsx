@@ -160,12 +160,12 @@ const CashRegister: React.FC<any> = () => {
               />
             </BasicCard>
 
-            <BasicCard heading="Sale Summary">
+            <BasicCard style={{marginVertical: 8}} heading="Sale Summary">
               <SaleSummary registerData={registerData} />
             </BasicCard>
           </View>
 
-          <View style={styles.column}>
+          <View style={styles.column1}>
             <BasicCard
               buttons={[
                 {
@@ -197,7 +197,7 @@ const CashRegister: React.FC<any> = () => {
               <CashInOut registerData={registerData} />
             </BasicCard>
 
-            <BasicCard heading="Payment Summary">
+            <BasicCard style={{marginVertical: 8}} heading="Payment Summary">
               <PaymentSummary registerData={registerData} />
             </BasicCard>
 
@@ -241,36 +241,44 @@ const CashRegister: React.FC<any> = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'none',
+    overflow: 'visible',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
-    paddingLeft: 5,
-    paddingRight: 5,
+    marginTop: 8,
+    height: 36,
   },
   title: {
     fontSize: 20,
     fontWeight: '600',
+    marginStart: 12,
   },
   date: {
     fontSize: 14,
     fontWeight: '300',
+    marginEnd: 12,
   },
   bold: {
     fontWeight: '500',
   },
   scrollContainer: {
-    paddingBottom: 20,
+    overflow: 'visible',
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    overflow: 'visible',
   },
   column: {
     flex: 1,
-    marginHorizontal: 8,
+    marginStart: 8,
+    marginEnd: 4,
+  },
+  column1: {
+    flex: 1,
+    marginStart: 4,
+    marginEnd: 8,
   },
   actionButton: {
     flexDirection: 'row',
@@ -292,6 +300,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    marginTop: 8,
   },
 });
 

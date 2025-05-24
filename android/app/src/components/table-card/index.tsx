@@ -4,6 +4,7 @@ import {Card} from 'react-native-paper';
 
 interface TableCardProps {
   heading?: string;
+  subheading?: string;
   button?: string;
   children?: React.ReactNode;
   style?: any;
@@ -13,6 +14,7 @@ interface TableCardProps {
 
 const TableCard: React.FC<TableCardProps> = ({
   heading,
+  subheading,
   children,
   style,
   button,
@@ -41,6 +43,7 @@ const TableCard: React.FC<TableCardProps> = ({
           {headerChildren}
         </View>
       </View>
+      {subheading && <Text style={styles.subheading}>{subheading}</Text>}
       <View style={{flex: 1}}>{children}</View>
     </View>
   );
@@ -66,6 +69,10 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: 'black',
+  },
+  subheading: {
+    fontSize: 13,
     color: 'black',
   },
   actionButton: {

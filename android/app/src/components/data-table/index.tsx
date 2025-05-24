@@ -46,6 +46,8 @@ interface CustomDataTableProps {
   count?: number;
   skip?: any;
   setSkip?: any;
+  showLoyalty?: boolean;
+  onLoyalty?: (row: any) => void;
 }
 
 const CustomDataTable: React.FC<CustomDataTableProps> = ({
@@ -75,6 +77,8 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
   count,
   skip,
   setSkip,
+  showLoyalty = false,
+  onLoyalty,
 }) => {
   const rowsPerPage = 15;
   const [page, setPage] = useState(0);
@@ -351,7 +355,8 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
   };
 
   const handlePageChange = (newPage: any) => {
-    if (newPage < 1) return; // Prevent going below page 1
+    console.log('New page:', newPage);
+    if (newPage < 0) return; // Prevent going below page 1
     setSkip(newPage);
   };
 
@@ -461,6 +466,14 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                           onPress={() => onDelete(row)}
                           style={styles.crossButton}>
                           <Feather name="x" size={22} color="black" />
+                        </TouchableOpacity>
+                      )}
+
+                      {showLoyalty && onLoyalty && (
+                        <TouchableOpacity
+                          onPress={() => onLoyalty(row)}
+                          style={styles.crossButton}>
+                          <Feather name="target" size={22} color="black" />
                         </TouchableOpacity>
                       )}
                     </DataTable.Cell>
@@ -779,19 +792,20 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
             page={page}
             numberOfPages={Math.ceil(filteredData.length / rowsPerPage)}
             onPageChange={setPage}
-            label={`${page * rowsPerPage + 1} - ${
-              (page + 1) * rowsPerPage
-            } of ${filteredData.length}`}
+            label={`${page * rowsPerPage + 1} - ${Math.min(
+              (page + 1) * rowsPerPage,
+              filteredData.length,
+            )} of ${filteredData.length}`}
           />
         )}
 
         {count && (
           <DataTable.Pagination
             page={skip}
-            numberOfPages={Math.ceil(count / 15)}
+            numberOfPages={Math.ceil(count / rowsPerPage)}
             onPageChange={handlePageChange}
-            label={`${(skip - 1) * 15 + 1} - ${Math.min(
-              skip * 15,
+            label={`${skip * rowsPerPage + 1} - ${Math.min(
+              (skip + 1) * rowsPerPage,
               count,
             )} of ${count}`}
           />

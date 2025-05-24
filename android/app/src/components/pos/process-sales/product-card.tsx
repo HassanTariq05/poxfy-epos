@@ -8,20 +8,22 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({product, onSelect}) => {
   return (
-    <TouchableOpacity onPress={() => onSelect(product)} style={styles.card}>
+    <TouchableOpacity
+      onPress={() => onSelect(product)}
+      style={[styles.card, {}]}>
       {/* Product Image Section */}
       <View style={styles.imageContainer}>
         <Image
           source={
-            product?.image
-              ? {uri: product?.image}
+            product?.images?.length ?? 0 > 0
+              ? {
+                  uri: '' + product?.images[0],
+                }
               : require('../../../assets/images/no-image.png')
           }
           style={styles.productImage}
         />
       </View>
-
-      {/* Product Title Section */}
       <View style={styles.titleContainer}>
         <Text style={styles.productTitle}>{product?.name}</Text>
       </View>
@@ -31,25 +33,21 @@ const ProductCard: React.FC<ProductCardProps> = ({product, onSelect}) => {
 
 const styles = StyleSheet.create({
   card: {
-    width: '23.4%',
-    height: 180,
     borderRadius: 15,
     backgroundColor: '#fff',
     overflow: 'hidden',
-    marginTop: 10,
-    marginRight: 10,
+    height: 150,
+    width: '23.6%',
   },
   imageContainer: {
-    flex: 2,
-    backgroundColor: '#fdecec',
-    justifyContent: 'center',
-    alignItems: 'center',
     borderRadius: 15,
+    height: 100,
   },
   productImage: {
-    width: 50,
-    height: 50,
-    tintColor: '#aaa',
+    flex: 1,
+    height: 120,
+    width: '100%',
+    borderRadius: 15,
   },
   noImageText: {
     marginTop: 5,

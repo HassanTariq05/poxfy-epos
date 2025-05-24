@@ -166,7 +166,7 @@ function Listing() {
   };
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{flex: 1, marginBottom: 8, marginHorizontal: 8}}>
       <TableCard
         heading="Register"
         headerChildren={

@@ -32,14 +32,37 @@ const InfoCardDashboard = ({
 
         {/* Icon Section */}
         <View style={styles.iconContainer}>
-          {svgIcon && <View style={styles.svgIcon}>{svgIcon}</View>}
+          {svgIcon && (
+            <View
+              style={[
+                styles.svgIcon,
+                {
+                  backgroundColor:
+                    todayValue > yesterdayValue ? '#00e37d' : '#fe5e5e',
+                },
+              ]}>
+              {svgIcon}
+            </View>
+          )}
         </View>
       </View>
 
       {/* Bottom Section with Wave & Arrow */}
       <View style={styles.bottomSection}>
         {svgIconBottom && <View style={styles.svgBottom}>{svgIconBottom}</View>}
-        {arrowSvg && <View style={styles.arrowContainer}>{arrowSvg}</View>}
+        {arrowSvg && (
+          <View
+            style={[
+              styles.arrowContainer,
+              {
+                transform: [
+                  {rotate: todayValue > yesterdayValue ? '3.142rad' : '0rad'},
+                ],
+              },
+            ]}>
+            {arrowSvg}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -49,7 +72,7 @@ const styles = StyleSheet.create({
   cardContainer: {
     backgroundColor: 'white',
     borderRadius: 20,
-    marginTop: 10,
+    marginTop: 8,
     width: '32.50%',
     height: 210,
     overflow: 'hidden',
