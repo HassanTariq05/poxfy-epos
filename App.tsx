@@ -20,11 +20,60 @@ import {getUserToken} from './android/app/src/user';
 import {Switch} from 'react-native';
 import SplashScreen from './android/app/src/screens/splash';
 import useAuthStore from './android/app/src/redux/feature/store';
-import {updateBaseUrl, updateSocketUrl} from './android/app/src/network/client';
+import {
+  Api,
+  updateBaseUrl,
+  updateSocketUrl,
+} from './android/app/src/network/client';
 import SalesHistory from './android/app/src/screens/pos/sales-history';
 import ProcessSales from './android/app/src/screens/pos/process-sales';
 import Loyalty from './android/app/src/screens/customer/loyalty';
-// import {updateBaseUrl} from './android/app/src/network/client';
+import NetInfo from '@react-native-community/netinfo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const OFFLINE_QUEUE_KEY = 'offline_sales_queue';
+
+var processedQueue = Array<string>();
+
+const processOfflineQueue = async () => {
+  console.log('processOfflineQueue');
+  const queueStr = await AsyncStorage.getItem(OFFLINE_QUEUE_KEY);
+  if (!queueStr) return;
+
+  const queue = JSON.parse(queueStr);
+  const token = await AsyncStorage.getItem('userToken');
+
+  for (const {payload, headerUrl} of queue) {
+    try {
+      if (!processedQueue.includes(payload.offlineUUID)) {
+        processedQueue.push(payload.offlineUUID);
+        console.log('Syncing', payload.offlineUUID);
+        await Api.post(`sales`, payload, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            origin: headerUrl,
+            referer: headerUrl,
+            'access-key': 'q2DU1I89vQgw',
+          },
+        });
+      }
+    } catch (err) {
+      console.log('Retry failed', err);
+    }
+  }
+
+  await AsyncStorage.removeItem(OFFLINE_QUEUE_KEY);
+};
+
+export const startNetworkListener = () => {
+  console.log('startNetworkListener');
+  NetInfo.addEventListener(async state => {
+    console.log('NetworkState', state);
+    if (state.isConnected && state.isInternetReachable) {
+      await processOfflineQueue();
+    }
+  });
+};
 
 function ScreenWrapper({children}: any) {
   return (
@@ -199,6 +248,7 @@ export default function App() {
       }, 2000);
     };
     checkAuth();
+    startNetworkListener();
   }, []);
 
   return (

@@ -41,6 +41,7 @@ interface CustomDataTableProps {
   onInputChangeForSet?: (row: DataFormat, key: string, value: string) => void;
   addDisabled?: boolean;
   highlightColumns?: boolean;
+  underlineColumn?: boolean;
   toolTip?: boolean;
   propWidth?: number;
   count?: number;
@@ -72,6 +73,7 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
   showInputButton = false,
   addDisabled = false,
   highlightColumns = false,
+  underlineColumn = false,
   toolTip = false,
   propWidth,
   count,
@@ -609,6 +611,10 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                               style={{
                                 textAlign:
                                   cellIndex == 0 ? 'flex-start' : 'center',
+                                textDecorationLine:
+                                  underlineColumn && cellIndex == 0
+                                    ? 'underline'
+                                    : 'none',
                               }}>
                               {row[header]}
                             </Text>

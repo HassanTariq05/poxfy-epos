@@ -81,7 +81,7 @@ const ProcessCustomerModal: React.FC<SlideInModalProps> = ({
     };
     setSelectedCustomerData(customerData);
     onClose();
-    reset();
+    // reset();
   };
 
   const [customers, setCustomers] = useState([]);
@@ -163,6 +163,7 @@ const ProcessCustomerModal: React.FC<SlideInModalProps> = ({
                       placeholder="Enter Customer Name"
                       onChangeText={onChange}
                       value={value}
+                      keyboardType="default"
                     />
                   </>
                 )}

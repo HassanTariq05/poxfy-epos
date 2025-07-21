@@ -25,10 +25,12 @@ import {
   getSales,
 } from '../../services/dashboard';
 import {NativeModules} from 'react-native';
+import PieChartCard from '../../components/pie-chart-card-dashboard';
 const {PrintSdk} = NativeModules;
 
 export default function Dashboard() {
-  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
+  const {setIsLoadingTrue, setIsLoadingFalse, headerUrl, outletChange} =
+    useAuthStore();
 
   const [salesData, setSalesData] = useState<any>({
     today: 0,
@@ -57,17 +59,83 @@ export default function Dashboard() {
     lowItems: 0,
   });
 
+  const [productPieChartSeries, setProductPieChartSeries] = useState([
+    {value: 1, color: '#fff', label: {text: 'No Data'}},
+  ]);
+  const [categoryPieChartSeries, setCategoryPieChartSeries] = useState([
+    {value: 1, color: '#fff', label: {text: 'No Data'}},
+  ]);
+
+  const colors = ['#EF5350', '#1E88E5', '#009688', '#FF5722', '#607D8B'];
+  const colors1 = ['#AB47BC', '#607D8B', '#5C6BC0', '#536DFE', '#E040FB'];
+
   const fetchData = async () => {
     try {
       setIsLoadingTrue();
 
-      const outletId = '6804e727bae8a248492f2db8';
+      const outletsData = await AsyncStorage.getItem('outletsData');
+      const parsedOutletsData = outletsData ? JSON.parse(outletsData) : '';
+      const outletId = await AsyncStorage.getItem('selectedOutlet');
+      // const outletId = '6804e727bae8a248492f2db8';
+
+      console.log('outletId', outletId);
 
       const salesResponse = await getSales(outletId, headerUrl);
       setSalesData(salesResponse.data.data);
 
       const productResponse = await getProducts(outletId, headerUrl);
       setProductData(productResponse.data.data);
+
+      const productSeries =
+        productResponse?.data?.data?.products?.map(
+          (product: any, index: number) => {
+            return {
+              value: product.totalSalesCount,
+              color: colors[index % colors.length],
+              label: {
+                text:
+                  product.productName + ' (' + product.totalSalesCount + ')',
+                fontSize: 0,
+                fill: 'white',
+                fontWeight: 'bold',
+              },
+            };
+          },
+        ) ?? [];
+
+      if (productSeries.length > 0) {
+        setProductPieChartSeries(productSeries);
+      } else {
+        setProductPieChartSeries([
+          {value: 1, color: '#fff', label: {text: 'No Data'}},
+        ]);
+      }
+
+      const categorySeries =
+        productResponse?.data?.data?.categories?.map(
+          (category: any, index: number) => {
+            return {
+              value:
+                category.totalSalesCount > 0 ? category.totalSalesCount : 1,
+              color: colors1[index % colors1.length],
+              label: {
+                text:
+                  category.categoryName + ' (' + category.totalRevenue + ')',
+                fontSize: 0,
+                fill: 'white',
+                fontWeight: 'bold',
+              },
+            };
+          },
+        ) ?? [];
+
+      if (categorySeries.length > 0) {
+        setCategoryPieChartSeries(categorySeries);
+      } else {
+        setCategoryPieChartSeries([
+          {value: 1, color: '#fff', label: {text: 'No Data'}},
+        ]);
+      }
 
       const outletResponse = await getOutlets(outletId, headerUrl);
       setOutletData(outletResponse.data.data);
@@ -87,18 +155,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [outletChange]);
 
   return (
     <>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <WelcomeBanner
           onRefresh={() => {
-            // fetchData();
-
-            PrintSdk.someSdkMethod('Hello from print world!')
-              .then((result: any) => console.log(result))
-              .catch((error: any) => console.error(error));
+            fetchData();
           }}
         />
         <View style={styles.cardContainer}>
@@ -110,7 +174,7 @@ export default function Dashboard() {
             yesterdayValue={salesData.yesterday}
             imgSrc={require('../../assets/images/bg-lines.png')}
             svgIcon={
-              <Svg width={32} height={32} viewBox="0 0 37 39" fill="none">
+              <Svg width={24} height={24} viewBox="0 0 37 39" fill="none">
                 <Path
                   d="M28.0972 38.737H8.26389C3.63611 38.737 0 35.1861 0 30.6668V12.9123C0 8.39301 3.63611 4.84212 8.26389 4.84212V1.61404C8.26389 0.645616 8.925 0 9.91667 0C10.9083 0 11.5694 0.645616 11.5694 1.61404V4.84212H26.4444V1.61404C26.4444 0.645616 27.1056 0 28.0972 0C29.0889 0 29.75 0.645616 29.75 1.61404V5.00353C33.5514 5.81055 36.3611 9.03863 36.3611 12.9123V30.6668C36.3611 35.1861 32.725 38.737 28.0972 38.737ZM3.30556 17.7544V30.6668C3.30556 33.4106 5.45417 35.5089 8.26389 35.5089H28.0972C30.9069 35.5089 33.0556 33.4106 33.0556 30.6668V17.7544H3.30556ZM3.30556 14.5264H33.0556V12.9123C33.0556 10.1685 30.9069 8.0702 28.0972 8.0702H8.26389C5.45417 8.0702 3.30556 10.1685 3.30556 12.9123V14.5264ZM8.26389 24.2106C7.27222 24.2106 6.61111 23.565 6.61111 22.5966C6.61111 21.6281 7.27222 20.9825 8.26389 20.9825C9.25556 20.9825 9.91667 21.6281 9.91667 22.5966C9.91667 23.565 9.25556 24.2106 8.26389 24.2106Z"
                   fill="white"
@@ -118,7 +182,7 @@ export default function Dashboard() {
               </Svg>
             }
             arrowSvg={
-              <Svg width={32} height={32} viewBox="0 0 33 40" fill="none">
+              <Svg width={24} height={24} viewBox="0 0 33 40" fill="none">
                 <Path
                   d={'M16.5 38V2M16.5 38L2 23.6M16.5 38L31 23.6'}
                   stroke={
@@ -165,7 +229,7 @@ export default function Dashboard() {
             yesterdayValue={salesData.lastWeek}
             imgSrc={require('../../assets/images/bg-lines.png')}
             svgIcon={
-              <Svg width={32} height={32} viewBox="0 0 37 39" fill="none">
+              <Svg width={24} height={24} viewBox="0 0 37 39" fill="none">
                 <Path
                   d="M27.1384 9.21816C27.7126 9.21848 28.2672 9.01421 28.6982 8.64365C29.1292 8.27309 29.4069 7.76171 29.4793 7.20542C29.5517 6.64914 29.4138 6.08617 29.0914 5.62211C28.7691 5.15805 28.2844 4.82479 27.7284 4.68484V0.576135C27.7284 0.423334 27.6662 0.276792 27.5556 0.168746C27.4449 0.0606999 27.2949 0 27.1384 0C26.9819 0 26.8319 0.0606999 26.7212 0.168746C26.6106 0.276792 26.5484 0.423334 26.5484 0.576135V4.68484C25.9924 4.82479 25.5077 5.15805 25.1854 5.62211C24.863 6.08617 24.7251 6.64914 24.7975 7.20542C24.8699 7.76171 25.1476 8.27309 25.5786 8.64365C26.0096 9.01421 26.5642 9.21848 27.1384 9.21816ZM26.5484 5.92151V6.33748C26.5484 6.49028 26.6106 6.63683 26.7212 6.74487C26.8319 6.85292 26.9819 6.91362 27.1384 6.91362C27.2949 6.91362 27.4449 6.85292 27.5556 6.74487C27.6662 6.63683 27.7284 6.49028 27.7284 6.33748V5.92151C27.9533 6.04834 28.1291 6.24411 28.2285 6.47846C28.3279 6.7128 28.3453 6.97263 28.2781 7.21764C28.2109 7.46265 28.0627 7.67915 27.8567 7.83357C27.6506 7.98798 27.3981 8.07168 27.1384 8.07168C26.8786 8.07168 26.6262 7.98798 26.4201 7.83357C26.214 7.67915 26.0659 7.46265 25.9987 7.21764C25.9314 6.97263 25.9489 6.7128 26.0483 6.47846C26.1477 6.24411 26.3235 6.04834 26.5484 5.92151ZM11.7994 2.30454H25.3685V3.45681H11.7994V2.30454ZM10.0295 9.21816C10.6037 9.21848 11.1583 9.01421 11.5893 8.64365C12.0203 8.27309 12.298 7.76171 12.3704 7.20542C12.4428 6.64914 12.3049 6.08617 11.9825 5.62211C11.6602 5.15805 11.1755 4.82479 10.6195 4.68484V0.576135C10.6195 0.423334 10.5573 0.276792 10.4467 0.168746C10.336 0.0606999 10.186 0 10.0295 0C9.87302 0 9.72296 0.0606999 9.61232 0.168746C9.50168 0.276792 9.43953 0.423334 9.43953 0.576135V4.68484C8.88348 4.82479 8.39882 5.15805 8.07645 5.62211C7.75409 6.08617 7.61617 6.64914 7.68856 7.20542C7.76096 7.76171 8.03869 8.27309 8.46967 8.64365C8.90065 9.01421 9.45527 9.21848 10.0295 9.21816ZM9.43953 5.92151V6.33748C9.43953 6.49028 9.50168 6.63683 9.61232 6.74487C9.72296 6.85292 9.87302 6.91362 10.0295 6.91362C10.186 6.91362 10.336 6.85292 10.4467 6.74487C10.5573 6.63683 10.6195 6.49028 10.6195 6.33748V5.92151C10.8444 6.04834 11.0202 6.24411 11.1196 6.47846C11.219 6.7128 11.2364 6.97263 11.1692 7.21764C11.102 7.46265 10.9538 7.67915 10.7478 7.83357C10.5417 7.98798 10.2892 8.07168 10.0295 8.07168C9.76975 8.07168 9.51726 7.98798 9.3112 7.83357C9.10513 7.67915 8.957 7.46265 8.88977 7.21764C8.82254 6.97263 8.83998 6.7128 8.93938 6.47846C9.03878 6.24411 9.21458 6.04834 9.43953 5.92151Z"
                   fill="white"
@@ -177,7 +241,7 @@ export default function Dashboard() {
               </Svg>
             }
             arrowSvg={
-              <Svg width={32} height={32} viewBox="0 0 33 40" fill="none">
+              <Svg width={24} height={24} viewBox="0 0 33 40" fill="none">
                 <Path
                   d={'M16.5 38V2M16.5 38L2 23.6M16.5 38L31 23.6'}
                   stroke={
@@ -219,12 +283,12 @@ export default function Dashboard() {
           <InfoCardDashboard
             mainheading={'Current Month vs Last Month'}
             todayLabel="Current Month"
-            todayValue={salesData.currentMonth}
+            todayValue={salesData.currentMonth ?? '0'}
             yesterdayLabel="Last Month"
-            yesterdayValue={salesData.lastMonth}
+            yesterdayValue={salesData.lastMonth ?? '0'}
             imgSrc={require('../../assets/images/bg-lines.png')}
             svgIcon={
-              <Svg width={32} height={32} viewBox="0 0 37 39" fill="none">
+              <Svg width={24} height={24} viewBox="0 0 37 39" fill="none">
                 <Path
                   d="M27.1384 9.21816C27.7126 9.21848 28.2672 9.01421 28.6982 8.64365C29.1292 8.27309 29.4069 7.76171 29.4793 7.20542C29.5517 6.64914 29.4138 6.08617 29.0914 5.62211C28.7691 5.15805 28.2844 4.82479 27.7284 4.68484V0.576135C27.7284 0.423334 27.6662 0.276792 27.5556 0.168746C27.4449 0.0606999 27.2949 0 27.1384 0C26.9819 0 26.8319 0.0606999 26.7212 0.168746C26.6106 0.276792 26.5484 0.423334 26.5484 0.576135V4.68484C25.9924 4.82479 25.5077 5.15805 25.1854 5.62211C24.863 6.08617 24.7251 6.64914 24.7975 7.20542C24.8699 7.76171 25.1476 8.27309 25.5786 8.64365C26.0096 9.01421 26.5642 9.21848 27.1384 9.21816ZM26.5484 5.92151V6.33748C26.5484 6.49028 26.6106 6.63683 26.7212 6.74487C26.8319 6.85292 26.9819 6.91362 27.1384 6.91362C27.2949 6.91362 27.4449 6.85292 27.5556 6.74487C27.6662 6.63683 27.7284 6.49028 27.7284 6.33748V5.92151C27.9533 6.04834 28.1291 6.24411 28.2285 6.47846C28.3279 6.7128 28.3453 6.97263 28.2781 7.21764C28.2109 7.46265 28.0627 7.67915 27.8567 7.83357C27.6506 7.98798 27.3981 8.07168 27.1384 8.07168C26.8786 8.07168 26.6262 7.98798 26.4201 7.83357C26.214 7.67915 26.0659 7.46265 25.9987 7.21764C25.9314 6.97263 25.9489 6.7128 26.0483 6.47846C26.1477 6.24411 26.3235 6.04834 26.5484 5.92151ZM11.7994 2.30454H25.3685V3.45681H11.7994V2.30454ZM10.0295 9.21816C10.6037 9.21848 11.1583 9.01421 11.5893 8.64365C12.0203 8.27309 12.298 7.76171 12.3704 7.20542C12.4428 6.64914 12.3049 6.08617 11.9825 5.62211C11.6602 5.15805 11.1755 4.82479 10.6195 4.68484V0.576135C10.6195 0.423334 10.5573 0.276792 10.4467 0.168746C10.336 0.0606999 10.186 0 10.0295 0C9.87302 0 9.72296 0.0606999 9.61232 0.168746C9.50168 0.276792 9.43953 0.423334 9.43953 0.576135V4.68484C8.88348 4.82479 8.39882 5.15805 8.07645 5.62211C7.75409 6.08617 7.61617 6.64914 7.68856 7.20542C7.76096 7.76171 8.03869 8.27309 8.46967 8.64365C8.90065 9.01421 9.45527 9.21848 10.0295 9.21816ZM9.43953 5.92151V6.33748C9.43953 6.49028 9.50168 6.63683 9.61232 6.74487C9.72296 6.85292 9.87302 6.91362 10.0295 6.91362C10.186 6.91362 10.336 6.85292 10.4467 6.74487C10.5573 6.63683 10.6195 6.49028 10.6195 6.33748V5.92151C10.8444 6.04834 11.0202 6.24411 11.1196 6.47846C11.219 6.7128 11.2364 6.97263 11.1692 7.21764C11.102 7.46265 10.9538 7.67915 10.7478 7.83357C10.5417 7.98798 10.2892 8.07168 10.0295 8.07168C9.76975 8.07168 9.51726 7.98798 9.3112 7.83357C9.10513 7.67915 8.957 7.46265 8.88977 7.21764C8.82254 6.97263 8.83998 6.7128 8.93938 6.47846C9.03878 6.24411 9.21458 6.04834 9.43953 5.92151Z"
                   fill="white"
@@ -236,7 +300,7 @@ export default function Dashboard() {
               </Svg>
             }
             arrowSvg={
-              <Svg width={32} height={32} viewBox="0 0 33 40" fill="none">
+              <Svg width={24} height={24} viewBox="0 0 33 40" fill="none">
                 <Path
                   d={'M16.5 38V2M16.5 38L2 23.6M16.5 38L31 23.6'}
                   stroke={
@@ -275,17 +339,15 @@ export default function Dashboard() {
               </Svg>
             }
           />
-        </View>
-        <View style={styles.cardContainer}>
           <InfoCardDashboard
             mainheading={'Current Year vs Last Year'}
             todayLabel="Current Year"
-            todayValue={salesData.currentYear}
+            todayValue={salesData.currentYear ?? '0'}
             yesterdayLabel="Last Year"
-            yesterdayValue={salesData.lastYear}
+            yesterdayValue={salesData.lastYear ?? '0'}
             imgSrc={require('../../assets/images/bg-lines.png')}
             svgIcon={
-              <Svg width={32} height={32} viewBox="0 0 37 39" fill="none">
+              <Svg width={24} height={24} viewBox="0 0 37 39" fill="none">
                 <Path
                   d="M28.0972 38.737H8.26389C3.63611 38.737 0 35.1861 0 30.6668V12.9123C0 8.39301 3.63611 4.84212 8.26389 4.84212V1.61404C8.26389 0.645616 8.925 0 9.91667 0C10.9083 0 11.5694 0.645616 11.5694 1.61404V4.84212H26.4444V1.61404C26.4444 0.645616 27.1056 0 28.0972 0C29.0889 0 29.75 0.645616 29.75 1.61404V5.00353C33.5514 5.81055 36.3611 9.03863 36.3611 12.9123V30.6668C36.3611 35.1861 32.725 38.737 28.0972 38.737ZM3.30556 17.7544V30.6668C3.30556 33.4106 5.45417 35.5089 8.26389 35.5089H28.0972C30.9069 35.5089 33.0556 33.4106 33.0556 30.6668V17.7544H3.30556ZM3.30556 14.5264H33.0556V12.9123C33.0556 10.1685 30.9069 8.0702 28.0972 8.0702H8.26389C5.45417 8.0702 3.30556 10.1685 3.30556 12.9123V14.5264ZM8.26389 24.2106C7.27222 24.2106 6.61111 23.565 6.61111 22.5966C6.61111 21.6281 7.27222 20.9825 8.26389 20.9825C9.25556 20.9825 9.91667 21.6281 9.91667 22.5966C9.91667 23.565 9.25556 24.2106 8.26389 24.2106Z"
                   fill="white"
@@ -293,7 +355,7 @@ export default function Dashboard() {
               </Svg>
             }
             arrowSvg={
-              <Svg width={32} height={32} viewBox="0 0 33 40" fill="none">
+              <Svg width={24} height={24} viewBox="0 0 33 40" fill="none">
                 <Path
                   d={'M16.5 38V2M16.5 38L2 23.6M16.5 38L31 23.6'}
                   stroke={
@@ -332,31 +394,30 @@ export default function Dashboard() {
               </Svg>
             }
           />
-
-          <View style={{width: '66%'}}>
+        </View>
+        <View style={styles.cardContainer}>
+          <View style={{flex: 1}}>
             <View style={{flex: 1, flexDirection: 'row', gap: 8}}>
               <SalesCard
                 title="Total Sales Amount"
-                value={salesData.currentMonth}
+                value={salesData.currentMonth ?? '0'}
                 period="Period: This Month"
               />
 
               <SalesCard
                 title="Sales Growth Rate"
-                value={salesData.salesGrowth + '%'}
+                value={(salesData.salesGrowth ?? '0') + '%'}
                 period="Period: Last 3 Months"
               />
-            </View>
-            <View style={{flex: 1, flexDirection: 'row', gap: 8}}>
               <SalesCard
                 title="Average Transaction Value"
-                value={salesData.currentAvgSales}
+                value={salesData.currentAvgSales?.toFixed(2) ?? '0'}
                 period="Previous Month: 0"
               />
 
               <SalesCard
                 title="Sales Overview"
-                value={salesData.currentWeek}
+                value={salesData.currentWeek ?? '0'}
                 period="Period: Last 7 Days"
               />
             </View>
@@ -364,117 +425,89 @@ export default function Dashboard() {
         </View>
 
         <View style={styles.cardContainer}>
-          <SalesCard title="Top-Selling Products" value={0} period="" />
-          <SalesCard title="Sales by Category" value={0} period="" />
+          <View style={{flex: 1, flexDirection: 'row', gap: 8}}>
+            <PieChartCard
+              title="Top-Selling Products"
+              series={productPieChartSeries}
+            />
+            <PieChartCard
+              title="Sales by Category"
+              series={categoryPieChartSeries}
+            />
+          </View>
+          <View style={{flex: 1}}>
+            <View style={{flex: 1, flexDirection: 'row', gap: 8}}>
+              <SummaryCard
+                title="Weekly Sales Summary"
+                color="#000"
+                items={[
+                  {period: 'This Week', value: salesData.currentWeek ?? '0'},
+                  {period: 'Growth', value: salesData.salesGrowth ?? '0' + '%'},
+                  {period: 'Last Week', value: salesData.lastWeek ?? '0'},
+                ]}
+                backgroundColor="white"
+              />
+              <SummaryCard
+                title="Monthly Sales Overview"
+                color="#000"
+                items={[
+                  {period: 'This Month', value: salesData.currentMonth ?? '0'},
+                  {
+                    period: 'YoY Growth',
+                    value: salesData.salesGrowth ?? '0' + '%',
+                  },
+                  {period: 'Last Month', value: salesData.lastMonth ?? '0'},
+                ]}
+                backgroundColor="white"
+              />
+            </View>
+            <View style={{flex: 1, flexDirection: 'row', gap: 8}}>
+              <SummaryCard
+                title="Yearly Sales Overview"
+                color="#000"
+                items={[
+                  {period: 'This Year', value: salesData.currentYear ?? '0'},
+                  {
+                    period: 'YoY Growth',
+                    value: salesData.salesGrowth ?? '0' + '%',
+                  },
+                  {period: 'Last Year', value: salesData.lastYear ?? '0'},
+                ]}
+                backgroundColor="white"
+              />
+              <SummaryCard
+                title="Total Sales Invoices "
+                color="#000"
+                items={[
+                  {
+                    period: 'Total Invoices',
+                    value: salesData.totalInvoices ?? '0',
+                  },
+                  {
+                    period: 'Pending',
+                    value: salesData.totalPendingInvoices ?? '0',
+                  },
+                  {period: 'Paid', value: salesData.totalPaidInvoices ?? '0'},
+                ]}
+                backgroundColor="white"
+              />
+            </View>
+          </View>
         </View>
 
         <View style={styles.cardContainer}>
-          <StatusCard
-            title="Customer Insights"
-            color="rgb(237, 105, 100)"
-            items={[
-              {period: 'Total Customers', value: customerData.totalCustomer},
-              {period: 'New Customers', value: customerData.newCustomer},
-              {
-                period: 'Repeat Customers',
-                value: customerData.customerRatio.repeatedCustomerRatio + '%',
-              },
-            ]}
-            backgroundColor="rgb(253, 243, 242)"
-          />
-
-          <StatusCard
-            title="Inventory Status"
-            color="#00e37d"
-            items={[
-              {period: 'Low Stock Items', value: inventoryData.lowItems},
-              {period: 'Out of Stock', value: inventoryData.outOfStockItems},
-              {
-                period: 'Available Stock',
-                value: inventoryData.availableStockItems,
-              },
-            ]}
-            backgroundColor="rgb(245, 255, 250)"
-          />
-        </View>
-
-        <View style={styles.cardContainer}>
-          <SummaryCard
-            title="Weekly Sales Summary"
-            color="#00e37d"
-            items={[
-              {period: 'This Week', value: salesData.currentWeek},
-              {period: 'Growth', value: salesData.salesGrowth + '%'},
-              {period: 'Last Week', value: salesData.lastWeek},
-            ]}
-            backgroundColor="white"
-          />
-          <SummaryCard
-            title="Monthly Sales Overview"
-            color="#00e37d"
-            items={[
-              {period: 'This Month', value: salesData.currentMonth},
-              {period: 'YoY Growth', value: salesData.salesGrowth + '%'},
-              {period: 'Last Month', value: salesData.lastMonth},
-            ]}
-            backgroundColor="white"
-          />
-        </View>
-
-        <View style={styles.cardContainer}>
-          <SummaryCard
-            title="Yearly Sales Overview"
-            color="#00e37d"
-            items={[
-              {period: 'This Year', value: salesData.currentYear},
-              {period: 'YoY Growth', value: salesData.salesGrowth + '%'},
-              {period: 'Last Year', value: salesData.lastYear},
-            ]}
-            backgroundColor="white"
-          />
-          <SummaryCard
-            title="Total Sales Invoices "
-            color="#00e37d"
-            items={[
-              {period: 'Total Invoices', value: salesData.totalInvoices},
-              {period: 'Pending', value: salesData.totalPendingInvoices},
-              {period: 'Paid', value: salesData.totalPaidInvoices},
-            ]}
-            backgroundColor="white"
-          />
-        </View>
-
-        <View style={styles.cardContainer1}>
-          <SummaryCard
-            title="Refunds and Returns"
-            color="#00e37d"
-            items={[
-              {period: 'Total Refunds', value: salesData.refundAmount},
-              {
-                period: 'Return Rate',
-                value:
-                  (
-                    (salesData.refundCount / salesData.totalPaidInvoices) *
-                    100
-                  ).toFixed(2) + '%',
-              },
-              {period: 'Number of Returns', value: salesData.refundCount},
-            ]}
-            backgroundColor="white"
-            inLastRow={true}
-          />
           <View
             style={{
               flex: 1,
-              height: 160,
+              height: 110,
             }}>
             <SummaryCard
               title="Sales by Store Location"
-              color="#00e37d"
+              color="#000"
               items={[
                 {
-                  period: outletData[0].outletName,
-                  value: outletData[0].totalRevenue,
+                  period: outletData[0]?.outletName,
+                  value: outletData[0]?.totalRevenue,
                 },
               ]}
               backgroundColor="white"
@@ -484,11 +517,11 @@ export default function Dashboard() {
           <View
             style={{
               flex: 1,
-              height: 160,
+              height: 110,
             }}>
             <SummaryCard
               title="Sales By Product Category"
-              color="#00e37d"
+              color="#000"
               items={[
                 {
                   period: productData?.categories[0]?.categoryName,
@@ -497,6 +530,92 @@ export default function Dashboard() {
               ]}
               backgroundColor="white"
               inLastRow={true}
+            />
+          </View>
+          <View
+            style={{
+              flex: 2,
+              height: 110,
+            }}>
+            <StatusCard
+              title="Customer Insights"
+              color="rgb(237, 105, 100)"
+              items={[
+                {
+                  period: 'Total Customers',
+                  value: customerData.totalCustomer ?? '0',
+                },
+                {
+                  period: 'New Customers',
+                  value: customerData.newCustomer ?? '0',
+                },
+                {
+                  period: 'Repeat Customers',
+                  value:
+                    customerData.customerRatio.repeatedCustomerRatio?.toFixed(
+                      0,
+                    ) ?? '0' + '%',
+                },
+              ]}
+              backgroundColor="rgb(253, 243, 242)"
+            />
+          </View>
+        </View>
+
+        <View style={styles.cardContainer1}>
+          <View
+            style={{
+              flex: 1,
+              height: 110,
+            }}>
+            <StatusCard
+              title="Refunds and Returns"
+              color="#00e37d"
+              items={[
+                {period: 'Total Refunds', value: salesData.refundAmount ?? '0'},
+                {
+                  period: 'Return Rate',
+                  value:
+                    salesData.totalPaidInvoices > 0
+                      ? (
+                          (salesData.refundCount /
+                            salesData.totalPaidInvoices) *
+                          100
+                        ).toFixed(2) + '%'
+                      : '0%',
+                },
+                {
+                  period: 'Number of Returns',
+                  value: salesData.refundCount ?? '0',
+                },
+              ]}
+              backgroundColor="white"
+            />
+          </View>
+
+          <View
+            style={{
+              flex: 1,
+              height: 110,
+            }}>
+            <StatusCard
+              title="Inventory Status"
+              color="#00e37d"
+              items={[
+                {
+                  period: 'Low Stock Items',
+                  value: inventoryData.lowItems ?? '0',
+                },
+                {
+                  period: 'Out of Stock',
+                  value: inventoryData.outOfStockItems ?? '0',
+                },
+                {
+                  period: 'Available Stock',
+                  value: inventoryData.availableStockItems ?? '0',
+                },
+              ]}
+              backgroundColor="rgb(245, 255, 250)"
             />
           </View>
         </View>

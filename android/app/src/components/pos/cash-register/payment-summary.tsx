@@ -16,7 +16,7 @@ const PaymentSummary: React.FC<PaymentSummaryProps> = ({registerData}) => {
       {/* Table Header */}
       <View style={styles.row}>
         <Text style={[styles.header, styles.left]}>Payment Received</Text>
-        <Text style={[styles.header, styles.left]}>Refunds</Text>
+        <Text style={[styles.header, styles.center]}>Refunds</Text>
         <Text style={[styles.header, styles.right]}>Net Receipts</Text>
       </View>
 
@@ -25,7 +25,7 @@ const PaymentSummary: React.FC<PaymentSummaryProps> = ({registerData}) => {
         <Text style={[styles.cell, styles.left]}>
           {safeNumber(registerData?.transaction?.received)}
         </Text>
-        <Text style={[styles.cell, styles.left]}>
+        <Text style={[styles.cell, styles.center]}>
           {safeNumber(registerData?.transaction?.refund)}
         </Text>
         <Text style={[styles.cell, styles.right]}>
@@ -63,6 +63,9 @@ const styles = StyleSheet.create({
   },
   left: {
     textAlign: 'left',
+  },
+  center: {
+    textAlign: 'center',
   },
   right: {
     textAlign: 'right',

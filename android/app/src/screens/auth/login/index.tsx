@@ -19,20 +19,34 @@ import useAuthStore from '../../../redux/feature/store';
 import {SOCKET_URL, SUB_API_BASE_URL} from '../../../constants';
 import {updateBaseUrlExplicitly} from '../../../network/client';
 import NativePrintSdk from '../../../../../../specs/NativePrintSdk';
+import {Linking, Button} from 'react-native';
 
 const LoginScreen = ({onLogin}: any) => {
   const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(
+    'Error! Invalid email or password, please input correct credentials.',
+  );
 
   const {
     control,
     handleSubmit,
     formState: {errors},
   } = useForm({
-    defaultValues: {
-      email: 'ameer@yopmail.com',
-      password: '!@QWerty321',
-      accountId: 'newserver',
-    },
+    // defaultValues: {
+    //   email: 'osama.zakaria@encopedia.com',
+    //   password: 'Osama@2025',
+    //   accountId: 'osama',
+    // },
+    // defaultValues: {
+    //   email: 'ameer@yopmail.com',
+    //   password: '!@QWerty321',
+    //   accountId: 'newserver',
+    // },
+    // defaultValues: {
+    //   email: '',
+    //   password: '',
+    //   accountId: '',
+    // },
   });
 
   const {setIsLoadingTrue, setIsLoadingFalse, setHeaderUrl} = useAuthStore();
@@ -65,6 +79,8 @@ const LoginScreen = ({onLogin}: any) => {
       setHeaderUrl(header);
       const appPlatform = Platform.OS === 'ios' ? 'iOS' : 'Android';
       const response = await submitLogin(payload, header, appPlatform);
+      console.log('response');
+      console.log(response);
       if (response?.status == 201 || response?.status == 200) {
         saveToken(response.data.data.accessToken);
         saveUser(response.data.data.fullName);
@@ -72,19 +88,9 @@ const LoginScreen = ({onLogin}: any) => {
         handleLogin();
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
+      setErrorMessage(err?.response?.data?.error);
       setIsLoadingFalse();
-      // ToastAndroid.showWithGravityAndOffset(
-      //   '❌ Invalid email or password',
-      //   ToastAndroid.LONG,
-      //   ToastAndroid.BOTTOM,
-      //   25,
-      //   50,
-      // );
-      // Alert.alert(
-      //   'Error!',
-      //   '❌ Invalid email or password, please input correct credentials.',
-      // );
       setErrorModalVisible(true);
     }
   };
@@ -240,11 +246,27 @@ const LoginScreen = ({onLogin}: any) => {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.footer}>
-            <Text style={styles.separatorText}>Terms of Use</Text>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <TouchableOpacity
+              style={styles.footer}
+              onPress={() => {
+                Linking.openURL('http://poxfy.com/terms-conditions').catch(
+                  err => console.error("Couldn't load page", err),
+                );
+              }}>
+              <Text style={styles.separatorText}>Terms of Use</Text>
+            </TouchableOpacity>
             <Text style={styles.separatorText}>•</Text>
-            <Text style={styles.separatorText}>Privacy Policy</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.footer}
+              onPress={() => {
+                Linking.openURL('http://poxfy.com/privacy-policy').catch(err =>
+                  console.error("Couldn't load page", err),
+                );
+              }}>
+              <Text style={styles.separatorText}>Privacy Policy</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
       <Modal
@@ -259,10 +281,7 @@ const LoginScreen = ({onLogin}: any) => {
               height={10}
               source={require('../../../assets/images/error.png')}
             />
-            <Text style={styles.text}>
-              Error! Invalid email or password, please input correct
-              credentials.
-            </Text>
+            <Text style={styles.text}>{errorMessage}</Text>
             <View style={styles.closeButtonView}>
               <TouchableOpacity
                 onPress={() => setErrorModalVisible(false)}

@@ -21,6 +21,10 @@ import useAuthStore from '../../../redux/feature/store';
 import {useFocusEffect} from '@react-navigation/native';
 import {useCallback} from 'react';
 import Feather from 'react-native-vector-icons/Feather';
+import {
+  getCashRegisters,
+  getCurrentRegister,
+} from '../../../services/process-sales';
 
 function Listing() {
   const headers = [
@@ -51,20 +55,9 @@ function Listing() {
     setData([]);
     try {
       setIsLoadingTrue();
-      const token = await AsyncStorage.getItem('userToken');
       const outletId = await AsyncStorage.getItem('selectedOutlet');
-      let url = `${API_BASE_URL}cash-register/list?take=10&page=1&outletId=${outletId}`;
-      console.log('URL:', url);
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          origin: headerUrl,
-          referer: headerUrl,
-        },
-      });
 
-      console.log('Response:', response.data.data.data);
+      const response = await getCashRegisters(outletId, headerUrl);
 
       const formattedData = response.data.data.data.map((item: any) => ({
         id: item._id,
@@ -75,8 +68,6 @@ function Listing() {
         Outlet: item.outlet?.name,
         'Created By': item.createdBy?.fullName || 'N/A',
       }));
-
-      console.log('Formatted data:', formattedData);
 
       setData(formattedData);
       setIsLoadingFalse();
@@ -95,25 +86,11 @@ function Listing() {
       const fetchCurrentRegister = async () => {
         try {
           setIsLoadingTrue();
-          const token = await AsyncStorage.getItem('userToken');
           const outletId = await AsyncStorage.getItem('selectedOutlet');
-          let url = `${API_BASE_URL}cash-register/current?outletId=${outletId}`;
-          console.log('URL:', url);
-          const response = await axios.get(url, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-              origin: headerUrl,
-              referer: headerUrl,
-            },
-          });
 
-          console.log('Response Current Register:', response.data);
+          const response = await getCurrentRegister(outletId, headerUrl);
 
-          if (
-            !('success' in response.data?.data) ||
-            response.data?.data?.success
-          ) {
+          if (response.data?.data?.cashRegister) {
             navigation.navigate('Listing');
           }
 

@@ -25,7 +25,9 @@ const InfoCardDashboard = ({
 
           {/* Yesterday */}
           <View style={styles.dataItemSecond}>
-            <Text style={styles.dataLabel}>{yesterdayLabel}</Text>
+            <Text style={[styles.dataLabel, {marginTop: 4}]}>
+              {yesterdayLabel}
+            </Text>
             <Text style={styles.dataValue}>{yesterdayValue}</Text>
           </View>
         </View>
@@ -71,23 +73,23 @@ const InfoCardDashboard = ({
 const styles = StyleSheet.create({
   cardContainer: {
     backgroundColor: 'white',
-    borderRadius: 20,
+    borderRadius: 16,
     marginTop: 8,
-    width: '32.50%',
-    height: 210,
+    height: 140,
     overflow: 'hidden',
+    flex: 1,
   },
   content: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: 8,
   },
   dataContainer: {
     flex: 1,
   },
   dataItem: {
-    marginBottom: 10,
+    marginBottom: 8,
   },
 
   dataItemSecond: {
@@ -96,24 +98,24 @@ const styles = StyleSheet.create({
   },
   dataLabel: {
     textTransform: 'uppercase',
-    fontSize: 14,
+    fontSize: 10,
     color: '#000',
   },
   dataValue: {
-    fontSize: 30,
+    fontSize: 17,
     fontWeight: 'bold',
     color: '#000',
   },
   iconContainer: {
-    width: 60,
-    height: 60,
-    marginTop: -70,
+    width: 40,
+    height: 40,
+    marginTop: -64,
     justifyContent: 'center',
     alignItems: 'center',
   },
   svgIcon: {
-    width: 60,
-    height: 60,
+    width: 40,
+    height: 40,
     borderRadius: 50,
     backgroundColor: 'rgb(237, 105, 100)',
     justifyContent: 'center',
@@ -121,7 +123,7 @@ const styles = StyleSheet.create({
     display: 'flex',
   },
   bottomSection: {
-    marginTop: 50,
+    marginTop: 46,
     alignItems: 'center',
   },
   svgBottom: {
@@ -134,8 +136,8 @@ const styles = StyleSheet.create({
   },
   arrowContainer: {
     position: 'absolute',
-    bottom: 80,
-    right: 35,
+    bottom: 70,
+    right: 16,
   },
 });
 

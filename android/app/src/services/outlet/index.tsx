@@ -1,6 +1,7 @@
 import {Api} from '../../network/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAuthStore from '../../redux/feature/store';
+import {isDeviceOnline} from '../dashboard';
 
 export const changeOutletStatus = async (id, data) => {
   return Api.put(`outlet/${id}`, data);
@@ -12,21 +13,23 @@ export const updateOutlet = async (data, id) => {
   return Api.put(`outlet/${id}`, data);
 };
 export const getAllOutletApi = async (headerUrl: string) => {
-  try {
+  const isOnline = await isDeviceOnline();
+  if (isOnline) {
     const token = await AsyncStorage.getItem('userToken');
 
-    const response = await Api.get('outlet', {
+    const data = await Api.get('outlet', {
       headers: {
         Authorization: `Bearer ${token}`,
         origin: headerUrl,
         referer: headerUrl,
       },
     });
-
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching outlets:', error);
-    throw error;
+    const dataString = await JSON.stringify(data);
+    await AsyncStorage.setItem('get_all_outlets', dataString);
+    return data;
+  } else {
+    const dataString = (await AsyncStorage.getItem('get_all_outlets')) ?? '{}';
+    return JSON.parse(dataString);
   }
 };
 export const getOutletByIdApi = async id => {

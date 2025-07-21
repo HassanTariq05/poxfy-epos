@@ -57,7 +57,6 @@ const CashRegister: React.FC<any> = () => {
       setRegisterId(outletId || '');
       if (outletId) {
         response = await getRegisterDetailsApi(outletId, headerUrl);
-        console.log('Response Register Details:', response.data.data);
       }
       if (response?.data.meta.success) {
         setRegisterData(response.data.data);
@@ -141,7 +140,7 @@ const CashRegister: React.FC<any> = () => {
               ).toLocaleDateString()} - ${new Date(
                 registerData.startTime,
               ).toLocaleTimeString()}`
-            : '13/02/2025 - 08:56:06'}
+            : '--'}
         </Text>
       </View>
 
@@ -217,12 +216,18 @@ const CashRegister: React.FC<any> = () => {
       <CashInModal
         registerData={registerData}
         visible={cashInModalVisible}
-        onClose={() => setCashInModalVisible(false)}
+        onClose={() => {
+          setCashInModalVisible(false);
+          handleOpenRegister();
+        }}
       />
       <CashOutModal
         registerData={registerData}
         visible={cashOutModalVisible}
-        onClose={() => setCashOutModalVisible(false)}
+        onClose={() => {
+          setCashOutModalVisible(false);
+          handleOpenRegister();
+        }}
       />
       <CustomPopConfirm
         title="Confirm Close Register"

@@ -40,18 +40,13 @@ function Tier() {
         'customer-tier',
         headerUrl,
       );
-      console.log('Tier Fetch: ', tierData.data.data);
 
       const formattedData = tierData.data.data.map((item: any) => ({
         ...item,
         Name: item.name,
       }));
 
-      console.log('Formatted data:', formattedData);
-
       setData((prev: any) => {
-        console.log('Previous Data:', prev);
-        console.log('New Data:', formattedData);
         return [...formattedData];
       });
       setIsLoadingFalse();
@@ -195,6 +190,7 @@ function Tier() {
             onDelete={confirmDelete}
             showSwitch={true}
             onToggleSwitch={confirmSwitch}
+            propWidth={780}
           />
           <CustomPopConfirm
             title="Confirm Deletion"

@@ -26,6 +26,9 @@ import {Text} from 'react-native-gesture-handler';
 import Feather from 'react-native-vector-icons/Feather';
 import {Dropdown} from 'react-native-element-dropdown';
 import DualDatePicker from '../../../components/dual-date-picker';
+import {getSaleHistory} from '../../../services/process-sales';
+import {getOfflineSales} from '../../../services/offline';
+import moment from 'moment';
 
 function SalesHistory() {
   const headers = [
@@ -65,6 +68,7 @@ function SalesHistory() {
   const [skip, setSkip] = useState(0);
   const [limit, setLimit] = useState(15);
   const [count, setCount] = useState();
+  const [user, setUser] = useState<string | null>('null');
 
   const navigation = useNavigation<DrawerNavigationProp<any>>();
 
@@ -106,14 +110,13 @@ function SalesHistory() {
       item.receivedCash > 0 &&
       item.receivedLoyality > 0
     ) {
-      result = 'Cash, Credit, Loyalty';
+      result = 'Cash, Card, Loyalty';
     } else if (item.receivedCredit > 0 && item.receivedCash > 0) {
-      result = 'Cash, Credit';
+      result = 'Cash, Card';
     } else if (item.receivedCredit > 0) {
-      result = 'Credit';
-    } else {
-      result = item.paymentType;
+      result = 'Card';
     }
+
     return result;
   };
 
@@ -125,10 +128,10 @@ function SalesHistory() {
 
     try {
       setIsLoadingTrue();
-      const token = await AsyncStorage.getItem('userToken');
-      let url = `${API_BASE_URL}sales/list?skip=${
-        skip * limit
-      }&limit=${limit}&`;
+      // const token = await AsyncStorage.getItem('userToken');
+      // let url = `${API_BASE_URL}sales/list?skip=${
+      //   skip * limit
+      // }&limit=${limit}&`;
 
       // Define query parameters dynamically
       const queryParams: string[] = [];
@@ -147,22 +150,39 @@ function SalesHistory() {
         queryParams.push(`name=${debouncedSearchQuery}`);
       }
 
-      url += queryParams.join('&');
+      const query = queryParams.join('&');
 
-      console.log('URL:', url);
+      const offlineSales = await getOfflineSales();
 
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          origin: headerUrl,
-          referer: headerUrl,
-        },
-        params: {
-          take: 10,
-          page: 1,
-        },
-      });
+      console.log('offlineSales');
+      console.log(offlineSales);
+
+      const offlineData = offlineSales.map((item: any) => ({
+        id: '--',
+        'Order Id': '{Offline}',
+        'Order Date': moment(item.payload.orderDate).format(
+          'MMMM Do, YYYY, HH:mm:ss',
+        ),
+        'Sale Type': item.payload.salesType?.toUpperCase(),
+        Customer: item.payload.customerName,
+        'Payment Type': getPaymentType(item.payload),
+        'Payment Status': item.payload.paymentStatus,
+        'Sale Total': (
+          item.payload.receivedCash +
+          item.payload.receivedCredit +
+          item.payload.receivedLoyality
+        ).toFixed(2),
+        Discount: item.payload.discount?.toFixed(2),
+        Tax: (item.payload.tax ?? 0.0)?.toFixed(2),
+        'Remaining Balance': (item.payload.remainingBalance ?? 0)?.toFixed(2),
+        'Created By': user,
+        'Modified By': user,
+      }));
+
+      console.log('offlineData');
+      console.log(offlineData);
+
+      const response = await getSaleHistory(skip, limit, query, headerUrl);
 
       console.log('Response get Sales History:', response.data.data.count);
       setCount(response.data.data.count);
@@ -171,20 +191,21 @@ function SalesHistory() {
         0,
       );
       setTotalSales(salesSum);
+      setTotalSales(response.data.data.summary.sales);
 
       const discountSum = response.data.data.data.reduce(
         (acc: number, item: any) => acc + (item.discountAmount || 0),
         0,
       );
       setTotalDiscount(discountSum);
+      setTotalDiscount(response.data.data.summary.discount);
 
       const taxSum = response.data.data.data.reduce(
         (acc: number, item: any) => acc + (item.tax || 0),
         0,
       );
       setTotalTax(taxSum);
-
-      console.log('Total Sales:', response.data.data.data[1]);
+      setTotalTax(response.data.data.summary.tax);
 
       const formattedData = response.data.data.data.map((item: any) => ({
         id: item._id,
@@ -204,9 +225,7 @@ function SalesHistory() {
         'Modified By': item.updatedBy?.fullName,
       }));
 
-      console.log('Formatted data:', formattedData);
-
-      setData(formattedData);
+      setData([...offlineData, ...formattedData]);
       setIsLoadingFalse();
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -280,6 +299,12 @@ function SalesHistory() {
     return () => clearTimeout(handler);
   }, [searchValue]);
 
+  useEffect(() => {
+    AsyncStorage.getItem('user')
+      .then(user => setUser(user))
+      .catch(error => console.error('Failed to load user:', error));
+  }, []);
+
   const [dateRange, setDateRange] = useState<string>('Select Date Range');
 
   return (
@@ -287,7 +312,39 @@ function SalesHistory() {
       <TableCard
         heading="Sales History"
         headerChildren={
-          <>
+          <TouchableOpacity
+            style={{marginTop: 4}}
+            onPress={() => {
+              setSelectedDateRange(null);
+              setDateRange('Select Date Range');
+              setSelectedPaymentStatus(null);
+              setSelectedPaymentType(null);
+              setSearchValue('');
+              fetchData();
+            }}>
+            <View
+              style={{
+                backgroundColor: '#e4e4e4',
+                padding: 8,
+                borderRadius: 24,
+              }}>
+              <Feather name="refresh-cw" size={17} color="red" />
+            </View>
+          </TouchableOpacity>
+        }
+        children={
+          <View style={{flex: 1}}>
+            <View style={[styles.searchContainer, styles.searchTextFocused]}>
+              <MaterialCommunityIcons name="magnify" size={20} color="black" />
+              <TextInput
+                style={styles.searchText}
+                value={searchValue}
+                placeholder="Find product by name, barcode"
+                onChangeText={setSearchValue}
+                keyboardType="default"
+              />
+            </View>
+
             <View style={styles.dropdownView}>
               <Dropdown
                 style={styles.dropdown}
@@ -329,40 +386,6 @@ function SalesHistory() {
                   setDateRange={setDateRange}
                 />
               </View>
-
-              <TouchableOpacity
-                style={{marginTop: 4}}
-                onPress={() => {
-                  setSelectedDateRange(null);
-                  setDateRange('Select Date Range');
-                  setSelectedPaymentStatus(null);
-                  setSelectedPaymentType(null);
-                  setSearchValue('');
-                  fetchData();
-                }}>
-                <View
-                  style={{
-                    backgroundColor: '#e4e4e4',
-                    padding: 8,
-                    borderRadius: 24,
-                  }}>
-                  <Feather name="refresh-cw" size={17} color="red" />
-                </View>
-              </TouchableOpacity>
-            </View>
-          </>
-        }
-        children={
-          <View style={{flex: 1}}>
-            <View style={[styles.searchContainer, styles.searchTextFocused]}>
-              <MaterialCommunityIcons name="magnify" size={20} color="black" />
-              <TextInput
-                style={styles.searchText}
-                value={searchValue}
-                placeholder="Find product by name, barcode"
-                onChangeText={setSearchValue}
-                keyboardType="default"
-              />
             </View>
 
             <SalesSummary
@@ -432,10 +455,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   dropdownView: {
+    marginTop: 10,
     display: 'flex',
     flexDirection: 'row',
     gap: 10,
-    justifyContent: 'flex-end',
   },
   dropdown: {
     height: 40,

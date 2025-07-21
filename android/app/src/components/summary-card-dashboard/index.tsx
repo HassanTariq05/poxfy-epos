@@ -30,8 +30,8 @@ const SummaryCard: React.FC<SalesCardProps> = ({
           <View style={styles.column}>
             {items.slice(0, 2).map((item, index) => (
               <View key={index} style={styles.item}>
-                <Text style={styles.period}>{item.period}</Text>
-                <Text style={styles.value}>{item.value}</Text>
+                <Text style={styles.period}>{item.period ?? '-'}</Text>
+                <Text style={styles.value}>{item.value ?? '0'}</Text>
               </View>
             ))}
           </View>
@@ -51,20 +51,17 @@ const SummaryCard: React.FC<SalesCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
-    padding: 20,
-    marginTop: 10,
-    width: '49.50%',
-    height: 210,
+    flex: 1,
+    borderRadius: 16,
+    padding: 8,
+    marginTop: 8,
     justifyContent: 'space-between',
   },
   lastRowCard: {
     flex: 1,
-    borderRadius: 20,
-    padding: 20,
-    marginTop: 10,
-    width: '100%',
-    height: 210,
+    borderRadius: 16,
+    padding: 8,
+    marginTop: 8,
     justifyContent: 'space-between',
   },
   content: {
@@ -86,22 +83,22 @@ const styles = StyleSheet.create({
   },
   item: {
     width: '100%',
-    marginBottom: 10,
   },
   title: {
-    color: '#00e37d',
-    fontSize: 18,
+    fontSize: 13,
+    fontWeight: 'bold',
     marginBottom: 8,
+    paddingBottom: 4,
     borderBottomColor: '#00e37d5f',
     borderBottomWidth: 1,
   },
   value: {
-    fontSize: 30,
+    fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'left',
   },
   period: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
     textAlign: 'left',
   },

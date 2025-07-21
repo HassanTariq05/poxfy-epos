@@ -12,6 +12,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Feather from 'react-native-vector-icons/Feather';
 import {menuItems, collapsibleItems} from './menu-items';
+import useAuthStore from '../../redux/feature/store';
 
 interface LeftMenuCardProps {
   collapsed: boolean;
@@ -60,7 +61,11 @@ export default function LeftMenuCard({
     }
   };
 
+  const {setSalesFlag, setSalesId} = useAuthStore();
+
   const handleSelectComponent = (routeName: string, itemName: string) => {
+    setSalesFlag(false);
+    setSalesId('');
     setSelectedComponent(routeName);
     setSelectedItem(itemName);
     navigation.navigate(routeName);

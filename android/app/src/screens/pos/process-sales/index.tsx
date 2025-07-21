@@ -8,6 +8,7 @@ import {
   Image,
   ScrollView,
   ToastAndroid,
+  Platform,
 } from 'react-native';
 import BasicCard from '../../../components/basic-card';
 import {Card} from 'react-native-paper';
@@ -15,9 +16,11 @@ import FeatherIcon from 'react-native-vector-icons/Feather';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ProductCard from '../../../components/pos/process-sales/product-card';
 import {
+  getCurrentRegister,
   getDiscountsList,
   getProductCategories,
   getProducts,
+  getSaleDetials,
   getSales,
   getTaxesList,
   postSaleOrder,
@@ -40,6 +43,7 @@ import PaymentModal from '../../../components/modals/payment-modal';
 import {getLoyaltyBalance} from '../../../services/customer';
 import moment from 'moment';
 import NativePrintSdk from '../../../../../../specs/NativePrintSdk';
+import uuid from 'react-native-uuid';
 
 export interface Tax {
   id: string;
@@ -91,19 +95,21 @@ function ProcessSales() {
     setSalesFlag,
     setSalesId,
   } = useAuthStore();
+
   const [categories, setCategories] = useState<any>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     'all',
   );
 
   const [products, setProducts] = useState<any>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>('Add Customer');
+  // const [selectedCustomer, setSelectedCustomer] = useState<any>('Add Customer');
   const [selectedCustomerData, setSelectedCustomerData] = useState<any>({
     Name: 'Walk-In Customer',
-    Phone: '0',
+    Phone: '',
   });
-  const [registerName, setRegisterName] = useState('Cash Register');
+  const [registerName, setRegisterName] = useState(null);
   const [outletName, setOutletName] = useState('Outlet');
+  const [outlet, setOutlet] = useState();
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
 
@@ -291,21 +297,22 @@ function ProcessSales() {
 
           setProducts(getProductsResponse.data.data.data);
 
-          console.log('getProductsResponse.data.data.data[1]');
-          console.log(getProductsResponse.data.data.data[1]);
-
           setIsLoadingFalse();
         } catch (error) {
           setIsLoadingFalse();
         }
       };
 
+      setCart({
+        items: [],
+      });
       fetchProducts();
       return () => {};
     }, [selectedCategory, debouncedSearchQuery, outletChange]),
   );
 
   useEffect(() => {
+    console.log('useEffect: salesFlag:', salesFlag, salesId);
     const getAllProductCategories = async () => {
       setIsLoadingTrue();
       try {
@@ -482,27 +489,17 @@ function ProcessSales() {
             parsedOutletsData.map(outlet => {
               if (outlet.value == outletId) {
                 setOutletName(outlet.label);
+                setOutlet(outlet);
               }
             });
           }
-          let url = `${API_BASE_URL}cash-register/current?outletId=${outletId}`;
-          const response = await axios.get(url, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-              origin: headerUrl,
-              referer: headerUrl,
-            },
-          });
 
-          if (
-            !('success' in response.data?.data) ||
-            response.data?.data?.success
-          ) {
+          const response = await getCurrentRegister(outletId, headerUrl);
+
+          if (response.data?.data?.cashRegister) {
             setRegisterName(response.data?.data?.cashRegister?.name);
             setIsRegisterOpen(true);
           } else {
-            setRegisterName('Cash Register');
             setIsRegisterOpen(false);
           }
 
@@ -537,7 +534,7 @@ function ProcessSales() {
 
   const handleOnSelectingAddCustomer = (customer: any) => {
     const customerLabel = customer.Name + ' (' + customer.Phone + ')';
-    setSelectedCustomer(customerLabel);
+    // setSelectedCustomer(customerLabel);
     setLoyality(true);
     setSelectedCustomerData(customer);
     fetchLoyalty(customer.id);
@@ -652,6 +649,7 @@ function ProcessSales() {
     const outletId = await AsyncStorage.getItem('selectedOutlet');
 
     return {
+      offlineUUID: uuid.v4(),
       customerContactNo: selectedCustomerData.Phone,
       customerId: selectedCustomerData.id || null,
       customerName: selectedCustomerData.Name,
@@ -675,6 +673,7 @@ function ProcessSales() {
     updatedReceivedCredit: any,
     updatedReceivedLoyalty: any,
   ) => {
+    console.log('handlePaymentSubmit');
     try {
       setIsLoadingTrue();
 
@@ -686,17 +685,32 @@ function ProcessSales() {
         'sales',
       );
 
+      // const response = null;
+      // const response1 = null;
       const response = await postSaleOrder(payload, headerUrl);
+      const response1 = await getSaleDetials(
+        response?.data?.data?._id,
+        headerUrl,
+      );
 
-      console.log('Response post sale order:', response);
       reset();
       setIsLoadingFalse();
       ToastAndroid.show('Order Successful', ToastAndroid.LONG);
 
-      sendForPrint(payload);
+      sendForPrint(
+        response?.data?.data?.orderId ?? 'SR',
+        response1?.data?.data?.logo ?? '',
+        payload,
+        updatedReceivedCash,
+        updatedReceivedCredit,
+        updatedReceivedLoyalty,
+      );
     } catch (err) {
       console.error('Error posting sale order:', err);
       setIsLoadingFalse();
+      if (Platform.OS === 'android') {
+        ToastAndroid.show(err?.response?.data?.error, ToastAndroid.LONG);
+      }
     }
   };
 
@@ -713,13 +727,19 @@ function ProcessSales() {
       );
 
       const response = await postSaleOrder(payload, headerUrl);
-
-      console.log('Response post sale order:', response);
+      const response1 = await getSaleDetials(response.data.data._id, headerUrl);
       reset();
       setIsLoadingFalse();
       ToastAndroid.show('Order Successful', ToastAndroid.LONG);
 
-      sendForPrint(payload);
+      sendForPrint(
+        response?.data?.data?.orderId ?? 'SR',
+        response1?.data?.data?.logo,
+        payload,
+        updatedReceivedCash,
+        0,
+        0,
+      );
     } catch (err) {
       console.error('Error posting sale order:', err);
       setIsLoadingFalse();
@@ -781,7 +801,7 @@ function ProcessSales() {
     setDiscountTotal(0);
     setTaxTotal(0);
     setCartTotal(0);
-    setSelectedCustomer('Add Customer');
+    // setSelectedCustomer('Add Customer');
     setSelectedCustomerData({
       Name: 'Walk-In Customer',
       Phone: '0',
@@ -800,7 +820,7 @@ function ProcessSales() {
     setDiscountTotal(0);
     setTaxTotal(0);
     setCartTotal(0);
-    setSelectedCustomer('Add Customer');
+    // setSelectedCustomer('Add Customer');
     setSelectedCustomerData({
       Name: 'Walk-In Customer',
       Phone: '0',
@@ -810,155 +830,430 @@ function ProcessSales() {
     setNotes('');
   };
 
-  function sendForPrint(payload: any) {
+  function sendForPrint(
+    invoiceNo: any,
+    logo: any,
+    payload: any,
+    cash: any,
+    credit: any,
+    loyalty: any,
+  ) {
     var printObjs = [];
+    printObjs.push({
+      text: logo,
+      dir: 'center',
+      size: '12',
+      next_line: false,
+      type: 'bitmap',
+    });
+    // printObjs.push({
+    //   text: moment().format('M/D/YY h:mm A'),
+    //   dir: 'left',
+    //   size: '10',
+    //   next_line: false,
+    // });
+    // printObjs.push({
+    //   text: 'Poxfy E-POS',
+    //   dir: 'center',
+    //   size: '10',
+    //   next_line: false,
+    // });
+    // printObjs.push({
+    //   text: ' ',
+    //   dir: 'right',
+    //   size: '10',
+    //   next_line: true,
+    // });
     printObjs.push({
       text: outletName,
       dir: 'center',
-      size: '32',
+      size: '21',
+      style: 'bold',
+      next_line: true,
     });
     printObjs.push({
-      text: 'Simplified Tax Invoice',
+      text: ' ',
       dir: 'center',
-      size: '28',
+      size: '10',
+      style: 'bold',
+      next_line: true,
     });
     printObjs.push({
-      text: 'Printed At: ' + moment().format('YYYY/MM/DD hh:mm:ss A'),
+      text: outlet.phone,
       dir: 'center',
-      size: '28',
+      size: '21',
+      next_line: true,
     });
     printObjs.push({
-      text: '-------------------------',
+      text: outlet.email,
       dir: 'center',
-      size: '28',
+      size: '21',
+      next_line: true,
     });
     printObjs.push({
-      text: 'Creator: ' + userFullName,
+      text: ' ',
+      dir: 'center',
+      size: '10',
+      style: 'bold',
+      next_line: true,
+    });
+    printObjs.push({
+      text: 'Tax Invoice',
+      dir: 'center',
+      size: '21',
+      style: 'bold',
+      next_line: true,
+    });
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '10',
+      style: 'bold',
+      next_line: true,
+    });
+    printObjs.push({
+      text: 'Printed At: ' + moment().format('DD MMM YYYY hh:mm:ss a'),
+      dir: 'center',
+      size: '21',
+      next_line: true,
+      style: 'bold',
+    });
+
+    var linePieces = 114;
+    var borderStr = '';
+    for (var i = 0; i <= linePieces; i++) {
+      borderStr += '_';
+    }
+    printObjs.push({
+      text: borderStr,
+      dir: 'center',
+      size: '10',
+      style: 'bold',
+      next_line: true,
+    });
+
+    printObjs.push({
+      text: 'Invoice #',
       dir: 'left',
-      size: '28',
+      size: '21',
+      next_line: false,
     });
     printObjs.push({
-      text: 'Colser: ' + userFullName,
+      text: invoiceNo,
       dir: 'right',
-      size: '28',
+      size: '21',
+      next_line: true,
+    });
+
+    printObjs.push({
+      text: 'Created By',
+      dir: 'left',
+      size: '21',
+      next_line: false,
     });
     printObjs.push({
-      text: '-------------------------',
-      dir: 'center',
-      size: '28',
+      text: userFullName,
+      dir: 'right',
+      size: '21',
+      next_line: true,
     });
+
+    printObjs.push({
+      text: 'Order Date',
+      dir: 'left',
+      size: '21',
+      next_line: false,
+    });
+    printObjs.push({
+      text: moment().format('DD MMM YYYY hh:mm:ss a'),
+      dir: 'right',
+      size: '21',
+      next_line: true,
+    });
+
+    printObjs.push({
+      text: 'Customer Name',
+      dir: 'left',
+      size: '21',
+      next_line: false,
+    });
+    printObjs.push({
+      text: payload.customerName,
+      dir: 'right',
+      size: '21',
+      next_line: true,
+    });
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '10',
+      next_line: true,
+    });
+
     printObjs.push({
       text: 'Qty',
       dir: 'left',
-      size: '28',
+      size: '21',
+      next_line: false,
+      style: 'bold',
     });
     printObjs.push({
       text: 'Item',
       dir: 'left',
-      size: '28',
+      size: '21',
+      next_line: false,
+      style: 'bold',
+      weight: 3.0,
     });
     printObjs.push({
       text: 'Price',
       dir: 'right',
-      size: '28',
+      size: '21',
+      next_line: false,
+      style: 'bold',
     });
-
     printObjs.push({
-      text: '-------------------------',
-      dir: 'center',
-      size: '28',
+      text: 'Total',
+      dir: 'right',
+      size: '21',
+      next_line: true,
+      style: 'bold',
     });
-
     saleDetails.forEach((item: any) => {
       printObjs.push({
-        text: item.quantity,
+        text: borderStr,
+        dir: 'center',
+        size: '10',
+        style: 'bold',
+        next_line: true,
+      });
+      printObjs.push({
+        text: '  ' + item.quantity,
         dir: 'left',
-        size: '28',
+        size: '21',
+        next_line: false,
       });
       printObjs.push({
         text: item.productName,
-        dir: 'center',
-        size: '28',
+        dir: 'left',
+        size: '21',
+        next_line: false,
+        weight: 3.0,
       });
       printObjs.push({
-        text: item.total,
+        text: item.retailPrice.toFixed(2),
         dir: 'right',
-        size: '28',
+        size: '21',
+        next_line: false,
+      });
+      printObjs.push({
+        text: item.total.toFixed(2),
+        dir: 'right',
+        size: '21',
+        next_line: true,
       });
     });
 
     printObjs.push({
-      text: '-------------------------',
+      text: borderStr,
       dir: 'center',
-      size: '28',
+      size: '10',
+      style: 'bold',
+      next_line: true,
     });
 
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '10',
+      next_line: true,
+    });
+
+    if ((getDiscountTotal() || 0) > 0) {
+      printObjs.push({
+        text: ' ',
+        dir: 'center',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: 'Discount',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: (getDiscountTotal()?.toFixed(2) ?? 0.0) + '  ',
+        dir: 'right',
+        size: '21',
+        next_line: true,
+      });
+    }
+
+    if ((getTaxTotal() || 0) > 0) {
+      printObjs.push({
+        text: ' ',
+        dir: 'center',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: 'Tax',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: getTaxTotal().toFixed(2) + '  ',
+        dir: 'right',
+        size: '21',
+        next_line: true,
+      });
+    }
+
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '21',
+      style: 'bold',
+      next_line: false,
+    });
     printObjs.push({
       text: 'Subtotal',
-      dir: 'left',
-      size: '28',
+      dir: 'right',
+      size: '21',
+      style: 'bold',
+      next_line: false,
     });
     printObjs.push({
-      text: getCartSubTotal().toFixed(2),
+      text: getCartSubTotal().toFixed(2) + '  ',
       dir: 'right',
-      size: '28',
+      size: '21',
+      next_line: true,
     });
 
     printObjs.push({
-      text: 'Discount',
-      dir: 'left',
-      size: '28',
+      text: ' ',
+      dir: 'center',
+      size: '21',
+      style: 'bold',
+      next_line: false,
     });
-    printObjs.push({
-      text: getDiscountTotal()?.toFixed(2) ?? 0.0,
-      dir: 'right',
-      size: '28',
-    });
-
-    printObjs.push({
-      text: 'Tax',
-      dir: 'left',
-      size: '28',
-    });
-    printObjs.push({
-      text: getTaxTotal().toFixed(2),
-      dir: 'right',
-      size: '28',
-    });
-
     printObjs.push({
       text: 'Total',
-      dir: 'left',
-      size: '28',
-    });
-    printObjs.push({
-      text: getCartTotal().toFixed(2),
       dir: 'right',
-      size: '28',
+      size: '21',
+      style: 'bold',
+      next_line: false,
+    });
+    printObjs.push({
+      text: getCartTotal().toFixed(2) + '  ',
+      dir: 'right',
+      size: '21',
+      style: 'bold',
+      next_line: true,
     });
 
     printObjs.push({
-      text: '-------------------------',
+      text: ' ',
       dir: 'center',
-      size: '28',
+      size: '10',
+      style: 'bold',
+      next_line: true,
     });
 
+    if (cash > 0) {
+      printObjs.push({
+        text: ' ',
+        dir: 'center',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: 'Cash',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: cash.toFixed(2) + '  ',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: true,
+      });
+    }
+
+    if (credit > 0) {
+      printObjs.push({
+        text: ' ',
+        dir: 'center',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: 'Credit',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: credit.toFixed(2) + '  ',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: true,
+      });
+    }
+
+    if (loyalty > 0) {
+      printObjs.push({
+        text: ' ',
+        dir: 'center',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: 'Loyalty',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: loyalty.toFixed(2) + '  ',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: true,
+      });
+    }
+
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '15',
+      next_line: true,
+    });
     printObjs.push({
       text: 'Products Count: ' + saleDetails.length,
       dir: 'center',
-      size: '28',
-    });
-    printObjs.push({
-      text: '-------------------------',
-      dir: 'center',
-      size: '28',
+      size: '21',
+      next_line: true,
     });
 
     try {
       const str = JSON.stringify([printObjs]);
-      console.log('PrintSdk JSON:', str);
       NativePrintSdk?.printJson(str);
-      console.log('PrintSdk called successfully');
     } catch (error) {
       console.error('Error calling PrintSdk:', error);
     }
@@ -967,17 +1262,19 @@ function ProcessSales() {
   return (
     <View style={styles.mainContainer}>
       <View style={styles.productView}>
-        <View style={styles.outletView}>
-          <Text style={styles.outletLabel}>{outletName}</Text>
-          <Icon
-            name={'chevron-double-right'}
-            size={30}
-            color={'black'}
-            style={{fontWeight: 'bold'}}
-          />
+        {registerName && (
+          <View style={styles.outletView}>
+            <Text style={styles.outletLabel}>{outletName}</Text>
+            <Icon
+              name={'chevron-double-right'}
+              size={17}
+              color={'black'}
+              style={{fontWeight: 'bold'}}
+            />
 
-          <Text style={styles.cashRegisterLabel}>{registerName}</Text>
-        </View>
+            <Text style={styles.cashRegisterLabel}>{registerName}</Text>
+          </View>
+        )}
         <View style={styles.searchView}>
           <View style={[styles.searchContainer, styles.searchTextFocused]}>
             <TextInput
@@ -1057,322 +1354,321 @@ function ProcessSales() {
       </View>
       <View style={styles.cartView}>
         <Card style={styles.card}>
-          <ScrollView contentContainerStyle={{flexGrow: 1}}>
-            <View style={styles.cardView}>
-              <View style={styles.section}>
-                <TouchableOpacity
-                  onPress={() => setModalVisible(true)}
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                  <Icon
-                    name="account-cog-outline"
-                    size={26}
-                    color={'rgb(103, 223, 135)'}
-                    style={{fontWeight: 500}}
-                  />
-                  <Text style={styles.sectionTitle}>{selectedCustomer}</Text>
-                </TouchableOpacity>
-              </View>
-
-              <ProcessCustomerModal
-                visible={modalVisible}
-                onClose={() => setModalVisible(false)}
-                onSelectExistingCustomer={handleOnSelectExistingCustomer}
-                onSelectAddCustomer={handleOnSelectAddCustomer}
-                setSelectedCustomerData={setSelectedCustomerData}
-              />
-
-              <AddExistingCustomerModal
-                visible={existingCustomersModalVisible}
-                onClose={() => setExistingCustomersModalVisible(false)}
-                onSelectCustomer={handleOnSelectingAddCustomer}
-              />
-
-              <ProductVariantModal
-                visible={variantModalVisible}
-                onClose={() => setVariantModalVisible(false)}
-                selectedProduct={selectedProduct}
-                onConfirm={handleVariantProductSelection}
-              />
-
-              <ProductSerialModal
-                visible={serialModalVisible}
-                onClose={() => setSerialModalVisible(false)}
-                selectedProduct={selectedProduct}
-                onConfirm={handleSerialProductSelection}
-              />
-
-              <AddCustomerModal
-                visible={addCustomerModalVisible}
-                gender={[]}
-                setRefetch={{}}
-                onClose={() => setAddCustomerModalVisible(false)}
-              />
-
-              <ProductDetailModal
-                visible={productDetailModalVisible}
-                onClose={() => setProductDetailModalVisible(false)}
-                taxes={taxes}
-                selectedProduct={selectedCartProduct}
-                selectedLineItem={selectedLineItem}
-                onConfirm={handleOnConfirmProductDetails}
-              />
-
-              <ErrorModal
-                error={'Error: Please Open Register'}
-                errorModalVisible={errorModalVisible}
-                setErrorModalVisible={setErrorModalVisible}
-              />
-
-              <DiscountModal
-                visible={discountModalVisible}
-                onClose={() => setDiscountModalVisible(false)}
-                onConfirm={handleOnConfirmDiscount}
-                discountTypes={discountTypes}
-              />
-
-              <PaymentModal
-                visible={paymentModalVisibile}
-                onClose={() => setPaymentModalVisible(false)}
-                onSubmit={(
-                  updatedReceivedCash: any,
-                  updatedReceivedCredit: any,
-                  updatedReceivedLoyalty: any,
-                ) => {
-                  if (salesFlag) {
-                    handleRefundSale(
-                      updatedReceivedCash,
-                      updatedReceivedCredit,
-                      updatedReceivedLoyalty,
-                    );
-                  } else {
-                    handlePaymentSubmit(
-                      updatedReceivedCash,
-                      updatedReceivedCredit,
-                      updatedReceivedLoyalty,
-                    );
-                  }
-                }}
-                onLoyalitySubmit={handleLoyalityPaymentSubmit}
-                subTotal={subtotal}
-                discount={discountTotal}
-                tax={taxTotal}
-                grandTotal={cartTotal}
-                cashReceived={cashReceived}
-                setCashReceived={setCashReceived}
-                loyality={loyality}
-                loyalityBalance={loyalityBalance}
-                customer={selectedCustomerData}
-              />
-
-              <View style={styles.divider} />
-
-              <View style={styles.productsView}>
-                <ScrollView contentContainerStyle={{flexGrow: 1}}>
-                  {cart.items.map((item: LineItem, index: any) => {
-                    const selectedAttributes = Object.values(
-                      item.product.attributes || {},
-                    ).map(String);
-
-                    const matchedVariant = item.product.variants?.find(
-                      (variant: any) => {
-                        return (
-                          Array.isArray(variant.combination) &&
-                          variant.combination.length ===
-                            Object.keys(selectedAttributes).length &&
-                          Object.values(selectedAttributes).every(attr =>
-                            variant.combination.includes(attr),
-                          )
-                        );
-                      },
-                    );
-                    return (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => {
-                          setSelectedCartProduct(item.product);
-                          setSelectedLineItem(item);
-                          setProductDetailModalVisible(true);
-                        }}>
-                        <View style={styles.product} key={index}>
-                          <View style={styles.productImageContainer}>
-                            <View style={styles.quantityBadge}>
-                              <Text style={styles.quantityText}>
-                                {item.quantity}
-                              </Text>
-                            </View>
-                            <Image
-                              source={
-                                item.product?.images?.length ?? 0 > 0
-                                  ? {
-                                      uri: '' + item.product?.images[0],
-                                    }
-                                  : require('../../../assets/images/no-image.png')
-                              }
-                              style={styles.productImage}
-                            />
-                          </View>
-
-                          <View style={styles.productDetails}>
-                            <Text style={styles.productName}>
-                              {item.product.name}
-                            </Text>
-                            {item.selectedVariant.combination.length > 0 && (
-                              <Text style={styles.productName}>
-                                {item.selectedVariant.combination.join(' / ')}
-                              </Text>
-                            )}
-                          </View>
-
-                          <View style={styles.productActionView}>
-                            <TouchableOpacity>
-                              <Text style={styles.productPrice}>
-                                {(
-                                  item.selectedVariant.retailPrice *
-                                  item.quantity
-                                ).toFixed(2)}
-                              </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              onPress={() =>
-                                handleRemoveProduct(
-                                  item.product._id,
-                                  item.product.attributes,
-                                )
-                              }
-                              style={styles.removeButton}>
-                              <FeatherIcon
-                                name="x-circle"
-                                size={26}
-                                color={'#A3A3A3'}
-                              />
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-
-              {!isRegisterOpen && (
-                <TouchableOpacity
-                  onPress={handleOpenRegister}
-                  style={styles.openRegisterButton}>
-                  <Text style={styles.openRegisterText}>Open Register</Text>
-                </TouchableOpacity>
-              )}
-
-              <View
-                pointerEvents={!isRegisterOpen ? 'none' : 'auto'} // Disables all child elements
-                style={{opacity: isRegisterOpen ? 1 : 0.7}}>
-                {' '}
-                {/* Notes Section */}
-                <View style={[styles.section, {paddingTop: 10}]}>
-                  <Icon
-                    name={'calendar-text-outline'}
-                    size={26}
-                    color={'rgb(103, 223, 135)'}
-                    style={{fontWeight: '500'}}
-                  />
-                  <Text style={styles.sectionTitle}>Notes</Text>
-                </View>
-                <TextInput
-                  editable={isRegisterOpen}
-                  style={[styles.input, !isRegisterOpen && {opacity: 0.7}]}
-                  placeholder="Notes"
-                  placeholderTextColor="#A3A3A3"
-                  value={notes}
-                  onChangeText={text => {
-                    setNotes(text);
-                  }}
+          {/* <ScrollView contentContainerStyle={{flexGrow: 1}}> */}
+          <View style={styles.cardView}>
+            <View style={styles.section}>
+              <TouchableOpacity
+                onPress={() => setModalVisible(true)}
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignContent: 'center',
+                  alignItems: 'center',
+                }}>
+                <Icon
+                  name="account-cog-outline"
+                  size={26}
+                  color={'rgb(103, 223, 135)'}
+                  style={{fontWeight: 500}}
                 />
-                {/* Payment Summary Section */}
-                <View style={styles.section}>
-                  <Icon
-                    name="wallet-outline"
-                    size={26}
-                    color={'rgb(103, 223, 135)'}
-                    style={{fontWeight: 500}}
-                  />
-                  <Text style={styles.sectionTitle}>Payment Summary</Text>
-                </View>
-                <View style={[styles.paymentSummaryView, {marginTop: 0}]}>
-                  <View style={[styles.paymentSummary, {paddingTop: 5}]}>
-                    <Text style={styles.summaryLabel}>Sub Total</Text>
-                    <Text style={styles.summaryValue}>
-                      {subtotal.toFixed(2)}
-                    </Text>
-                  </View>
+                <Text style={styles.sectionTitle}>
+                  {selectedCustomerData.Name}{' '}
+                  {selectedCustomerData.Phone != ''
+                    ? '(' + selectedCustomerData.Phone + ')'
+                    : ''}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-                  <TouchableOpacity
-                    onPress={() => setDiscountModalVisible(true)}>
-                    <View style={styles.paymentSummary}>
-                      <Text style={[styles.sectionTitle, {marginLeft: 0}]}>
-                        Discount
-                      </Text>
-                      <Text style={[styles.summaryValue]}>
-                        {discountTotal.toFixed(2)}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
+            <ProcessCustomerModal
+              visible={modalVisible}
+              onClose={() => setModalVisible(false)}
+              onSelectExistingCustomer={handleOnSelectExistingCustomer}
+              onSelectAddCustomer={handleOnSelectAddCustomer}
+              setSelectedCustomerData={setSelectedCustomerData}
+            />
 
-                  <View style={styles.paymentSummary}>
-                    <Text style={styles.summaryLabel}>Tax</Text>
-                    <Text style={styles.summaryValue}>
-                      {taxTotal.toFixed(2)}
-                    </Text>
-                  </View>
+            <AddExistingCustomerModal
+              visible={existingCustomersModalVisible}
+              onClose={() => setExistingCustomersModalVisible(false)}
+              onSelectCustomer={handleOnSelectingAddCustomer}
+            />
 
-                  <View style={styles.paymentSummary}>
-                    <Text style={styles.summaryLabel}>Grand Total</Text>
-                    <Text style={styles.summaryValue}>
-                      {cartTotal.toFixed(2)}
-                    </Text>
-                  </View>
-                </View>
-                {/* Payment Buttons */}
-                <View style={styles.paymentButtonsView}>
-                  <TouchableOpacity
-                    onPress={reset}
-                    style={[
-                      styles.paymentButton,
-                      !isRegisterOpen && {opacity: 0.7},
-                    ]}>
-                    <Text style={styles.paymentText}>DISCARD</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={handleParkSale}
-                    disabled={!isRegisterOpen || cart.items.length === 0}
-                    style={[
-                      styles.paymentButton,
-                      !isRegisterOpen && {opacity: 0.7},
-                    ]}>
-                    <Text style={styles.paymentText}>PARK</Text>
-                  </TouchableOpacity>
-                </View>
+            <ProductVariantModal
+              visible={variantModalVisible}
+              onClose={() => setVariantModalVisible(false)}
+              selectedProduct={selectedProduct}
+              onConfirm={handleVariantProductSelection}
+            />
+
+            <ProductSerialModal
+              visible={serialModalVisible}
+              onClose={() => setSerialModalVisible(false)}
+              selectedProduct={selectedProduct}
+              onConfirm={handleSerialProductSelection}
+            />
+
+            <AddCustomerModal
+              visible={addCustomerModalVisible}
+              gender={[]}
+              setRefetch={{}}
+              onClose={() => setAddCustomerModalVisible(false)}
+            />
+
+            <ProductDetailModal
+              visible={productDetailModalVisible}
+              onClose={() => setProductDetailModalVisible(false)}
+              taxes={taxes}
+              selectedProduct={selectedCartProduct}
+              selectedLineItem={selectedLineItem}
+              onConfirm={handleOnConfirmProductDetails}
+            />
+
+            <ErrorModal
+              error={'Error: Please Open Register'}
+              errorModalVisible={errorModalVisible}
+              setErrorModalVisible={setErrorModalVisible}
+            />
+
+            <DiscountModal
+              visible={discountModalVisible}
+              onClose={() => setDiscountModalVisible(false)}
+              onConfirm={handleOnConfirmDiscount}
+              discountTypes={discountTypes}
+            />
+
+            <PaymentModal
+              visible={paymentModalVisibile}
+              onClose={() => setPaymentModalVisible(false)}
+              onSubmit={(
+                updatedReceivedCash: any,
+                updatedReceivedCredit: any,
+                updatedReceivedLoyalty: any,
+              ) => {
+                if (salesFlag) {
+                  handleRefundSale(
+                    updatedReceivedCash,
+                    updatedReceivedCredit,
+                    updatedReceivedLoyalty,
+                  );
+                } else {
+                  handlePaymentSubmit(
+                    updatedReceivedCash,
+                    updatedReceivedCredit,
+                    updatedReceivedLoyalty,
+                  );
+                }
+              }}
+              onLoyalitySubmit={handleLoyalityPaymentSubmit}
+              subTotal={subtotal}
+              discount={discountTotal}
+              tax={taxTotal}
+              grandTotal={cartTotal}
+              cashReceived={cashReceived}
+              setCashReceived={setCashReceived}
+              loyality={loyality}
+              loyalityBalance={loyalityBalance}
+              customer={selectedCustomerData}
+            />
+
+            <View style={styles.divider} />
+
+            <View style={styles.productsView}>
+              <ScrollView contentContainerStyle={{flexGrow: 1}}>
+                {cart.items.map((item: LineItem, index: any) => {
+                  const selectedAttributes = Object.values(
+                    item.product.attributes || {},
+                  ).map(String);
+
+                  const matchedVariant = item.product.variants?.find(
+                    (variant: any) => {
+                      return (
+                        Array.isArray(variant.combination) &&
+                        variant.combination.length ===
+                          Object.keys(selectedAttributes).length &&
+                        Object.values(selectedAttributes).every(attr =>
+                          variant.combination.includes(attr),
+                        )
+                      );
+                    },
+                  );
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => {
+                        setSelectedCartProduct(item.product);
+                        setSelectedLineItem(item);
+                        setProductDetailModalVisible(true);
+                      }}>
+                      <View style={styles.product} key={index}>
+                        <View style={styles.productImageContainer}>
+                          <View style={styles.quantityBadge}>
+                            <Text style={styles.quantityText}>
+                              {item.quantity}
+                            </Text>
+                          </View>
+                          <Image
+                            source={
+                              item.product?.images?.length ?? 0 > 0
+                                ? {
+                                    uri: '' + item.product?.images[0],
+                                  }
+                                : require('../../../assets/images/no-image.png')
+                            }
+                            style={styles.productImage}
+                          />
+                        </View>
+
+                        <View style={styles.productDetails}>
+                          <Text style={styles.productName}>
+                            {item.product.name}
+                          </Text>
+                          {item.selectedVariant.combination.length > 0 && (
+                            <Text style={styles.productName}>
+                              {item.selectedVariant.combination.join(' / ')}
+                            </Text>
+                          )}
+                        </View>
+
+                        <View style={styles.productActionView}>
+                          <TouchableOpacity>
+                            <Text style={styles.productPrice}>
+                              {(
+                                item.selectedVariant.retailPrice * item.quantity
+                              ).toFixed(2)}
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() =>
+                              handleRemoveProduct(
+                                item.product._id,
+                                item.product.attributes,
+                              )
+                            }
+                            style={styles.removeButton}>
+                            <FeatherIcon
+                              name="x-circle"
+                              size={26}
+                              color={'#A3A3A3'}
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            {!isRegisterOpen && (
+              <TouchableOpacity
+                onPress={handleOpenRegister}
+                style={styles.openRegisterButton}>
+                <Text style={styles.openRegisterText}>Open Register</Text>
+              </TouchableOpacity>
+            )}
+
+            <View
+              pointerEvents={!isRegisterOpen ? 'none' : 'auto'} // Disables all child elements
+              style={{opacity: isRegisterOpen ? 1 : 0.7}}>
+              {' '}
+              {/* Notes Section */}
+              <View style={[styles.section, {paddingTop: 10}]}>
+                <Icon
+                  name={'calendar-text-outline'}
+                  size={26}
+                  color={'rgb(103, 223, 135)'}
+                  style={{fontWeight: '500'}}
+                />
+                <Text style={styles.sectionTitle}>Notes</Text>
               </View>
+              <TextInput
+                editable={isRegisterOpen}
+                style={[styles.input, !isRegisterOpen && {opacity: 0.7}]}
+                placeholder="Notes"
+                placeholderTextColor="#A3A3A3"
+                value={notes}
+                onChangeText={text => {
+                  setNotes(text);
+                }}
+              />
+              {/* Payment Summary Section */}
+              <View style={styles.section}>
+                <Icon
+                  name="wallet-outline"
+                  size={26}
+                  color={'rgb(103, 223, 135)'}
+                  style={{fontWeight: 500}}
+                />
+                <Text style={styles.sectionTitle}>Payment Summary</Text>
+              </View>
+              <View style={[styles.paymentSummaryView, {marginTop: 0}]}>
+                <View style={[styles.paymentSummary, {paddingTop: 5}]}>
+                  <Text style={styles.summaryLabel}>Sub Total</Text>
+                  <Text style={styles.summaryValue}>{subtotal.toFixed(2)}</Text>
+                </View>
 
-              {isRegisterOpen && (
-                <TouchableOpacity
-                  disabled={cart.items.length === 0}
-                  onPress={() => setPaymentModalVisible(true)}
-                  style={[
-                    styles.payButtonView,
-                    {opacity: cart.items.length === 0 ? 0.7 : 1},
-                  ]}>
-                  <Text style={styles.openRegisterText}>PAY</Text>
-                  <Text style={styles.openRegisterText}>
+                <TouchableOpacity onPress={() => setDiscountModalVisible(true)}>
+                  <View style={styles.paymentSummary}>
+                    <Text style={[styles.sectionTitle, {marginLeft: 0}]}>
+                      Discount
+                    </Text>
+                    <Text style={[styles.summaryValue]}>
+                      {discountTotal.toFixed(2)}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                <View style={styles.paymentSummary}>
+                  <Text style={styles.summaryLabel}>Tax</Text>
+                  <Text style={styles.summaryValue}>{taxTotal.toFixed(2)}</Text>
+                </View>
+
+                <View style={styles.paymentSummary}>
+                  <Text style={styles.summaryLabel}>Grand Total</Text>
+                  <Text style={styles.summaryValue}>
                     {cartTotal.toFixed(2)}
                   </Text>
+                </View>
+              </View>
+              {/* Payment Buttons */}
+              <View style={styles.paymentButtonsView}>
+                <TouchableOpacity
+                  onPress={reset}
+                  style={[
+                    styles.paymentButton,
+                    !isRegisterOpen && {opacity: 0.7},
+                  ]}>
+                  <Text style={styles.paymentText}>DISCARD</Text>
                 </TouchableOpacity>
-              )}
+                <TouchableOpacity
+                  onPress={handleParkSale}
+                  disabled={!isRegisterOpen || cart.items.length === 0}
+                  style={[
+                    styles.paymentButton,
+                    !isRegisterOpen && {opacity: 0.7},
+                  ]}>
+                  <Text style={styles.paymentText}>PARK</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </ScrollView>
+
+            {isRegisterOpen && (
+              <TouchableOpacity
+                disabled={cart.items.length === 0}
+                onPress={() => setPaymentModalVisible(true)}
+                style={[
+                  styles.payButtonView,
+                  {opacity: cart.items.length === 0 ? 0.7 : 1},
+                ]}>
+                <Text style={styles.openRegisterText}>PAY</Text>
+                <Text style={styles.openRegisterText}>
+                  {cartTotal.toFixed(2)}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {/* </ScrollView> */}
         </Card>
       </View>
     </View>
@@ -1394,10 +1690,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   outletView: {
+    paddingStart: 10,
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    gap: 20,
+    alignItems: 'center',
+    gap: 2,
   },
   searchView: {
     display: 'flex',
@@ -1410,11 +1708,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   outletLabel: {
-    fontSize: 22,
+    fontSize: 17,
     fontWeight: '500',
   },
   cashRegisterLabel: {
-    fontSize: 22,
+    fontSize: 17,
     fontWeight: 'bold',
   },
   searchContainer: {
@@ -1607,7 +1905,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   productsView: {
-    height: 205,
+    height: 160,
     width: '100%',
   },
   product: {

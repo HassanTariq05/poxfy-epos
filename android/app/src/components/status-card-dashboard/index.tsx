@@ -23,10 +23,10 @@ const StatusCard: React.FC<SalesCardProps> = ({
     <View style={[styles.card, {backgroundColor}]}>
       <View style={styles.content}>
         <Text style={[styles.title, {color}]}>{title}</Text>
-        <View style={styles.contentView}>
+        <View style={{flexDirection: 'row', gap: 2}}>
           {items.map((item, index) => (
-            <View key={index}>
-              <Text style={styles.period}>{item.period}</Text>
+            <View key={index} style={{flex: 1}}>
+              <Text style={{fontSize: 12}}>{item.period}</Text>
               <Text style={styles.value}>{item.value}</Text>
             </View>
           ))}
@@ -38,35 +38,40 @@ const StatusCard: React.FC<SalesCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
-    padding: 20,
-    marginTop: 10,
-    width: '49.50%',
+    flex: 1,
+    borderRadius: 16,
+    padding: 8,
+    marginTop: 8,
     justifyContent: 'space-between',
   },
   content: {
     flex: 1,
   },
   contentView: {
+    flex: 1,
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 10,
+    width: '30%',
   },
   title: {
-    fontSize: 16,
+    fontSize: 13,
+    fontWeight: 'bold',
     marginBottom: 8,
-    borderBottomColor: 'gray',
+    paddingBottom: 4,
+    borderBottomColor: '#ccc',
     borderBottomWidth: 1,
   },
   value: {
-    fontSize: 23,
+    fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'left',
   },
   period: {
-    fontSize: 12,
+    flex: 1,
+    fontSize: 19,
     color: '#666',
-    textAlign: 'left',
   },
 });
 

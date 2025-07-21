@@ -41,13 +41,18 @@ export default function Header() {
       setIsLoadingTrue();
       const {data: response} = await getAllOutletApi(headerUrl);
 
-      if (response?.data?.length > 0) {
-        const outletsData = response.data.map((outlet: any) => ({
+      if (response?.data?.data?.length > 0) {
+        const outletsData = response.data.data.map((outlet: any) => ({
           label: outlet.name,
           value: outlet._id,
+          phone: outlet.phone,
+          email: outlet.email,
+          street: outlet.street,
+          city: outlet.city,
+          state: outlet.state,
+          postal: outlet.postal,
+          country: outlet.country,
         }));
-
-        console.log('Stringified Outlets: ', JSON.stringify(outletsData));
 
         await AsyncStorage.setItem('outletsData', JSON.stringify(outletsData));
 
@@ -67,7 +72,6 @@ export default function Header() {
           if (savedOutlet) {
             await AsyncStorage.setItem('selectedOutlet', savedOutlet);
           }
-          console.log('Restored selected outlet:', savedOutlet);
         } else {
           // Select the first outlet if no valid saved outlet exists
           const firstOutlet = outletsData[0].value;
@@ -75,6 +79,7 @@ export default function Header() {
           await AsyncStorage.setItem('selectedOutlet', firstOutlet);
           console.log('Selected first outlet:', firstOutlet);
         }
+        toggleOutletChange();
       } else {
         setOutlets([]);
         setSelectedOutlet(null);

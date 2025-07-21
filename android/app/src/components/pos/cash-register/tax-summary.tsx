@@ -13,26 +13,26 @@ const TaxSummary: React.FC<TaxSummaryProps> = ({registerData}) => {
     <View style={styles.container}>
       <View style={styles.row}>
         <Text style={[styles.header, styles.left, styles.wide]}>Tax</Text>
-        <Text style={[styles.header, styles.left]}>Sales</Text>
-        <Text style={[styles.header, styles.right]}>Tax</Text>
+        <Text style={[styles.header, styles.right]}>Amount</Text>
       </View>
 
-      <View style={styles.row}>
-        <Text style={[styles.cell, styles.left, styles.wide]}>GST</Text>
-        <Text style={[styles.cell, styles.left]}>
-          {safeNumber(transaction?.total)}
-        </Text>
-        <Text style={[styles.cell, styles.right]}>
-          {safeNumber(transaction?.gst)}
-        </Text>
-      </View>
+      {transaction?.gst?.map((tax: any, index: number) => (
+        <View style={styles.row}>
+          <Text style={[styles.cell, styles.left]}>{tax.name}</Text>
+          <Text style={[styles.cell, styles.right]}>
+            {safeNumber(tax.amount)}
+          </Text>
+        </View>
+      ))}
 
       <View style={styles.row}>
-        <Text style={styles.cell} />
         <Text style={[styles.cell, styles.left, styles.bold]}>Total</Text>
         <Text style={[styles.cell, styles.right, styles.green]}>
-          {(Number(transaction?.total) || 0) *
-            (1 + (Number(transaction?.gst) || 0) / 100)}
+          {safeNumber(
+            transaction?.gst?.reduce((total: number, tax: any) => {
+              return total + tax.amount;
+            }, 0.0),
+          )}
         </Text>
       </View>
     </View>

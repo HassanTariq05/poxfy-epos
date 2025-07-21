@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import useAuthStore from '../../../redux/feature/store';
 import Feather from 'react-native-vector-icons/Feather';
+import {getMyInventory} from '../../../services/process-sales';
 
 function MyInventory() {
   const headers = [
@@ -37,13 +38,13 @@ function MyInventory() {
       setIsLoadingTrue();
 
       const {data: response} = await getAllOutletApi(headerUrl);
-      if (response?.data?.length > 0) {
-        const outletsData = response.data.map((outlet: any) => ({
+      if (response?.data?.data?.length > 0) {
+        const outletsData = response.data.data.map((outlet: any) => ({
           label: outlet.name,
           value: outlet._id,
         }));
 
-        setOutlets(outletsData);
+        setOutlets([outletsWithAll[0], ...outletsData]);
         setIsLoadingFalse();
       }
     } catch (err) {
@@ -59,12 +60,6 @@ function MyInventory() {
   const fetchData = async () => {
     setData([]);
     try {
-      const token = await AsyncStorage.getItem('userToken');
-
-      // Initialize base URL
-      let url = `${API_BASE_URL}inventory-ledger?`;
-
-      // Define query parameters dynamically
       const queryParams: string[] = [];
 
       if (selectedProduct) {
@@ -77,24 +72,11 @@ function MyInventory() {
         queryParams.push(`inventoryType=${selectedItem}`);
       }
 
-      // Append query parameters to the URL
-      url += queryParams.join('&');
+      const query = queryParams.join('&');
 
-      console.log('Request URL:', url);
+      const response = await getMyInventory(query, headerUrl);
 
-      setIsLoadingTrue();
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          origin: headerUrl,
-          referer: headerUrl,
-        },
-      });
-
-      console.log('Response Inventory List:', response.data.data);
-
-      const formattedData = response.data.data.map((item: any) => ({
+      const formattedData = response?.data?.data?.map((item: any) => ({
         ...item,
         ['Inventory Item']: item.name,
         ['On Hand']: item.onHand,
@@ -102,8 +84,6 @@ function MyInventory() {
         ['Available']: item.available,
         ['Outlets']: item.outletName,
       }));
-
-      console.log('Formatted data:', formattedData);
 
       setData(formattedData);
       setIsLoadingFalse();
@@ -256,7 +236,7 @@ function MyInventory() {
               />
               <Dropdown
                 style={styles.dropdown}
-                data={outletsWithAll}
+                data={outlets}
                 labelField="label"
                 valueField="value"
                 placeholder="Select Outlet"
@@ -309,6 +289,7 @@ function MyInventory() {
                 handleOnSetClick(row, key, value)
               }
               toolTip={true}
+              underlineColumn={true}
             />
           }></TableCard>
       </View>

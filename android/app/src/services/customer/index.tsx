@@ -1,5 +1,6 @@
 import {Api} from '../../network/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {isDeviceOnline} from '../dashboard';
 
 export const createCustomer = async (data: any, headerUrl: any) => {
   const token = await AsyncStorage.getItem('userToken');
@@ -35,12 +36,49 @@ export const deleteCustmer = async (id: any, headerUrl: any) => {
   });
 };
 export const getLoyaltyBalance = async (id: any, headerUrl: any) => {
-  const token = await AsyncStorage.getItem('userToken');
-  return Api.get(`supplier/${id}/loyality-balance`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      origin: headerUrl,
-      referer: headerUrl,
-    },
-  });
+  const isOnline = await isDeviceOnline();
+  if (isOnline) {
+    const token = await AsyncStorage.getItem('userToken');
+    const data = await Api.get(`supplier/${id}/loyality-balance`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        origin: headerUrl,
+        referer: headerUrl,
+      },
+    });
+    const dataString = await JSON.stringify(data);
+    await AsyncStorage.setItem('get_loyalty_balance_' + id, dataString);
+    return data;
+  } else {
+    const dataString =
+      (await AsyncStorage.getItem('get_loyalty_balance_' + id)) ?? '{}';
+    return JSON.parse(dataString);
+  }
+};
+export const getLoyaltyReport = async (
+  customerId: any,
+  query: string,
+  headerUrl: any,
+) => {
+  const isOnline = await isDeviceOnline();
+  if (isOnline) {
+    const token = await AsyncStorage.getItem('userToken');
+    const data = await Api.get(
+      `report/customer-loyality-report?customerIds[]=${customerId}&${query}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          origin: headerUrl,
+          referer: headerUrl,
+        },
+      },
+    );
+    const dataString = await JSON.stringify(data);
+    await AsyncStorage.setItem('loyalty_report_' + customerId, dataString);
+    return data;
+  } else {
+    const dataString =
+      (await AsyncStorage.getItem('loyalty_report_' + customerId)) ?? '{}';
+    return JSON.parse(dataString);
+  }
 };

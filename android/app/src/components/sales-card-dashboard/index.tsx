@@ -23,23 +23,22 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: 'white',
-    borderRadius: 20,
+    borderRadius: 16,
     paddingVertical: 8,
     paddingHorizontal: 16,
     marginTop: 8,
-    width: '32.50%',
-    height: 100,
     justifyContent: 'space-between',
   },
   content: {
     flex: 1,
   },
   title: {
-    fontSize: 15,
+    fontSize: 13,
+    fontWeight: 'bold',
     marginBottom: 8,
+    paddingBottom: 4,
     borderBottomColor: '#00e37d5f',
     borderBottomWidth: 1,
-    color: '#00e37d',
   },
   value: {
     fontSize: 20,

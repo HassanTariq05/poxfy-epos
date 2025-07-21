@@ -40,18 +40,13 @@ function Tag() {
         'customer-tag',
         headerUrl,
       );
-      console.log('Tag Fetch: ', tagData.data.data);
 
       const formattedData = tagData.data.data.map((item: any) => ({
         ...item,
         Name: item.name,
       }));
 
-      console.log('Formatted data:', formattedData);
-
       setData((prev: any) => {
-        console.log('Previous Data:', prev);
-        console.log('New Data:', formattedData);
         return [...formattedData];
       });
       setIsLoadingFalse();
@@ -198,6 +193,7 @@ function Tag() {
             onDelete={confirmDelete}
             showSwitch={true}
             onToggleSwitch={confirmSwitch}
+            propWidth={780}
           />
           <CustomPopConfirm
             title="Confirm Deletion"

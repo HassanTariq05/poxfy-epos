@@ -81,10 +81,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       grandTotal - newCashReceived - credit - loyaltyUsed;
     setAmount(remainingBalance.toFixed(2));
 
-    console.log('remainingBalance');
-    console.log(remainingBalance);
+    console.log('remainingBalance: ' + remainingBalance);
+    console.log('remainingBalance is zero: ' + (remainingBalance <= 0.01));
 
-    if (remainingBalance <= 0) {
+    if (remainingBalance <= 0.01) {
       onSubmit(newCashReceived, credit, loyaltyUsed);
     }
   };
@@ -100,10 +100,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       grandTotal - newCreditReceived - cash - loyaltyUsed;
     setAmount(remainingBalance.toFixed(2));
 
-    console.log('remainingBalance');
-    console.log(remainingBalance);
+    console.log('remainingBalance: ' + remainingBalance);
+    console.log('remainingBalance is zero: ' + (remainingBalance <= 0.01));
 
-    if (remainingBalance <= 0) {
+    if (remainingBalance <= 0.01) {
       onSubmit(cash, newCreditReceived, loyaltyUsed);
     }
   };
@@ -123,10 +123,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     const remainingBalance = grandTotal - newLoyaltyReceived - cash - credit;
     setAmount(remainingBalance.toFixed(2));
 
-    console.log('remainingBalance');
-    console.log(remainingBalance);
+    console.log('remainingBalance: ' + remainingBalance);
+    console.log('remainingBalance is zero: ' + (remainingBalance <= 0.01));
 
-    if (remainingBalance <= 0) {
+    if (remainingBalance <= 0.01) {
       onSubmit(cash, credit, newLoyaltyReceived);
     }
   };

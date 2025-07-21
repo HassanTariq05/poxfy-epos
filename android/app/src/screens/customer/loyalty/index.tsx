@@ -25,6 +25,7 @@ import CustomPopConfirm from '../../../components/pop-confirm';
 import {
   deleteCustmer,
   getLoyaltyBalance,
+  getLoyaltyReport,
   updateCustomer,
 } from '../../../services/customer';
 import useAuthStore from '../../../redux/feature/store';
@@ -103,10 +104,6 @@ const LoyaltyModal: React.FC<LoyaltyModalProps> = ({
     });
     try {
       setIsLoadingTrue();
-      const token = await AsyncStorage.getItem('userToken');
-      var url =
-        `${API_BASE_URL}report/customer-loyality-report?customerIds[]=` +
-        customerId;
 
       const queryParams: string[] = [];
 
@@ -115,19 +112,9 @@ const LoyaltyModal: React.FC<LoyaltyModalProps> = ({
         queryParams.push(`startDate=${selectedDateRange.startDate}`);
       }
 
-      url += '&' + queryParams.join('&');
+      const query = queryParams.join('&');
 
-      console.log('Loyalty get url: ', url);
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          origin: headerUrl,
-          referer: headerUrl,
-        },
-      });
-
-      console.log('Response Loyalty List:', response.data.data);
+      const response = await getLoyaltyReport(customerId, query, headerUrl);
 
       const formattedData = response.data.data.map((item: any) => ({
         'Order ID': item.orderId,
@@ -137,8 +124,6 @@ const LoyaltyModal: React.FC<LoyaltyModalProps> = ({
         'Accrued Points': item.accuredPoint,
         'Points Used': item.pointUsed,
       }));
-
-      console.log('Formatted data:', formattedData);
 
       setData(formattedData);
       setIsLoadingFalse();

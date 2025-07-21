@@ -11,9 +11,7 @@ const PopupDatePicker: React.FC<PopupDatePickerProps> = ({
   initialVal,
   onDateSelect,
 }) => {
-  const [date, setDate] = useState(
-    initialVal ? new Date(initialVal) : new Date(),
-  );
+  const [date, setDate] = useState(initialVal);
   useEffect(() => {
     console.log('Initial Date', initialVal);
   }, []);
@@ -30,7 +28,7 @@ const PopupDatePicker: React.FC<PopupDatePickerProps> = ({
       {/* Button to open the date picker */}
       <TouchableOpacity style={styles.inputDate} onPress={() => setOpen(true)}>
         <Text style={{color: 'black'}}>
-          {date.toDateString() || 'Select Date'}
+          {date?.toDateString() || 'Select Date'}
         </Text>
       </TouchableOpacity>
 
@@ -45,7 +43,11 @@ const PopupDatePicker: React.FC<PopupDatePickerProps> = ({
             <Text style={styles.title}>Select Date</Text>
 
             {/* Date Picker Component */}
-            <DatePicker date={date} mode="date" onDateChange={setDate} />
+            <DatePicker
+              date={date || new Date()}
+              mode="date"
+              onDateChange={setDate}
+            />
 
             {/* Confirm Button */}
             <TouchableOpacity onPress={handleConfirm} style={styles.button}>

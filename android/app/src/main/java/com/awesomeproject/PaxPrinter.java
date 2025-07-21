@@ -60,7 +60,7 @@ public class PaxPrinter {
         return statusCode2Str(res);
     }
 
-    private String statusCode2Str(int status) {
+    public static String statusCode2Str(int status) {
         String res = "";
         switch (status) {
             case 0:

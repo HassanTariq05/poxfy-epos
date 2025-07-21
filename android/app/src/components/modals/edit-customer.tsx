@@ -23,6 +23,7 @@ import useAuthStore from '../../redux/feature/store';
 import {getSlugListOfValuesByKey} from '../../services/global';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import PhoneInput from 'react-native-phone-number-input';
 
 interface EditCustomerModalProps {
   visible: boolean;
@@ -88,15 +89,21 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         taxExempted: customer?.taxExempted || false,
         dateOfBirth: customer?.dateOfBirth,
       });
+
+      setPhone(customer?.phone || '');
     }
   }, [customer, reset]);
 
   const slideAnim = useRef(new Animated.Value(500)).current;
   const nameInputRef = useRef<TextInput>(null);
 
+  const phoneInput = useRef(null);
+  const [phone, setPhone] = useState('');
+
   const [tags, setTags] = useState([]);
   const [tiers, setTiers] = useState([]);
   const [genders, setGenders] = useState([]);
+  const [countries, setCountries] = useState([]);
 
   useEffect(() => {
     if (visible) {
@@ -130,11 +137,12 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         );
 
         const tierData = response.data.data.map((tier: any) => ({
-          label: tier?.name,
-          value: tier?._id,
+          label: tier.name,
+          value: tier._id,
         }));
 
         setTiers(tierData);
+        console.log('Tier: ', tierData);
 
         const {data: tagData} = await getSlugListOfValuesByKey(
           'customer-tag',
@@ -142,11 +150,12 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         );
 
         const tagDataFormatted = tagData.data.data.map((tag: any) => ({
-          label: tag?.name,
-          value: tag?._id,
+          label: tag.name,
+          value: tag._id,
         }));
 
         setTags(tagDataFormatted);
+        console.log('Tag: ', tagDataFormatted);
 
         const token = await AsyncStorage.getItem('userToken');
         const API_URL = await AsyncStorage.getItem('API_BASE_URL');
@@ -159,7 +168,7 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
             'Content-Type': 'application/json',
             origin: headerUrl,
             referer: headerUrl,
-            'access-key': 12345,
+            'access-key': 'q2DU1I89vQgw',
           },
           params: payload,
         };
@@ -167,17 +176,29 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         const {data: genderData} = await axios.get(url, config);
 
         const genderDataFormatted = genderData.data.data.map((gender: any) => ({
-          label: gender?.value,
-          value: gender?._id,
+          label: gender.value,
+          value: gender._id,
         }));
 
         setGenders(genderDataFormatted);
+        console.log('Genders: ', genderDataFormatted);
 
-        console.log('Tag: ', tagData.data.data);
-        console.log('Tier: ', response.data.data);
-        console.log('Gender in edit: ', genderData.data.data);
+        const {data: countryData} = await axios.get(
+          'https://newserver.poxfy.com/locales/country.json',
+          config,
+        );
+        const formattedCountries = countryData.map(
+          (country: any, index: number) => ({
+            label: country,
+            value: country,
+          }),
+        );
+        setCountries(formattedCountries);
+        console.log('Countries: ', formattedCountries);
+
         setIsLoadingFalse();
-      } catch {
+      } catch (error) {
+        console.log('Error fetching list of values:', error);
         setIsLoadingFalse();
         return null;
       }
@@ -211,7 +232,8 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
       logo: 'http',
       notes: data.notes,
       optOutForMarketing: data.receiveMarketing,
-      phone: data.phone,
+      // phone: data.phone,
+      phone: phone,
       signUpForLoyality: data.signupLoyalty,
       state: data.state,
       taxExempted: data.taxExempted,
@@ -289,11 +311,10 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                   </View>
 
                   <View style={{width: '50%'}}>
-                    <Text style={styles.floatingLabel}>Last Name *</Text>
+                    <Text style={styles.floatingLabel}>Last Name</Text>
                     <Controller
                       control={control}
                       name="lastName"
-                      rules={{required: 'Last name is required'}}
                       render={({field: {onChange, value}}) => (
                         <>
                           <TextInput
@@ -313,14 +334,13 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                   </View>
                 </View>
 
-                <View style={styles.subLeftContainer}>
-                  <View style={{width: '50%'}}>
-                    <Text style={styles.floatingLabel}>Email *</Text>
+                <View>
+                  <View style={{}}>
+                    <Text style={styles.floatingLabel}>Email</Text>
                     <Controller
                       control={control}
                       name="email"
                       rules={{
-                        required: 'Email is required',
                         pattern: {
                           value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                           message: 'Enter a valid email address',
@@ -346,36 +366,80 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                     />
                   </View>
 
-                  <View style={{width: '50%'}}>
-                    <Text style={styles.floatingLabel}>Phone *</Text>
-                    <Controller
-                      control={control}
-                      name="phone"
-                      rules={{required: 'Phone is required'}}
-                      render={({field: {onChange, value}}) => (
-                        <>
-                          <TextInput
-                            style={styles.input1}
-                            placeholder="Enter Phone Number"
-                            onChangeText={onChange}
-                            value={value}
-                          />
-                          {errors.phone && (
-                            <Text style={styles.errorText}>
-                              {errors.phone.message}
-                            </Text>
-                          )}
-                        </>
-                      )}
-                    />
+                  <View style={{overflow: 'hidden'}}>
+                    <Text style={styles.floatingLabel}>Phone</Text>
+                    <View
+                      style={{
+                        flex: 1,
+                        flexDirection: 'row',
+                        gap: 2,
+                        marginBottom: 10,
+                        borderColor: 'rgb(202,202,202)',
+                        borderWidth: 1,
+                        backgroundColor: 'none',
+                        borderRadius: 20,
+                        height: 40,
+                      }}>
+                      <PhoneInput
+                        ref={phoneInput}
+                        defaultCode="DM"
+                        layout="first"
+                        defaultValue={phone}
+                        autoFocus
+                        placeholder="Phone"
+                        onChangeFormattedText={(text: string) => {
+                          setPhone(text);
+                        }}
+                        containerStyle={{
+                          width: '100%',
+                          height: 40,
+                          paddingHorizontal: 0,
+                          paddingVertical: 0,
+                          gap: 0,
+                          backgroundColor: 'transparent',
+                        }}
+                        flagButtonStyle={{
+                          width: 60,
+                          height: 40,
+                        }}
+                        textContainerStyle={{
+                          backgroundColor: 'transparent',
+                          borderRadius: 20,
+                          paddingHorizontal: 10,
+                          paddingVertical: 0,
+                          height: 40,
+                        }}
+                        textInputStyle={{
+                          marginLeft: 0,
+                        }}
+                      />
+                      {/* <Controller
+                                          control={control}
+                                          name="phone"
+                                          render={({field: {onChange, value}}) => (
+                                            <>
+                                              <TextInput
+                                                placeholder="Phone"
+                                                onChangeText={onChange}
+                                                value={value}
+                                                style={{flex: 1}}
+                                              />
+                                              {errors.phone && (
+                                                <Text style={styles.errorText}>
+                                                  {errors.phone.message}
+                                                </Text>
+                                              )}
+                                            </>
+                                          )}
+                                        /> */}
+                    </View>
                   </View>
                 </View>
 
-                <Text style={styles.floatingLabel}>Notes *</Text>
+                <Text style={styles.floatingLabel}>Notes</Text>
                 <Controller
                   control={control}
                   name="notes"
-                  rules={{required: 'Notes is required'}}
                   render={({field: {onChange, value}}) => (
                     <>
                       <TextInput
@@ -395,11 +459,10 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                   )}
                 />
                 <Text style={styles.label}>Company Details</Text>
-                <Text style={styles.floatingLabel}>Company Name *</Text>
+                <Text style={styles.floatingLabel}>Company Name</Text>
                 <Controller
                   control={control}
                   name="companyName"
-                  rules={{required: 'Company Name is required'}}
                   render={({field: {onChange, value}}) => (
                     <>
                       <TextInput
@@ -419,11 +482,10 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
 
                 <Text style={styles.label}>Physical Address</Text>
 
-                <Text style={styles.floatingLabel}>Street Address *</Text>
+                <Text style={styles.floatingLabel}>Street Address</Text>
                 <Controller
                   control={control}
                   name="streetAddress"
-                  rules={{required: 'Street Address is required'}}
                   render={({field: {onChange, value}}) => (
                     <>
                       <TextInput
@@ -443,11 +505,10 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
 
                 <View style={styles.subLeftContainer}>
                   <View style={{width: '50%'}}>
-                    <Text style={styles.floatingLabel}>City *</Text>
+                    <Text style={styles.floatingLabel}>City</Text>
                     <Controller
                       control={control}
                       name="city"
-                      rules={{required: 'City is required'}}
                       render={({field: {onChange, value}}) => (
                         <>
                           <TextInput
@@ -467,11 +528,10 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                   </View>
 
                   <View style={{width: '50%'}}>
-                    <Text style={styles.floatingLabel}>State *</Text>
+                    <Text style={styles.floatingLabel}>State</Text>
                     <Controller
                       control={control}
                       name="state"
-                      rules={{required: 'State is required'}}
                       render={({field: {onChange, value}}) => (
                         <>
                           <TextInput
@@ -491,11 +551,10 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                   </View>
                 </View>
 
-                <Text style={styles.floatingLabel}>Country *</Text>
-                <Controller
+                <Text style={styles.floatingLabel}>Country</Text>
+                {/* <Controller
                   control={control}
                   name="country"
-                  rules={{required: 'Country is required'}}
                   render={({field: {onChange, value}}) => (
                     <>
                       <TextInput
@@ -511,6 +570,29 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                       )}
                     </>
                   )}
+                /> */}
+                <Controller
+                  control={control}
+                  name="country"
+                  render={({field: {onChange, value}}) => (
+                    <>
+                      <Dropdown
+                        style={styles.input}
+                        data={countries}
+                        labelField="label"
+                        valueField="value"
+                        placeholder="Country"
+                        value={value}
+                        onChange={item => onChange(item.value)}
+                        mode="modal"
+                      />
+                      {errors.gender && (
+                        <Text style={styles.errorText}>
+                          {errors.gender.message}
+                        </Text>
+                      )}
+                    </>
+                  )}
                 />
               </View>
 
@@ -518,12 +600,11 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
               <View style={styles.rightContainer}>
                 <Text style={styles.label}>Additional Information</Text>
 
-                <Text style={styles.floatingLabel}>Amount *</Text>
+                <Text style={styles.floatingLabel}>Credit Limit</Text>
                 <Controller
                   control={control}
                   name="additional"
                   rules={{
-                    required: 'This is required',
                     pattern: {
                       value: /^\d+$/,
                       message: 'Only numbers are allowed',
@@ -552,11 +633,10 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                   )}
                 />
 
-                <Text style={styles.floatingLabel}>Gender *</Text>
+                <Text style={styles.floatingLabel}>Gender</Text>
                 <Controller
                   control={control}
                   name="gender"
-                  rules={{required: 'Gender is required'}}
                   render={({field: {onChange, value}}) => (
                     <>
                       <Dropdown
@@ -578,11 +658,10 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                   )}
                 />
 
-                <Text style={styles.floatingLabel}>Tag *</Text>
+                <Text style={styles.floatingLabel}>Tag</Text>
                 <Controller
                   control={control}
                   name="tag"
-                  rules={{required: 'Tag is required'}}
                   render={({field: {onChange, value}}) => (
                     <>
                       <Dropdown
@@ -604,11 +683,10 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                   )}
                 />
 
-                <Text style={styles.floatingLabel}>Tier *</Text>
+                <Text style={styles.floatingLabel}>Tier</Text>
                 <Controller
                   control={control}
                   name="tier"
-                  rules={{required: 'Group Tier is required'}}
                   render={({field: {onChange, value}}) => (
                     <>
                       <Dropdown
@@ -631,7 +709,7 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                 />
 
                 <View>
-                  <Text style={styles.floatingLabel}>Date of Birth *</Text>
+                  <Text style={styles.floatingLabel}>Date of Birth</Text>
                   <PopupDatePicker onDateSelect={setSelectedDate} />
                 </View>
 

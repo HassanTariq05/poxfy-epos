@@ -26,6 +26,20 @@ const PaymentSummary: React.FC<PaymentSummaryProps> = ({registerData}) => {
           {registerData?.transaction?.openingBalance}
         </Text>
       </View>
+      <View style={styles.row}>
+        <Text style={[styles.cell, styles.left]}>{'In'}</Text>
+        <Text style={[styles.cell, styles.left]}> </Text>
+        <Text style={[styles.cell, styles.right]}>
+          {registerData?.transaction?.totalIn ?? 0}
+        </Text>
+      </View>
+      <View style={styles.row}>
+        <Text style={[styles.cell, styles.left]}>{'Out'}</Text>
+        <Text style={[styles.cell, styles.left]}> </Text>
+        <Text style={[styles.cell, styles.right]}>
+          {registerData?.transaction?.totalOut ?? 0}
+        </Text>
+      </View>
     </View>
   );
 };

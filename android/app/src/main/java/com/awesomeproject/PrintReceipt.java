@@ -13,8 +13,8 @@ import androidx.appcompat.app.AlertDialog;
 import com.AwesomeProject.MainApplication;
 import com.AwesomeProject.R;
 import com.pax.dal.exceptions.PrinterDevException;
-import com.pax.gl.page.IPage;
-import com.pax.gl.page.PaxGLPage;
+//import com.pax.gl.page.IPage;
+//import com.pax.gl.page.PaxGLPage;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -50,51 +50,51 @@ public class PrintReceipt {
             return;
         }
         
-        PaxGLPage paxGLPage = PaxGLPage.getInstance(context);
-        IPage page = paxGLPage.createPage();
-        page.adjustLineSpace(-9);
-
-
-        page.addLine().addUnit(logoBMp, IPage.EAlign.CENTER);
-        page.addLine().addUnit("\n", 7);
-        JSONArray invoice = multiInvoices.getJSONArray(index);
-        Log.i("Data", invoice.toString());
-        for (int j = 0; j < invoice.length(); j++) {
-            Log.i("Data", invoice.optJSONObject(j).toString());
-            String text = invoice.optJSONObject(j).getString("text");
-            IPage.EAlign align;
-            switch (invoice.optJSONObject(j).optString("dir")) {
-                case "right":
-                    align = IPage.EAlign.RIGHT;
-                    break;
-                case "left":
-                    align = IPage.EAlign.LEFT;
-                    break;
-                default:
-                    align = IPage.EAlign.CENTER;
-
-            }
-            int textSize = Integer.parseInt(invoice.optJSONObject(j).getString("size"));
-            int style;
-            switch (invoice.optJSONObject(j).optString("style")) {
-                case "bold":
-                    style = IPage.ILine.IUnit.TEXT_STYLE_BOLD;
-                    break;
-                case "italic":
-                    style = IPage.ILine.IUnit.TEXT_STYLE_ITALIC;
-                    break;
-                case "underline":
-                    style = IPage.ILine.IUnit.TEXT_STYLE_UNDERLINE;
-                    break;
-                default:
-                    style = IPage.ILine.IUnit.TEXT_STYLE_NORMAL;
-
-            }
-            page.addLine().addUnit(text, textSize, align, style);
-            page.addLine().addUnit("\n", 5);
-
-        }
-        page.addLine().addUnit("\n", 30);
+//        PaxGLPage paxGLPage = PaxGLPage.getInstance(context);
+//        IPage page = paxGLPage.createPage();
+//        page.adjustLineSpace(-9);
+//
+//
+//        page.addLine().addUnit(logoBMp, IPage.EAlign.CENTER);
+//        page.addLine().addUnit("\n", 7);
+//        JSONArray invoice = multiInvoices.getJSONArray(index);
+//        Log.i("Data", invoice.toString());
+//        for (int j = 0; j < invoice.length(); j++) {
+//            Log.i("Data", invoice.optJSONObject(j).toString());
+//            String text = invoice.optJSONObject(j).getString("text");
+//            IPage.EAlign align;
+//            switch (invoice.optJSONObject(j).optString("dir")) {
+//                case "right":
+//                    align = IPage.EAlign.RIGHT;
+//                    break;
+//                case "left":
+//                    align = IPage.EAlign.LEFT;
+//                    break;
+//                default:
+//                    align = IPage.EAlign.CENTER;
+//
+//            }
+//            int textSize = Integer.parseInt(invoice.optJSONObject(j).getString("size"));
+//            int style;
+//            switch (invoice.optJSONObject(j).optString("style")) {
+//                case "bold":
+//                    style = IPage.ILine.IUnit.TEXT_STYLE_BOLD;
+//                    break;
+//                case "italic":
+//                    style = IPage.ILine.IUnit.TEXT_STYLE_ITALIC;
+//                    break;
+//                case "underline":
+//                    style = IPage.ILine.IUnit.TEXT_STYLE_UNDERLINE;
+//                    break;
+//                default:
+//                    style = IPage.ILine.IUnit.TEXT_STYLE_NORMAL;
+//
+//            }
+//            page.addLine().addUnit(text, textSize, align, style);
+//            page.addLine().addUnit("\n", 5);
+//
+//        }
+//        page.addLine().addUnit("\n", 30);
         
 //        bitmap = paxGLPage.pageToBitmap(page, 384);
         printReceipt();

@@ -28,6 +28,7 @@ import {DrawerNavigationProp} from '@react-navigation/drawer';
 import {Modal} from 'react-native-paper';
 import Loyalty from '../loyalty';
 import LoyaltyModal from '../loyalty';
+import {getCustomerList} from '../../../services/process-sales';
 
 function Customer() {
   const navigation = useNavigation<DrawerNavigationProp<any>>();
@@ -57,19 +58,8 @@ function Customer() {
     setLoyaltyModalVisible(false);
     try {
       setIsLoadingTrue();
-      const token = await AsyncStorage.getItem('userToken');
-      const url = `${API_BASE_URL}supplier/list?take=10&page=1`;
-      console.log('Customer get url: ', url);
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          origin: headerUrl,
-          referer: headerUrl,
-        },
-      });
 
-      console.log('Response Customer List:', response.data.data.data);
+      const response = await getCustomerList(headerUrl);
 
       const formattedData = response.data.data.data.map((item: any) => ({
         ...item,
@@ -81,11 +71,7 @@ function Customer() {
         Country: item.country,
       }));
 
-      console.log('Formatted data:', formattedData);
-
       setData((prev: any) => {
-        console.log('Previous Data:', prev);
-        console.log('New Data:', formattedData);
         return [...formattedData];
       });
       setIsLoadingFalse();
@@ -97,19 +83,6 @@ function Customer() {
   useEffect(() => {
     fetchData();
   }, [refetch]);
-
-  // const getListOfValues = async () => {
-  //   try {
-  //     const response = await getAllListOfValueByKey('gender');
-  //     console.log(response);
-  //     setGender(response.data.data.data);
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  // };
-  // useEffect(() => {
-  //   getListOfValues();
-  // }, []);
 
   const handleHeadingAction = () => {
     setModalVisible(true);
@@ -252,7 +225,6 @@ function Customer() {
             showLoyalty={true}
             onLoyalty={row => {
               setCustomerId(row._id);
-              console.log('Customer ID:', row._id);
               // navigation.navigate('Customer-Loyalty');
               setLoyaltyModalVisible(true);
               setCustomerDetails(

@@ -1,6 +1,7 @@
 package com.AwesomeProject
 
 import android.app.Application
+import com.awesomeproject.Logger
 import com.awesomeproject.NativePrintSdkPackage
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
@@ -57,6 +58,7 @@ class MainApplication : Application(), ReactApplication {
       // If you opted-in for the New Architecture, we load the native entry point for this app.
       load()
     }
+      Logger.init(this)
   }
 
 
