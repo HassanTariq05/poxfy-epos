@@ -31,6 +31,8 @@ function Tier() {
   const [tier, setTier] = useState('');
   const [refetch, setRefetch] = useState(false);
   const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
+  const [skip, setSkip] = useState(0);
+  const [limit, setLimit] = useState(10);
 
   const fetchData = async () => {
     setData([]);
@@ -58,7 +60,7 @@ function Tier() {
 
   useEffect(() => {
     fetchData();
-  }, [refetch]);
+  }, [refetch, skip, limit]);
 
   const handleHeadingAction = () => {
     setModalVisible(true);
@@ -190,7 +192,11 @@ function Tier() {
             onDelete={confirmDelete}
             showSwitch={true}
             onToggleSwitch={confirmSwitch}
-            propWidth={780}
+            count={data.length}
+            skip={skip}
+            setSkip={setSkip}
+            limit={limit}
+            setLimit={setLimit}
           />
           <CustomPopConfirm
             title="Confirm Deletion"

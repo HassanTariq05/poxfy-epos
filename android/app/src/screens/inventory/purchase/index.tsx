@@ -37,6 +37,9 @@ function Purchase() {
     setModalVisible(true);
   };
 
+  const [skip, setSkip] = useState(0);
+  const [limit, setLimit] = useState(10);
+
   return (
     <>
       <View>
@@ -62,10 +65,16 @@ function Purchase() {
           <CustomDataTable
             headers={headers}
             data={dummyPurchaseData}
+            flexes={[]}
+            alignments={[]}
             showEdit={true}
             showDelete={true}
             onDelete={() => {}}
             onEdit={() => {}}
+            skip={skip}
+            setSkip={setSkip}
+            limit={limit}
+            setLimit={setLimit}
           />
         </TableCard>
       </View>

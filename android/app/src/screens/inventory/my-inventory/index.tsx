@@ -32,6 +32,8 @@ function MyInventory() {
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [refetch, setRefetch] = useState(false);
   const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
+  const [skip, setSkip] = useState(0);
+  const [limit, setLimit] = useState(10);
 
   const getOutlet = async () => {
     try {
@@ -95,7 +97,7 @@ function MyInventory() {
 
   useEffect(() => {
     fetchData();
-  }, [selectedItem, selectedProduct, selectedOutlet, refetch]);
+  }, [selectedItem, selectedProduct, selectedOutlet, refetch, skip, limit]);
 
   const outletsWithAll = [{id: 0, value: '', label: 'All'}, ...outlets];
 
@@ -290,6 +292,11 @@ function MyInventory() {
               }
               toolTip={true}
               underlineColumn={true}
+              count={data.length}
+              skip={skip}
+              setSkip={setSkip}
+              limit={limit}
+              setLimit={setLimit}
             />
           }></TableCard>
       </View>

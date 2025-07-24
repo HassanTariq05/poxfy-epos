@@ -44,6 +44,7 @@ import {getLoyaltyBalance} from '../../../services/customer';
 import moment from 'moment';
 import NativePrintSdk from '../../../../../../specs/NativePrintSdk';
 import uuid from 'react-native-uuid';
+import {set} from 'react-hook-form';
 
 export interface Tax {
   id: string;
@@ -272,6 +273,7 @@ function ProcessSales() {
   };
 
   useEffect(() => {
+    if (debouncedSearchQuery == searchQuery) return;
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
     }, 500);
@@ -279,59 +281,59 @@ function ProcessSales() {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  useFocusEffect(
-    useCallback(() => {
-      const fetchProducts = async () => {
-        setIsLoadingTrue();
-        let url = `product?isSale=true&active=true`;
+  const fetchProducts = async (category: string, query: string) => {
+    setIsLoadingTrue();
+    let url = `product?isSale=true&active=true`;
+    if (category !== 'all') {
+      url += `&productTypeIds=${selectedCategory}`;
+    }
+    if (query.trim() !== '') {
+      url += `&name=${query}`;
+    }
+    try {
+      const getProductsResponse = await getProducts(url, headerUrl);
 
-        if (debouncedSearchQuery.trim() !== '') {
-          url += `&name=${debouncedSearchQuery}`;
-        }
-        if (selectedCategory !== 'all') {
-          url += `&productTypeIds=${selectedCategory}`;
-        }
+      setProducts(getProductsResponse.data.data.data);
 
-        try {
-          const getProductsResponse = await getProducts(url, headerUrl);
+      setIsLoadingFalse();
+    } catch (error) {
+      setIsLoadingFalse();
+    }
+  };
 
-          setProducts(getProductsResponse.data.data.data);
+  useEffect(() => {
+    fetchProducts(selectedCategory ?? '', '');
+    return () => {};
+  }, [selectedCategory]);
 
-          setIsLoadingFalse();
-        } catch (error) {
-          setIsLoadingFalse();
-        }
-      };
+  useEffect(() => {
+    fetchProducts(selectedCategory ?? 'all', debouncedSearchQuery);
+    return () => {};
+  }, [debouncedSearchQuery]);
 
-      setCart({
-        items: [],
-      });
-      fetchProducts();
-      return () => {};
-    }, [selectedCategory, debouncedSearchQuery, outletChange]),
-  );
+  const getAllProductCategories = async () => {
+    setIsLoadingTrue();
+    try {
+      const getCategoriesResponse = await getProductCategories(headerUrl);
+
+      const updatedCategories = [
+        {_id: 'all', name: 'All', image: null},
+        ...getCategoriesResponse.data.data.data,
+      ];
+      setCategories(updatedCategories);
+      setIsLoadingFalse();
+    } catch (error) {
+      setIsLoadingFalse();
+    }
+  };
 
   useEffect(() => {
     console.log('useEffect: salesFlag:', salesFlag, salesId);
-    const getAllProductCategories = async () => {
-      setIsLoadingTrue();
-      try {
-        const getCategoriesResponse = await getProductCategories(headerUrl);
-
-        const updatedCategories = [
-          {_id: 'all', name: 'All', image: null},
-          ...getCategoriesResponse.data.data.data,
-        ];
-        setCategories(updatedCategories);
-        setIsLoadingFalse();
-      } catch (error) {
-        setIsLoadingFalse();
-      }
-    };
     getAllProductCategories();
   }, [outletChange]);
 
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [summaryCollapsed, setSummaryCollapsed] = useState(true);
 
   useEffect(() => {
     const getSale = async (discountTypesDataFormatted: any, taxes1: any) => {
@@ -465,7 +467,7 @@ function ProcessSales() {
       }
     };
     getDiscountTypes();
-  }, [outletChange, salesId]);
+  }, [salesId]);
 
   const [discountTypes, setDiscountTypes] = useState([]);
   const [userFullName, setUserFullName] = useState('');
@@ -476,44 +478,49 @@ function ProcessSales() {
     });
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      const fetchCurrentRegister = async () => {
-        try {
-          setIsLoadingTrue();
-          const token = await AsyncStorage.getItem('userToken');
-          const outletsData = await AsyncStorage.getItem('outletsData');
-          const parsedOutletsData = outletsData ? JSON.parse(outletsData) : '';
-          const outletId = await AsyncStorage.getItem('selectedOutlet');
-          if (Array.isArray(parsedOutletsData)) {
-            parsedOutletsData.map(outlet => {
-              if (outlet.value == outletId) {
-                setOutletName(outlet.label);
-                setOutlet(outlet);
-              }
-            });
-          }
-
-          const response = await getCurrentRegister(outletId, headerUrl);
-
-          if (response.data?.data?.cashRegister) {
-            setRegisterName(response.data?.data?.cashRegister?.name);
-            setIsRegisterOpen(true);
-          } else {
-            setIsRegisterOpen(false);
-          }
-
-          setIsLoadingFalse();
-        } catch (err) {
-          setIsLoadingFalse();
+  useEffect(() => {
+    const fetchCurrentRegister = async () => {
+      try {
+        setIsLoadingTrue();
+        const token = await AsyncStorage.getItem('userToken');
+        const outletsData = await AsyncStorage.getItem('outletsData');
+        const parsedOutletsData = outletsData ? JSON.parse(outletsData) : '';
+        const outletId = await AsyncStorage.getItem('selectedOutlet');
+        if (Array.isArray(parsedOutletsData)) {
+          parsedOutletsData.map(outlet => {
+            if (outlet.value == outletId) {
+              setOutletName(outlet.label);
+              setOutlet(outlet);
+            }
+          });
         }
-      };
 
-      fetchCurrentRegister();
+        const response = await getCurrentRegister(outletId, headerUrl);
 
-      return () => {};
-    }, [outletChange]),
-  );
+        if (response.data?.data?.cashRegister) {
+          setRegisterName(response.data?.data?.cashRegister?.name);
+          setIsRegisterOpen(true);
+        } else {
+          setIsRegisterOpen(false);
+        }
+
+        setIsLoadingFalse();
+      } catch (err) {
+        setIsLoadingFalse();
+      }
+    };
+
+    fetchCurrentRegister();
+
+    setSelectedCategory('all');
+    setDebouncedSearchQuery('');
+    setSearchQuery('');
+    setSummaryCollapsed(true);
+
+    reset1();
+
+    return () => {};
+  }, [outletChange]);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [existingCustomersModalVisible, setExistingCustomersModalVisible] =
@@ -758,7 +765,7 @@ function ProcessSales() {
       reset();
       setIsLoadingFalse();
       ToastAndroid.show('Order Parked', ToastAndroid.LONG);
-      navigation.navigate('POS-Sales-History');
+      // navigation.navigate('POS-Sales-History');
     } catch (err: any) {
       console.error('Error posting sale order:', err.response);
       setIsLoadingFalse();
@@ -1353,17 +1360,25 @@ function ProcessSales() {
         </View>
       </View>
       <View style={styles.cartView}>
-        <Card style={styles.card}>
+        <View style={styles.card}>
           {/* <ScrollView contentContainerStyle={{flexGrow: 1}}> */}
-          <View style={styles.cardView}>
-            <View style={styles.section}>
-              <TouchableOpacity
-                onPress={() => setModalVisible(true)}
+          {/* <View style={styles.cardView}> */}
+          <View style={{}}>
+            <TouchableOpacity
+              onPress={() => setModalVisible(true)}
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignContent: 'center',
+                alignItems: 'center',
+              }}>
+              <View
                 style={{
+                  flex: 1,
                   flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignContent: 'center',
                   alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  padding: 8,
                 }}>
                 <Icon
                   name="account-cog-outline"
@@ -1377,211 +1392,141 @@ function ProcessSales() {
                     ? '(' + selectedCustomerData.Phone + ')'
                     : ''}
                 </Text>
-              </TouchableOpacity>
-            </View>
-
-            <ProcessCustomerModal
-              visible={modalVisible}
-              onClose={() => setModalVisible(false)}
-              onSelectExistingCustomer={handleOnSelectExistingCustomer}
-              onSelectAddCustomer={handleOnSelectAddCustomer}
-              setSelectedCustomerData={setSelectedCustomerData}
-            />
-
-            <AddExistingCustomerModal
-              visible={existingCustomersModalVisible}
-              onClose={() => setExistingCustomersModalVisible(false)}
-              onSelectCustomer={handleOnSelectingAddCustomer}
-            />
-
-            <ProductVariantModal
-              visible={variantModalVisible}
-              onClose={() => setVariantModalVisible(false)}
-              selectedProduct={selectedProduct}
-              onConfirm={handleVariantProductSelection}
-            />
-
-            <ProductSerialModal
-              visible={serialModalVisible}
-              onClose={() => setSerialModalVisible(false)}
-              selectedProduct={selectedProduct}
-              onConfirm={handleSerialProductSelection}
-            />
-
-            <AddCustomerModal
-              visible={addCustomerModalVisible}
-              gender={[]}
-              setRefetch={{}}
-              onClose={() => setAddCustomerModalVisible(false)}
-            />
-
-            <ProductDetailModal
-              visible={productDetailModalVisible}
-              onClose={() => setProductDetailModalVisible(false)}
-              taxes={taxes}
-              selectedProduct={selectedCartProduct}
-              selectedLineItem={selectedLineItem}
-              onConfirm={handleOnConfirmProductDetails}
-            />
-
-            <ErrorModal
-              error={'Error: Please Open Register'}
-              errorModalVisible={errorModalVisible}
-              setErrorModalVisible={setErrorModalVisible}
-            />
-
-            <DiscountModal
-              visible={discountModalVisible}
-              onClose={() => setDiscountModalVisible(false)}
-              onConfirm={handleOnConfirmDiscount}
-              discountTypes={discountTypes}
-            />
-
-            <PaymentModal
-              visible={paymentModalVisibile}
-              onClose={() => setPaymentModalVisible(false)}
-              onSubmit={(
-                updatedReceivedCash: any,
-                updatedReceivedCredit: any,
-                updatedReceivedLoyalty: any,
-              ) => {
-                if (salesFlag) {
-                  handleRefundSale(
-                    updatedReceivedCash,
-                    updatedReceivedCredit,
-                    updatedReceivedLoyalty,
-                  );
-                } else {
-                  handlePaymentSubmit(
-                    updatedReceivedCash,
-                    updatedReceivedCredit,
-                    updatedReceivedLoyalty,
-                  );
-                }
-              }}
-              onLoyalitySubmit={handleLoyalityPaymentSubmit}
-              subTotal={subtotal}
-              discount={discountTotal}
-              tax={taxTotal}
-              grandTotal={cartTotal}
-              cashReceived={cashReceived}
-              setCashReceived={setCashReceived}
-              loyality={loyality}
-              loyalityBalance={loyalityBalance}
-              customer={selectedCustomerData}
-            />
-
-            <View style={styles.divider} />
-
-            <View style={styles.productsView}>
-              <ScrollView contentContainerStyle={{flexGrow: 1}}>
-                {cart.items.map((item: LineItem, index: any) => {
-                  const selectedAttributes = Object.values(
-                    item.product.attributes || {},
-                  ).map(String);
-
-                  const matchedVariant = item.product.variants?.find(
-                    (variant: any) => {
-                      return (
-                        Array.isArray(variant.combination) &&
-                        variant.combination.length ===
-                          Object.keys(selectedAttributes).length &&
-                        Object.values(selectedAttributes).every(attr =>
-                          variant.combination.includes(attr),
-                        )
-                      );
-                    },
-                  );
-                  return (
-                    <TouchableOpacity
-                      key={index}
-                      onPress={() => {
-                        setSelectedCartProduct(item.product);
-                        setSelectedLineItem(item);
-                        setProductDetailModalVisible(true);
-                      }}>
-                      <View style={styles.product} key={index}>
-                        <View style={styles.productImageContainer}>
-                          <View style={styles.quantityBadge}>
-                            <Text style={styles.quantityText}>
-                              {item.quantity}
-                            </Text>
-                          </View>
-                          <Image
-                            source={
-                              item.product?.images?.length ?? 0 > 0
-                                ? {
-                                    uri: '' + item.product?.images[0],
-                                  }
-                                : require('../../../assets/images/no-image.png')
-                            }
-                            style={styles.productImage}
-                          />
-                        </View>
-
-                        <View style={styles.productDetails}>
-                          <Text style={styles.productName}>
-                            {item.product.name}
-                          </Text>
-                          {item.selectedVariant.combination.length > 0 && (
-                            <Text style={styles.productName}>
-                              {item.selectedVariant.combination.join(' / ')}
-                            </Text>
-                          )}
-                        </View>
-
-                        <View style={styles.productActionView}>
-                          <TouchableOpacity>
-                            <Text style={styles.productPrice}>
-                              {(
-                                item.selectedVariant.retailPrice * item.quantity
-                              ).toFixed(2)}
-                            </Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() =>
-                              handleRemoveProduct(
-                                item.product._id,
-                                item.product.attributes,
-                              )
-                            }
-                            style={styles.removeButton}>
-                            <FeatherIcon
-                              name="x-circle"
-                              size={26}
-                              color={'#A3A3A3'}
-                            />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </View>
-
-            {!isRegisterOpen && (
-              <TouchableOpacity
-                onPress={handleOpenRegister}
-                style={styles.openRegisterButton}>
-                <Text style={styles.openRegisterText}>Open Register</Text>
-              </TouchableOpacity>
-            )}
-
-            <View
-              pointerEvents={!isRegisterOpen ? 'none' : 'auto'} // Disables all child elements
-              style={{opacity: isRegisterOpen ? 1 : 0.7}}>
-              {' '}
-              {/* Notes Section */}
-              <View style={[styles.section, {paddingTop: 10}]}>
-                <Icon
-                  name={'calendar-text-outline'}
-                  size={26}
-                  color={'rgb(103, 223, 135)'}
-                  style={{fontWeight: '500'}}
-                />
-                <Text style={styles.sectionTitle}>Notes</Text>
               </View>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.productsView}>
+            <ScrollView contentContainerStyle={{flexGrow: 1}}>
+              {cart.items.map((item: LineItem, index: any) => {
+                const selectedAttributes = Object.values(
+                  item.product.attributes || {},
+                ).map(String);
+
+                const matchedVariant = item.product.variants?.find(
+                  (variant: any) => {
+                    return (
+                      Array.isArray(variant.combination) &&
+                      variant.combination.length ===
+                        Object.keys(selectedAttributes).length &&
+                      Object.values(selectedAttributes).every(attr =>
+                        variant.combination.includes(attr),
+                      )
+                    );
+                  },
+                );
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => {
+                      setSelectedCartProduct(item.product);
+                      setSelectedLineItem(item);
+                      setProductDetailModalVisible(true);
+                    }}>
+                    <View style={styles.product} key={index}>
+                      <View style={styles.productImageContainer}>
+                        <View style={styles.quantityBadge}>
+                          <Text style={styles.quantityText}>
+                            {item.quantity}
+                          </Text>
+                        </View>
+                        <Image
+                          source={
+                            item.product?.images?.length ?? 0 > 0
+                              ? {
+                                  uri: '' + item.product?.images[0],
+                                }
+                              : require('../../../assets/images/no-image.png')
+                          }
+                          style={styles.productImage}
+                        />
+                      </View>
+
+                      <View style={styles.productDetails}>
+                        <Text style={styles.productName}>
+                          {item.product.name}
+                        </Text>
+                        {item.selectedVariant.combination.length > 0 && (
+                          <Text style={styles.productName}>
+                            {item.selectedVariant.combination.join(' / ')}
+                          </Text>
+                        )}
+                      </View>
+
+                      <View style={styles.productActionView}>
+                        <TouchableOpacity>
+                          <Text style={styles.productPrice}>
+                            {(
+                              item.selectedVariant.retailPrice * item.quantity
+                            ).toFixed(2)}
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() =>
+                            handleRemoveProduct(
+                              item.product._id,
+                              item.product.attributes,
+                            )
+                          }
+                          style={styles.removeButton}>
+                          <FeatherIcon
+                            name="x-circle"
+                            size={26}
+                            color={'#A3A3A3'}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {!isRegisterOpen && (
+            <TouchableOpacity
+              onPress={handleOpenRegister}
+              style={styles.openRegisterButton}>
+              <Text style={styles.openRegisterText}>Open Register</Text>
+            </TouchableOpacity>
+          )}
+
+          <View
+            pointerEvents={!isRegisterOpen ? 'none' : 'auto'} // Disables all child elements
+            style={{opacity: isRegisterOpen ? 1 : 0.7}}>
+            {' '}
+            {/* Notes Section */}
+            <View
+              style={{height: summaryCollapsed ? 48 : 260, overflow: 'hidden'}}>
+              <TouchableOpacity
+                onPress={() => setSummaryCollapsed(!summaryCollapsed)}>
+                <View
+                  style={[
+                    styles.section,
+                    {
+                      paddingTop: 10,
+                      justifyContent: 'space-between',
+                    },
+                  ]}>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <Icon
+                      name={'calendar-text-outline'}
+                      size={26}
+                      color={'rgb(103, 223, 135)'}
+                      style={{fontWeight: '500'}}
+                    />
+                    <Text style={styles.sectionTitle}>Notes</Text>
+                  </View>
+                  <Icon
+                    name={summaryCollapsed ? 'chevron-up' : 'chevron-down'}
+                    size={26}
+                    color={'rgba(116, 116, 116, 1)'}
+                    style={{fontWeight: '500'}}
+                  />
+                </View>
+              </TouchableOpacity>
               <TextInput
                 editable={isRegisterOpen}
                 style={[styles.input, !isRegisterOpen && {opacity: 0.7}]}
@@ -1623,36 +1568,32 @@ function ProcessSales() {
                   <Text style={styles.summaryLabel}>Tax</Text>
                   <Text style={styles.summaryValue}>{taxTotal.toFixed(2)}</Text>
                 </View>
-
-                <View style={styles.paymentSummary}>
-                  <Text style={styles.summaryLabel}>Grand Total</Text>
-                  <Text style={styles.summaryValue}>
-                    {cartTotal.toFixed(2)}
-                  </Text>
-                </View>
-              </View>
-              {/* Payment Buttons */}
-              <View style={styles.paymentButtonsView}>
-                <TouchableOpacity
-                  onPress={reset}
-                  style={[
-                    styles.paymentButton,
-                    !isRegisterOpen && {opacity: 0.7},
-                  ]}>
-                  <Text style={styles.paymentText}>DISCARD</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleParkSale}
-                  disabled={!isRegisterOpen || cart.items.length === 0}
-                  style={[
-                    styles.paymentButton,
-                    !isRegisterOpen && {opacity: 0.7},
-                  ]}>
-                  <Text style={styles.paymentText}>PARK</Text>
-                </TouchableOpacity>
               </View>
             </View>
-
+            <View style={styles.paymentSummary}>
+              <Text style={styles.summaryLabel}>Grand Total</Text>
+              <Text style={styles.summaryValue}>{cartTotal.toFixed(2)}</Text>
+            </View>
+            {/* Payment Buttons */}
+            <View style={styles.paymentButtonsView}>
+              <TouchableOpacity
+                onPress={reset}
+                style={[
+                  styles.paymentButton,
+                  !isRegisterOpen && {opacity: 0.7},
+                ]}>
+                <Text style={styles.paymentText}>DISCARD</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleParkSale}
+                disabled={!isRegisterOpen || cart.items.length === 0}
+                style={[
+                  styles.paymentButton,
+                  !isRegisterOpen && {opacity: 0.7},
+                ]}>
+                <Text style={styles.paymentText}>PARK</Text>
+              </TouchableOpacity>
+            </View>
             {isRegisterOpen && (
               <TouchableOpacity
                 disabled={cart.items.length === 0}
@@ -1668,8 +1609,100 @@ function ProcessSales() {
               </TouchableOpacity>
             )}
           </View>
+          {/* </View> */}
           {/* </ScrollView> */}
-        </Card>
+        </View>
+
+        <ProcessCustomerModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onSelectExistingCustomer={handleOnSelectExistingCustomer}
+          onSelectAddCustomer={handleOnSelectAddCustomer}
+          setSelectedCustomerData={setSelectedCustomerData}
+        />
+
+        <AddExistingCustomerModal
+          visible={existingCustomersModalVisible}
+          onClose={() => setExistingCustomersModalVisible(false)}
+          onSelectCustomer={handleOnSelectingAddCustomer}
+        />
+
+        <ProductVariantModal
+          visible={variantModalVisible}
+          onClose={() => setVariantModalVisible(false)}
+          selectedProduct={selectedProduct}
+          onConfirm={handleVariantProductSelection}
+        />
+
+        <ProductSerialModal
+          visible={serialModalVisible}
+          onClose={() => setSerialModalVisible(false)}
+          selectedProduct={selectedProduct}
+          onConfirm={handleSerialProductSelection}
+        />
+
+        <AddCustomerModal
+          visible={addCustomerModalVisible}
+          gender={[]}
+          setRefetch={{}}
+          onClose={() => setAddCustomerModalVisible(false)}
+        />
+
+        <ProductDetailModal
+          visible={productDetailModalVisible}
+          onClose={() => setProductDetailModalVisible(false)}
+          taxes={taxes}
+          selectedProduct={selectedCartProduct}
+          selectedLineItem={selectedLineItem}
+          onConfirm={handleOnConfirmProductDetails}
+        />
+
+        <ErrorModal
+          error={'Error: Please Open Register'}
+          errorModalVisible={errorModalVisible}
+          setErrorModalVisible={setErrorModalVisible}
+        />
+
+        <DiscountModal
+          visible={discountModalVisible}
+          onClose={() => setDiscountModalVisible(false)}
+          onConfirm={handleOnConfirmDiscount}
+          discountTypes={discountTypes}
+        />
+
+        <PaymentModal
+          visible={paymentModalVisibile}
+          onClose={() => setPaymentModalVisible(false)}
+          onSubmit={(
+            updatedReceivedCash: any,
+            updatedReceivedCredit: any,
+            updatedReceivedLoyalty: any,
+          ) => {
+            if (salesFlag) {
+              handleRefundSale(
+                updatedReceivedCash,
+                updatedReceivedCredit,
+                updatedReceivedLoyalty,
+              );
+            } else {
+              handlePaymentSubmit(
+                updatedReceivedCash,
+                updatedReceivedCredit,
+                updatedReceivedLoyalty,
+              );
+            }
+          }}
+          onLoyalitySubmit={handleLoyalityPaymentSubmit}
+          subTotal={subtotal}
+          discount={discountTotal}
+          tax={taxTotal}
+          grandTotal={cartTotal}
+          cashReceived={cashReceived}
+          setCashReceived={setCashReceived}
+          loyality={loyality}
+          loyalityBalance={loyalityBalance}
+          customer={selectedCustomerData}
+        />
       </View>
     </View>
   );
@@ -1682,6 +1715,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 8,
     paddingBottom: 8,
+    flex: 1,
   },
   productView: {
     width: '65%',
@@ -1725,6 +1759,7 @@ const styles = StyleSheet.create({
     width: '80%',
   },
   searchText: {
+    flex: 1,
     fontSize: 14,
     marginLeft: 5,
     color: '#000',
@@ -1807,14 +1842,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   card: {
-    backgroundColor: '#fff',
+    flex: 1,
     borderRadius: 12,
     elevation: 0,
     shadowColor: 'transparent',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    backgroundColor: 'white',
   },
   cardView: {
+    flex: 1,
     paddingVertical: 16,
     paddingHorizontal: 20,
+    backgroundColor: 'yellow',
   },
   section: {
     flexDirection: 'row',
@@ -1830,7 +1870,6 @@ const styles = StyleSheet.create({
   divider: {
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
-    marginVertical: 8,
   },
   openRegisterButton: {
     backgroundColor: 'rgb(236, 105, 100)',
@@ -1846,6 +1885,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 10,
     paddingHorizontal: 10,
+    height: 36,
   },
   openRegisterText: {
     color: '#fff',
@@ -1903,9 +1943,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 8,
     paddingHorizontal: 18,
+    height: 50,
   },
   productsView: {
-    height: 160,
+    flex: 1,
     width: '100%',
   },
   product: {
@@ -1916,6 +1957,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderBottomColor: '#E5E7EB',
     borderBottomWidth: 1,
+    height: 80,
   },
   productActionView: {
     flexDirection: 'row',

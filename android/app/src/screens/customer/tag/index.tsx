@@ -31,6 +31,8 @@ function Tag() {
   const [tag, setTag] = useState('');
   const [refetch, setRefetch] = useState(false);
   const {setIsLoadingTrue, setIsLoadingFalse, headerUrl} = useAuthStore();
+  const [skip, setSkip] = useState(0);
+  const [limit, setLimit] = useState(10);
 
   const fetchData = async () => {
     setData([]);
@@ -58,7 +60,7 @@ function Tag() {
 
   useEffect(() => {
     fetchData();
-  }, [refetch]);
+  }, [refetch, skip, limit]);
 
   const handleHeadingAction = () => {
     setModalVisible(true);
@@ -193,7 +195,11 @@ function Tag() {
             onDelete={confirmDelete}
             showSwitch={true}
             onToggleSwitch={confirmSwitch}
-            propWidth={780}
+            count={data.length}
+            skip={skip}
+            setSkip={setSkip}
+            limit={limit}
+            setLimit={setLimit}
           />
           <CustomPopConfirm
             title="Confirm Deletion"

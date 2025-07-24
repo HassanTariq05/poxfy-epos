@@ -260,7 +260,10 @@ public class PrintSdkModule extends NativePrintSdkSpec {
 
                 Log.i("Data", invoice.optJSONObject(j).toString());
 
-                String text = invoice.optJSONObject(j).getString("text");
+                String text = "--";
+                if(invoice.optJSONObject(j).has("text")) {
+                    text = invoice.optJSONObject(j).getString("text");
+                }
                 boolean nextLine = invoice.optJSONObject(j).getBoolean("next_line");
 
                 IPage.EAlign align;

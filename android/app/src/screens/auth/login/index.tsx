@@ -31,23 +31,7 @@ const LoginScreen = ({onLogin}: any) => {
     control,
     handleSubmit,
     formState: {errors},
-  } = useForm({
-    // defaultValues: {
-    //   email: 'osama.zakaria@encopedia.com',
-    //   password: 'Osama@2025',
-    //   accountId: 'osama',
-    // },
-    // defaultValues: {
-    //   email: 'ameer@yopmail.com',
-    //   password: '!@QWerty321',
-    //   accountId: 'newserver',
-    // },
-    // defaultValues: {
-    //   email: '',
-    //   password: '',
-    //   accountId: '',
-    // },
-  });
+  } = useForm({});
 
   const {setIsLoadingTrue, setIsLoadingFalse, setHeaderUrl} = useAuthStore();
 

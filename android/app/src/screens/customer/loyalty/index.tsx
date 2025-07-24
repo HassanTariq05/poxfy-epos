@@ -74,6 +74,8 @@ const LoyaltyModal: React.FC<LoyaltyModalProps> = ({
     balance: 0,
     totalPointsUsed: 0,
   });
+  const [skip, setSkip] = useState(0);
+  const [limit, setLimit] = useState(10);
 
   const slideAnim = useRef(new Animated.Value(500)).current;
 
@@ -250,6 +252,10 @@ const LoyaltyModal: React.FC<LoyaltyModalProps> = ({
                     ]}
                     headers={headers}
                     data={data}
+                    skip={skip}
+                    setSkip={setSkip}
+                    limit={limit}
+                    setLimit={setLimit}
                   />
                 </TableCard>
               </View>

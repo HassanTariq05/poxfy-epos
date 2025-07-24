@@ -52,6 +52,8 @@ function Customer() {
   const [loyaltyModalVisible, setLoyaltyModalVisible] =
     useState<boolean>(false);
   const [customerDetails, setCustomerDetails] = useState('');
+  const [skip, setSkip] = useState(0);
+  const [limit, setLimit] = useState(10);
 
   const fetchData = async () => {
     setData([]);
@@ -82,7 +84,7 @@ function Customer() {
 
   useEffect(() => {
     fetchData();
-  }, [refetch]);
+  }, [refetch, skip, limit]);
 
   const handleHeadingAction = () => {
     setModalVisible(true);
@@ -231,6 +233,11 @@ function Customer() {
                 '' + row.Name + ' - ' + row.Phone + ' - ' + row.Email,
               );
             }}
+            count={data.length}
+            skip={skip}
+            setSkip={setSkip}
+            limit={limit}
+            setLimit={setLimit}
           />
           <CustomPopConfirm
             title="Confirm Deletion"

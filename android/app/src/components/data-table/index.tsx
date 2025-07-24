@@ -8,7 +8,7 @@ import {
   View,
   Modal,
 } from 'react-native';
-import {DataTable, Title} from 'react-native-paper';
+import {DataTable, Provider, Title} from 'react-native-paper';
 import Feather from 'react-native-vector-icons/Feather';
 import {Switch} from 'react-native-switch';
 import Tooltip from 'react-native-walkthrough-tooltip';
@@ -27,6 +27,7 @@ interface CustomDataTableProps {
   searchQuery?: string;
   showSwitch?: boolean;
   showOpenRegister?: boolean;
+  showPrint?: boolean;
   showEdit?: boolean;
   showDelete?: boolean;
   showRefund?: boolean;
@@ -36,6 +37,7 @@ interface CustomDataTableProps {
   onOpenRegister?: (row: DataFormat) => void;
   onEdit?: (row: any) => void;
   onRefund?: (row: any) => void;
+  onPrint?: (row: any, index: number) => void;
   onDelete?: (row: DataFormat) => void;
   onInputChange?: (row: DataFormat, key: string, value: any) => void;
   onInputChangeForSet?: (row: DataFormat, key: string, value: string) => void;
@@ -47,6 +49,8 @@ interface CustomDataTableProps {
   count?: number;
   skip?: any;
   setSkip?: any;
+  limit?: any;
+  setLimit?: any;
   showLoyalty?: boolean;
   onLoyalty?: (row: any) => void;
 }
@@ -59,8 +63,10 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
   searchQuery = '',
   onToggleSwitch,
   onOpenRegister,
+  showPrint,
   onEdit,
   onRefund,
+  onPrint,
   onDelete,
   onInputChange,
   onInputChangeForSet,
@@ -79,10 +85,12 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
   count,
   skip,
   setSkip,
+  limit,
+  setLimit,
   showLoyalty = false,
   onLoyalty,
 }) => {
-  const rowsPerPage = 15;
+  // const rowsPerPage = 15;
   const [page, setPage] = useState(0);
   const [switchStates, setSwitchStates] = useState<Record<number, boolean>>({});
   const [inputValues, setInputValues] = useState<
@@ -124,9 +132,13 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
     ),
   );
 
+  const numberOfItemsPerPageList = [10, 20, 50, 100];
+  const [numberOfItemsPerPage, onItemsPerPageChange] = React.useState(
+    numberOfItemsPerPageList[0],
+  );
   const currentRows = filteredData.slice(
-    page * rowsPerPage,
-    (page + 1) * rowsPerPage,
+    page * numberOfItemsPerPage,
+    (page + 1) * numberOfItemsPerPage,
   );
 
   const toggleSwitch = (index: number, row: DataFormat) => {
@@ -362,32 +374,44 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
     setSkip(newPage);
   };
 
+  const columnWidth = 70;
+
   return (
     <>
       <View style={(styles.dataTableView, {flex: 1})}>
-        <ScrollView horizontal persistentScrollbar={true}>
+        <ScrollView
+          horizontal
+          persistentScrollbar={true}
+          contentContainerStyle={{
+            flexGrow: 1,
+          }}>
           <ScrollView
             horizontal={false}
             persistentScrollbar={true}
-            contentContainerStyle={{flexGrow: 1}}>
+            contentContainerStyle={{
+              flexGrow: 1,
+            }}>
             <DataTable
-              style={[styles.dataTable, propWidth ? {width: propWidth} : {}]}>
+              // style={[styles.dataTable, propWidth ? {width: propWidth} : {}]}>
+              style={[styles.dataTable]}>
               <DataTable.Header style={styles.header}>
                 {(showSwitch ||
                   showOpenRegister ||
                   showEdit ||
                   showDelete ||
-                  showRefund) && (
+                  showRefund ||
+                  showPrint) && (
                   <DataTable.Title
                     textStyle={styles.headerActionText}
-                    style={{flex: 2}}>
+                    style={{width: 2 * columnWidth}}>
                     <Text style={styles.headerActionTextInside}>Action</Text>
                   </DataTable.Title>
                 )}
                 {headers.map((header, index) => (
                   <DataTable.Title
                     style={{
-                      flex: flexes[index],
+                      // flex: flexes[index],
+                      width: flexes[index] * columnWidth,
                     }}
                     textStyle={{
                       color: 'black',
@@ -405,79 +429,90 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                     showOpenRegister ||
                     showEdit ||
                     showDelete ||
-                    showRefund) && (
+                    showRefund ||
+                    showPrint) && (
                     <DataTable.Cell
                       style={{
-                        flex: 2,
+                        // flex: 2,
+                        width: 2 * columnWidth,
                         justifyContent: 'center',
                       }}>
-                      {showSwitch && (
-                        <View style={{paddingLeft: 5, paddingRight: 5}}>
-                          <Switch
-                            value={switchStates[rowIndex]}
-                            onValueChange={() => toggleSwitch(rowIndex, row)}
-                            disabled={false}
-                            activeText=""
-                            inActiveText=""
-                            circleSize={22}
-                            barHeight={24}
-                            circleBorderWidth={1}
-                            backgroundActive={'#eb6b6b'}
-                            backgroundInactive={'#e0e0e0'}
-                            circleActiveColor={'#fff'}
-                            circleInActiveColor={'#fff'}
-                            changeValueImmediately={true}
-                            innerCircleStyle={{
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                            switchLeftPx={10}
-                            switchRightPx={10}
-                            switchWidthMultiplier={1.6}
-                          />
-                        </View>
-                      )}
+                      <View style={{flexDirection: 'row', gap: 12}}>
+                        {showSwitch && (
+                          <View style={{paddingLeft: 5, paddingRight: 5}}>
+                            <Switch
+                              value={switchStates[rowIndex]}
+                              onValueChange={() => toggleSwitch(rowIndex, row)}
+                              disabled={false}
+                              activeText=""
+                              inActiveText=""
+                              circleSize={22}
+                              barHeight={24}
+                              circleBorderWidth={1}
+                              backgroundActive={'#eb6b6b'}
+                              backgroundInactive={'#e0e0e0'}
+                              circleActiveColor={'#fff'}
+                              circleInActiveColor={'#fff'}
+                              changeValueImmediately={true}
+                              innerCircleStyle={{
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                              switchLeftPx={10}
+                              switchRightPx={10}
+                              switchWidthMultiplier={1.6}
+                            />
+                          </View>
+                        )}
 
-                      {showOpenRegister && onOpenRegister && (
-                        <TouchableOpacity
-                          onPress={() => onOpenRegister(row)}
-                          style={styles.actionButton}>
-                          <Text style={styles.buttonText}>Open Register</Text>
-                        </TouchableOpacity>
-                      )}
-
-                      {(showEdit || row['Payment Status'] == 'PARKED') &&
-                        onEdit && (
+                        {showOpenRegister && onOpenRegister && (
                           <TouchableOpacity
-                            onPress={() => onEdit(row)}
-                            style={styles.editButton}>
-                            <Feather name="edit-3" size={22} color="black" />
+                            onPress={() => onOpenRegister(row)}
+                            style={styles.actionButton}>
+                            <Text style={styles.buttonText}>Open Register</Text>
                           </TouchableOpacity>
                         )}
 
-                      {showRefund &&
-                        row['Sale Type'] != 'REFUND' &&
-                        onRefund && (
-                          <TouchableOpacity onPress={() => onRefund(row)}>
-                            <Feather name="repeat" size={22} color="black" />
+                        {(showEdit || row['Payment Status'] == 'PARKED') &&
+                          onEdit && (
+                            <TouchableOpacity
+                              onPress={() => onEdit(row)}
+                              style={styles.editButton}>
+                              <Feather name="edit-3" size={22} color="black" />
+                            </TouchableOpacity>
+                          )}
+
+                        {showRefund &&
+                          row['Sale Type'] != 'REFUND' &&
+                          onRefund && (
+                            <TouchableOpacity onPress={() => onRefund(row)}>
+                              <Feather name="repeat" size={22} color="black" />
+                            </TouchableOpacity>
+                          )}
+
+                        {showPrint && onPrint && (
+                          <TouchableOpacity
+                            onPress={() => onPrint(row, rowIndex)}>
+                            <Feather name="printer" size={22} color="black" />
                           </TouchableOpacity>
                         )}
 
-                      {showDelete && onDelete && (
-                        <TouchableOpacity
-                          onPress={() => onDelete(row)}
-                          style={styles.crossButton}>
-                          <Feather name="x" size={22} color="black" />
-                        </TouchableOpacity>
-                      )}
+                        {showDelete && onDelete && (
+                          <TouchableOpacity
+                            onPress={() => onDelete(row)}
+                            style={styles.crossButton}>
+                            <Feather name="x" size={22} color="black" />
+                          </TouchableOpacity>
+                        )}
 
-                      {showLoyalty && onLoyalty && (
-                        <TouchableOpacity
-                          onPress={() => onLoyalty(row)}
-                          style={styles.crossButton}>
-                          <Feather name="target" size={22} color="black" />
-                        </TouchableOpacity>
-                      )}
+                        {showLoyalty && onLoyalty && (
+                          <TouchableOpacity
+                            onPress={() => onLoyalty(row)}
+                            style={styles.crossButton}>
+                            <Feather name="target" size={22} color="black" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     </DataTable.Cell>
                   )}
 
@@ -495,7 +530,7 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
                         style={[
                           cellStyle,
                           {
-                            flex: flexes[cellIndex],
+                            width: flexes[cellIndex] * columnWidth,
                             justifyContent: alignments[cellIndex],
                             alignItems: 'center',
                           },
@@ -796,10 +831,12 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
         {!count && (
           <DataTable.Pagination
             page={page}
-            numberOfPages={Math.ceil(filteredData.length / rowsPerPage)}
+            numberOfPages={Math.ceil(
+              filteredData.length / numberOfItemsPerPage,
+            )}
             onPageChange={setPage}
-            label={`${page * rowsPerPage + 1} - ${Math.min(
-              (page + 1) * rowsPerPage,
+            label={`${page * numberOfItemsPerPage + 1} - ${Math.min(
+              (page + 1) * numberOfItemsPerPage,
               filteredData.length,
             )} of ${filteredData.length}`}
           />
@@ -808,12 +845,19 @@ const CustomDataTable: React.FC<CustomDataTableProps> = ({
         {count && (
           <DataTable.Pagination
             page={skip}
-            numberOfPages={Math.ceil(count / rowsPerPage)}
+            numberOfPages={Math.ceil(count / numberOfItemsPerPage)}
             onPageChange={handlePageChange}
-            label={`${skip * rowsPerPage + 1} - ${Math.min(
-              (skip + 1) * rowsPerPage,
+            label={`${skip * numberOfItemsPerPage + 1} - ${Math.min(
+              (skip + 1) * numberOfItemsPerPage,
               count,
             )} of ${count}`}
+            numberOfItemsPerPageList={numberOfItemsPerPageList}
+            numberOfItemsPerPage={numberOfItemsPerPage}
+            onItemsPerPageChange={value => {
+              onItemsPerPageChange(value);
+              setSkip(0);
+              setLimit(value);
+            }}
           />
         )}
       </View>
@@ -827,7 +871,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {width: '100%'},
   dataTable: {
-    width: 1000,
+    flex: 1,
     backgroundColor: 'white',
     minWidth: '100%',
     height: 'auto',

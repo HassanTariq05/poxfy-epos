@@ -17,6 +17,8 @@ function OpeningBalance() {
     setSelectedRow(row);
     setModalVisible(true);
   };
+  const [skip, setSkip] = useState(0);
+  const [limit, setLimit] = useState(10);
 
   return (
     <>
@@ -46,10 +48,16 @@ function OpeningBalance() {
           <CustomDataTable
             headers={headers}
             data={dummyOpeningData}
+            flexes={[]}
+            alignments={[]}
             editableFields={['opening']}
             onInputChange={(row, key, value) =>
               console.log('Updated:', row, key, value)
             }
+            skip={skip}
+            setSkip={setSkip}
+            limit={limit}
+            setLimit={setLimit}
           />
         </TableCard>
       </View>

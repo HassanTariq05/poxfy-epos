@@ -28,6 +28,8 @@ function InventoryTransfer() {
   } | null>(null);
 
   const [inventory, setinventory] = useState<string>('');
+  const [skip, setSkip] = useState(0);
+  const [limit, setLimit] = useState(10);
 
   const handleAction = (row: {[key: string]: string | number}) => {
     setSelectedRow(row);
@@ -59,10 +61,16 @@ function InventoryTransfer() {
           <CustomDataTable
             headers={headers}
             data={dummyTransferData}
+            flexes={[]}
+            alignments={[]}
             showEdit={true}
             showDelete={true}
             onDelete={() => {}}
             onEdit={() => {}}
+            skip={skip}
+            setSkip={setSkip}
+            limit={limit}
+            setLimit={setLimit}
           />
         </TableCard>
       </View>

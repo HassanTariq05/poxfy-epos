@@ -25,7 +25,7 @@ const InfoCardDashboard = ({
 
           {/* Yesterday */}
           <View style={styles.dataItemSecond}>
-            <Text style={[styles.dataLabel, {marginTop: 4}]}>
+            <Text style={[styles.dataLabel, {marginTop: 8}]}>
               {yesterdayLabel}
             </Text>
             <Text style={styles.dataValue}>{yesterdayValue}</Text>
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     display: 'flex',
   },
   bottomSection: {
-    marginTop: 46,
+    marginTop: 36,
     alignItems: 'center',
   },
   svgBottom: {

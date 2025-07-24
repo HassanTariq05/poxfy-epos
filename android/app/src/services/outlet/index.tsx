@@ -32,8 +32,25 @@ export const getAllOutletApi = async (headerUrl: string) => {
     return JSON.parse(dataString);
   }
 };
-export const getOutletByIdApi = async id => {
-  return Api.get(`outlet/${id}`);
+export const getOutletByIdApi = async (id: string, headerUrl: string) => {
+  const isOnline = await isDeviceOnline();
+  if (isOnline) {
+    const token = await AsyncStorage.getItem('userToken');
+
+    const data = await Api.get(`outlet/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        origin: headerUrl,
+        referer: headerUrl,
+      },
+    });
+    const dataString = await JSON.stringify(data);
+    await AsyncStorage.setItem('outlet_' + id, dataString);
+    return data;
+  } else {
+    const dataString = (await AsyncStorage.getItem('outlet_' + id)) ?? '{}';
+    return JSON.parse(dataString);
+  }
 };
 export const deleteOutletApi = async id => {
   return Api.delete(`outlet/${id}`);

@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import WelcomeBanner from '../../components/welcome-banner';
 import InfoCardDashboard from '../../components/info-card-dashboard';
 import {Svg, Path} from 'react-native-svg';
@@ -26,6 +26,7 @@ import {
 } from '../../services/dashboard';
 import {NativeModules} from 'react-native';
 import PieChartCard from '../../components/pie-chart-card-dashboard';
+import {useFocusEffect} from '@react-navigation/native';
 const {PrintSdk} = NativeModules;
 
 export default function Dashboard() {
@@ -153,9 +154,11 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [outletChange]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [outletChange]),
+  );
 
   return (
     <>
@@ -552,9 +555,9 @@ export default function Dashboard() {
                 {
                   period: 'Repeat Customers',
                   value:
-                    customerData.customerRatio.repeatedCustomerRatio?.toFixed(
+                    (customerData.customerRatio.repeatedCustomerRatio?.toFixed(
                       0,
-                    ) ?? '0' + '%',
+                    ) ?? '0') + '%',
                 },
               ]}
               backgroundColor="rgb(253, 243, 242)"

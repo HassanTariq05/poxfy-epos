@@ -24,7 +24,11 @@ import Feather from 'react-native-vector-icons/Feather';
 import {
   getCashRegisters,
   getCurrentRegister,
+  getSaleDetials,
 } from '../../../services/process-sales';
+import NativePrintSdk from '../../../../../../specs/NativePrintSdk';
+import {getOutletByIdApi} from '../../../services/outlet';
+import moment from 'moment';
 
 function Listing() {
   const headers = [
@@ -40,6 +44,8 @@ function Listing() {
   const [modalVisible, setModalVisible] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [selectedRow, setSelectedRow] = useState<string | null>(null);
+  const [skip, setSkip] = useState(0);
+  const [limit, setLimit] = useState(10);
 
   const navigation = useNavigation<DrawerNavigationProp<any>>();
 
@@ -79,7 +85,7 @@ function Listing() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [skip, limit]);
 
   useFocusEffect(
     useCallback(() => {
@@ -175,7 +181,7 @@ function Listing() {
             </View>
 
             <CustomDataTable
-              flexes={[1, 1, 1, 1, 2, 1]}
+              flexes={[2, 2, 2, 2, 2, 1]}
               alignments={[
                 'flex-start',
                 'center',
@@ -189,6 +195,11 @@ function Listing() {
               searchQuery={register}
               showOpenRegister={true}
               onOpenRegister={handleOpenRegisterClick}
+              count={data.length}
+              skip={skip}
+              setSkip={setSkip}
+              limit={limit}
+              setLimit={setLimit}
             />
           </View>
         }></TableCard>

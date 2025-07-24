@@ -346,7 +346,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                     }}>
                     <PhoneInput
                       ref={phoneInput}
-                      defaultCode="DM"
+                      defaultCode="EG"
                       layout="first"
                       autoFocus
                       placeholder="Phone"

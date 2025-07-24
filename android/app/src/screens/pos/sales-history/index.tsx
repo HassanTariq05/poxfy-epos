@@ -26,9 +26,11 @@ import {Text} from 'react-native-gesture-handler';
 import Feather from 'react-native-vector-icons/Feather';
 import {Dropdown} from 'react-native-element-dropdown';
 import DualDatePicker from '../../../components/dual-date-picker';
-import {getSaleHistory} from '../../../services/process-sales';
+import {getSaleDetials, getSaleHistory} from '../../../services/process-sales';
 import {getOfflineSales} from '../../../services/offline';
 import moment from 'moment';
+import NativePrintSdk from '../../../../../../specs/NativePrintSdk';
+import {getOutletByIdApi} from '../../../services/outlet';
 
 function SalesHistory() {
   const headers = [
@@ -51,6 +53,7 @@ function SalesHistory() {
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [totalTax, setTotalTax] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
+  const [rawData, setRawData] = useState<any[]>([]);
   const [data, setData] = useState<any[]>([]);
   const [selectedRow, setSelectedRow] = useState<string | null>(null);
   const [selectedPaymentType, setSelectedPaymentType] = useState<string | null>(
@@ -66,7 +69,7 @@ function SalesHistory() {
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchValue);
   const [skip, setSkip] = useState(0);
-  const [limit, setLimit] = useState(15);
+  const [limit, setLimit] = useState(10);
   const [count, setCount] = useState();
   const [user, setUser] = useState<string | null>('null');
 
@@ -122,25 +125,16 @@ function SalesHistory() {
 
   const fetchData = async () => {
     setData([]);
-    setTotalSales(0);
-    setTotalDiscount(0);
-    setTotalTax(0);
 
     try {
       setIsLoadingTrue();
-      // const token = await AsyncStorage.getItem('userToken');
-      // let url = `${API_BASE_URL}sales/list?skip=${
-      //   skip * limit
-      // }&limit=${limit}&`;
-
-      // Define query parameters dynamically
       const queryParams: string[] = [];
 
       if (selectedPaymentType) {
-        queryParams.push(`paymentTypes=${selectedPaymentType}`);
+        queryParams.push(`paymentTypes[]=${selectedPaymentType}`);
       }
       if (selectedPaymentStatus) {
-        queryParams.push(`paymentStatuses=${selectedPaymentStatus}`);
+        queryParams.push(`paymentStatuses[]=${selectedPaymentStatus}`);
       }
       if (selectedDateRange) {
         queryParams.push(`endDate=${selectedDateRange.endDate}`);
@@ -183,21 +177,10 @@ function SalesHistory() {
       console.log(offlineData);
 
       const response = await getSaleHistory(skip, limit, query, headerUrl);
-
-      console.log('Response get Sales History:', response.data.data.count);
-      setCount(response.data.data.count);
-      const salesSum = response.data.data.data.reduce(
-        (acc: number, item: any) => acc + (item.totalSale || 0),
-        0,
-      );
-      setTotalSales(salesSum);
+      setRawData(response.data.data.data);
+      console.log('Response get Sales History:', response.data.data.data.count);
+      setCount(response.data.data.data.count);
       setTotalSales(response.data.data.summary.sales);
-
-      const discountSum = response.data.data.data.reduce(
-        (acc: number, item: any) => acc + (item.discountAmount || 0),
-        0,
-      );
-      setTotalDiscount(discountSum);
       setTotalDiscount(response.data.data.summary.discount);
 
       const taxSum = response.data.data.data.reduce(
@@ -243,6 +226,7 @@ function SalesHistory() {
       selectedDateRange,
       debouncedSearchQuery,
       skip,
+      limit,
     ]),
   );
 
@@ -306,6 +290,448 @@ function SalesHistory() {
   }, []);
 
   const [dateRange, setDateRange] = useState<string>('Select Date Range');
+
+  async function printSale(row: any, index: number) {
+    try {
+      const sale = rawData[index];
+      setIsLoadingTrue();
+      const outletResponse = await getOutletByIdApi(sale.outletId, headerUrl);
+      const response = await getSaleDetials(sale._id, headerUrl);
+      setIsLoadingFalse();
+      sendForPrint(
+        sale.orderId,
+        response?.data?.data?.logo ?? '',
+        outletResponse?.data?.data,
+        sale,
+      );
+    } catch (error) {
+      setIsLoadingFalse();
+    }
+  }
+
+  function sendForPrint(invoiceNo: any, logo: any, outlet: any, sale: any) {
+    var printObjs = [];
+    printObjs.push({
+      text: logo,
+      dir: 'center',
+      size: '12',
+      next_line: false,
+      type: 'bitmap',
+    });
+    // printObjs.push({
+    //   text: moment().format('M/D/YY h:mm A'),
+    //   dir: 'left',
+    //   size: '10',
+    //   next_line: false,
+    // });
+    // printObjs.push({
+    //   text: 'Poxfy E-POS',
+    //   dir: 'center',
+    //   size: '10',
+    //   next_line: false,
+    // });
+    // printObjs.push({
+    //   text: ' ',
+    //   dir: 'right',
+    //   size: '10',
+    //   next_line: true,
+    // });
+    printObjs.push({
+      text: outlet?.name ?? '-',
+      dir: 'center',
+      size: '21',
+      style: 'bold',
+      next_line: true,
+    });
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '10',
+      style: 'bold',
+      next_line: true,
+    });
+    printObjs.push({
+      text: outlet?.phone,
+      dir: 'center',
+      size: '21',
+      next_line: true,
+    });
+    printObjs.push({
+      text: outlet?.email,
+      dir: 'center',
+      size: '21',
+      next_line: true,
+    });
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '10',
+      style: 'bold',
+      next_line: true,
+    });
+    printObjs.push({
+      text: 'Tax Invoice',
+      dir: 'center',
+      size: '21',
+      style: 'bold',
+      next_line: true,
+    });
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '10',
+      style: 'bold',
+      next_line: true,
+    });
+    printObjs.push({
+      text:
+        'Printed At: ' +
+        moment(sale.createdAt).format('DD MMM YYYY hh:mm:ss a'),
+      dir: 'center',
+      size: '21',
+      next_line: true,
+      style: 'bold',
+    });
+
+    var linePieces = 114;
+    var borderStr = '';
+    for (var i = 0; i <= linePieces; i++) {
+      borderStr += '_';
+    }
+    printObjs.push({
+      text: borderStr,
+      dir: 'center',
+      size: '10',
+      style: 'bold',
+      next_line: true,
+    });
+
+    printObjs.push({
+      text: 'Invoice #',
+      dir: 'left',
+      size: '21',
+      next_line: false,
+    });
+    printObjs.push({
+      text: invoiceNo,
+      dir: 'right',
+      size: '21',
+      next_line: true,
+    });
+
+    printObjs.push({
+      text: 'Created By',
+      dir: 'left',
+      size: '21',
+      next_line: false,
+    });
+    printObjs.push({
+      text: sale.createdBy?.fullName,
+      dir: 'right',
+      size: '21',
+      next_line: true,
+    });
+
+    printObjs.push({
+      text: 'Order Date',
+      dir: 'left',
+      size: '21',
+      next_line: false,
+    });
+    printObjs.push({
+      text: moment(sale.createdAt).format('DD MMM YYYY hh:mm:ss a'),
+      dir: 'right',
+      size: '21',
+      next_line: true,
+    });
+
+    printObjs.push({
+      text: 'Customer Name',
+      dir: 'left',
+      size: '21',
+      next_line: false,
+    });
+    printObjs.push({
+      text: sale.customerName,
+      dir: 'right',
+      size: '21',
+      next_line: true,
+    });
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '10',
+      next_line: true,
+    });
+
+    printObjs.push({
+      text: 'Qty',
+      dir: 'left',
+      size: '21',
+      next_line: false,
+      style: 'bold',
+    });
+    printObjs.push({
+      text: 'Item',
+      dir: 'left',
+      size: '21',
+      next_line: false,
+      style: 'bold',
+      weight: 3.0,
+    });
+    printObjs.push({
+      text: 'Price',
+      dir: 'right',
+      size: '21',
+      next_line: false,
+      style: 'bold',
+    });
+    printObjs.push({
+      text: 'Total',
+      dir: 'right',
+      size: '21',
+      next_line: true,
+      style: 'bold',
+    });
+    sale.saleDetails.forEach((item: any) => {
+      printObjs.push({
+        text: borderStr,
+        dir: 'center',
+        size: '10',
+        style: 'bold',
+        next_line: true,
+      });
+      printObjs.push({
+        text: '  ' + item.quantity,
+        dir: 'left',
+        size: '21',
+        next_line: false,
+      });
+      printObjs.push({
+        text: item.product?.name,
+        dir: 'left',
+        size: '21',
+        next_line: false,
+        weight: 3.0,
+      });
+      printObjs.push({
+        text: item.price?.toFixed(2),
+        dir: 'right',
+        size: '21',
+        next_line: false,
+      });
+      printObjs.push({
+        text: (item.price * item.quantity)?.toFixed(2),
+        dir: 'right',
+        size: '21',
+        next_line: true,
+      });
+    });
+
+    printObjs.push({
+      text: borderStr,
+      dir: 'center',
+      size: '10',
+      style: 'bold',
+      next_line: true,
+    });
+
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '10',
+      next_line: true,
+    });
+
+    if ((sale.discountAmount || 0) > 0) {
+      printObjs.push({
+        text: ' ',
+        dir: 'center',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: 'Discount',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: (sale.discountAmount?.toFixed(2) ?? 0.0) + '  ',
+        dir: 'right',
+        size: '21',
+        next_line: true,
+      });
+    }
+
+    if ((sale.tax || 0) > 0) {
+      printObjs.push({
+        text: ' ',
+        dir: 'center',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: 'Tax',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: sale.tax?.toFixed(2) + '  ',
+        dir: 'right',
+        size: '21',
+        next_line: true,
+      });
+    }
+
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '21',
+      style: 'bold',
+      next_line: false,
+    });
+    printObjs.push({
+      text: 'Subtotal',
+      dir: 'right',
+      size: '21',
+      style: 'bold',
+      next_line: false,
+    });
+    printObjs.push({
+      text: sale.subTotal?.toFixed(2) + '  ',
+      dir: 'right',
+      size: '21',
+      next_line: true,
+    });
+
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '21',
+      style: 'bold',
+      next_line: false,
+    });
+    printObjs.push({
+      text: 'Total',
+      dir: 'right',
+      size: '21',
+      style: 'bold',
+      next_line: false,
+    });
+    printObjs.push({
+      text: sale.totalSale?.toFixed(2) + '  ',
+      dir: 'right',
+      size: '21',
+      style: 'bold',
+      next_line: true,
+    });
+
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '10',
+      style: 'bold',
+      next_line: true,
+    });
+
+    if (sale.receivedCash > 0) {
+      printObjs.push({
+        text: ' ',
+        dir: 'center',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: 'Cash',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: sale.receivedCash?.toFixed(2) + '  ',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: true,
+      });
+    }
+
+    if (sale.receivedCredit > 0) {
+      printObjs.push({
+        text: ' ',
+        dir: 'center',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: 'Credit',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: sale.receivedCredit?.toFixed(2) + '  ',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: true,
+      });
+    }
+
+    if (sale.receivedLoyality > 0) {
+      printObjs.push({
+        text: ' ',
+        dir: 'center',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: 'Loyalty',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: false,
+      });
+      printObjs.push({
+        text: sale.receivedLoyality?.toFixed(2) + '  ',
+        dir: 'right',
+        size: '21',
+        style: 'bold',
+        next_line: true,
+      });
+    }
+
+    printObjs.push({
+      text: ' ',
+      dir: 'center',
+      size: '15',
+      next_line: true,
+    });
+    printObjs.push({
+      text: 'Products Count: ' + sale.saleDetails.length,
+      dir: 'center',
+      size: '21',
+      next_line: true,
+    });
+
+    try {
+      const str = JSON.stringify([printObjs]);
+      NativePrintSdk?.printJson(str);
+    } catch (error) {
+      console.error('Error calling PrintSdk:', error);
+    }
+  }
 
   return (
     <View style={{flex: 1, marginHorizontal: 8, marginBottom: 8}}>
@@ -412,13 +838,16 @@ function SalesHistory() {
               ]}
               headers={headers}
               data={data}
-              propWidth={1800}
               showRefund={true}
               onRefund={handleOnRefund}
               onEdit={handleOnEdit}
               count={count}
               skip={skip}
               setSkip={setSkip}
+              limit={limit}
+              setLimit={setLimit}
+              showPrint={true}
+              onPrint={printSale}
             />
           </View>
         }></TableCard>

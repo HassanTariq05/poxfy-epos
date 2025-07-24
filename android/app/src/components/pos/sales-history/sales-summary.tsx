@@ -16,7 +16,7 @@ const SalesSummary: React.FC<SalesSummaryProps> = ({sales, discount, tax}) => {
         </Text>
         <View style={[styles.line, {backgroundColor: 'rgb(103, 223, 135)'}]} />
         <Text style={[styles.value, {color: 'rgb(103, 223, 135)'}]}>
-          {sales.toFixed(2)}
+          {sales?.toFixed(2) ?? '0'}
         </Text>
       </View>
 
@@ -26,7 +26,7 @@ const SalesSummary: React.FC<SalesSummaryProps> = ({sales, discount, tax}) => {
         </Text>
         <View style={[styles.line, {backgroundColor: 'rgb(236, 105, 100)'}]} />
         <Text style={[styles.value, {color: 'rgb(236, 105, 100)'}]}>
-          {discount.toFixed(2)}
+          {discount?.toFixed(2) ?? '0'}
         </Text>
       </View>
 
@@ -36,7 +36,7 @@ const SalesSummary: React.FC<SalesSummaryProps> = ({sales, discount, tax}) => {
         </Text>
         <View style={[styles.line, {backgroundColor: 'rgb(103, 223, 135)'}]} />
         <Text style={[styles.value, {color: 'rgb(103, 223, 135)'}]}>
-          {tax.toFixed(2)}
+          {tax?.toFixed(2) ?? '0'}
         </Text>
       </View>
     </View>
